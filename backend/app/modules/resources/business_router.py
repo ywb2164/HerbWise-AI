@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.responses import ApiResponse, success
-from app.modules.auth.service import require_role
+from app.modules.auth.service import get_current_user, require_role
 from app.modules.resources.business_schemas import (
     GenerateResourceRequest,
     ManualDecisionRequest,
@@ -20,8 +20,16 @@ from app.modules.resources.business_service import (
     review_resource,
 )
 
-resources_router = APIRouter(prefix="/resources", tags=["resources"])
-reviews_router = APIRouter(prefix="/reviews", tags=["reviews"])
+resources_router = APIRouter(
+    prefix="/resources",
+    tags=["resources"],
+    dependencies=[Depends(get_current_user)],
+)
+reviews_router = APIRouter(
+    prefix="/reviews",
+    tags=["reviews"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @resources_router.post(

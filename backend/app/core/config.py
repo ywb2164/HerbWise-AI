@@ -18,7 +18,7 @@ class Settings(BaseSettings):
     api_prefix: str = "/api"
     database_url: str = "mysql+asyncmy://herbwise:herbwise@db:3306/herbwise"
     redis_url: str = "redis://redis:6379/0"
-    jwt_secret_key: SecretStr = SecretStr("replace-me")
+    jwt_secret_key: SecretStr = SecretStr("development-only-change-me-32-bytes")
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = Field(default=60, ge=1)
     jwt_refresh_expire_days: int = Field(default=7, ge=1)

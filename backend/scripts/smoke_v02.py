@@ -40,7 +40,7 @@ def main() -> int:
         request(client, "GET", "/api/auth/menus", headers=headers)
         request(client, "GET", "/api/profiles/stu_001", headers=headers)
         request(client, "GET", "/api/profiles/stu_001/dimensions", headers=headers)
-        request(client, "GET", "/api/medicines/by-name/黄芪", headers=headers)
+        request(client, "GET", "/api/medicines/by-name/黄耆", headers=headers)
         request(client, "GET", "/api/medicines/by-name/Astragalus", headers=headers)
         request(client, "GET", "/api/medicines/by-name/黄芪", headers=headers)
         resource = request(

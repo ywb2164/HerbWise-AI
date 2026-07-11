@@ -10,7 +10,8 @@
         "tags": [
           "system"
         ],
-        "summary": "Root",
+        "summary": "API root",
+        "description": "Return the HerbWise API service identity.",
         "operationId": "root__get",
         "responses": {
           "200": {
@@ -35,7 +36,8 @@
         "tags": [
           "system"
         ],
-        "summary": "Health",
+        "summary": "Health check",
+        "description": "Return process liveness without checking dependencies.",
         "operationId": "health_health_get",
         "responses": {
           "200": {
@@ -60,7 +62,8 @@
         "tags": [
           "system"
         ],
-        "summary": "Ready",
+        "summary": "Readiness check",
+        "description": "Check database and Redis readiness.",
         "operationId": "ready_ready_get",
         "responses": {
           "200": {
@@ -268,6 +271,11 @@
         "summary": "Create learner profile",
         "description": "Create one learner profile and its six capability dimensions.",
         "operationId": "create_api_profiles_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -308,6 +316,11 @@
         "summary": "List learner profiles",
         "description": "List learner profiles with pagination and optional identity-type filtering.",
         "operationId": "list_route_api_profiles_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "page",
@@ -381,6 +394,11 @@
         "summary": "Get learner profile",
         "description": "Get one learner profile.",
         "operationId": "get_profile_api_profiles__learner_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "learner_id",
@@ -422,6 +440,11 @@
         "summary": "Update learner profile",
         "description": "Update a profile and record profile history.",
         "operationId": "update_api_profiles__learner_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "learner_id",
@@ -475,6 +498,11 @@
         "summary": "Get learner dimensions",
         "description": "Return the learner's six assessed capability dimensions.",
         "operationId": "dimensions_api_profiles__learner_id__dimensions_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "learner_id",
@@ -518,6 +546,11 @@
         "summary": "Get learner weak points",
         "description": "Return traceable unresolved and resolved learner weak points.",
         "operationId": "weak_point_list_api_profiles__learner_id__weak_points_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "learner_id",
@@ -561,6 +594,11 @@
         "summary": "Get learner history",
         "description": "Return auditable learner-profile history.",
         "operationId": "history_list_api_profiles__learner_id__history_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "learner_id",
@@ -604,6 +642,11 @@
         "summary": "Diagnose learner",
         "description": "Run deterministic six-dimension profile diagnostics without an LLM.",
         "operationId": "diagnose_route_api_profiles__learner_id__diagnose_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "learner_id",
@@ -658,7 +701,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/tests/initial/submit": {
@@ -700,7 +748,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/tests/records/{record_id}": {
@@ -711,6 +764,11 @@
         "summary": "Get test record",
         "description": "Get a completed initial-test record.",
         "operationId": "record_api_tests_records__record_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "record_id",
@@ -754,6 +812,11 @@
         "summary": "Create medicine",
         "description": "Create a structured demo medicine record.",
         "operationId": "create_api_medicines_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "requestBody": {
           "required": true,
           "content": {
@@ -794,6 +857,11 @@
         "summary": "List medicines",
         "description": "List structured medicine records with pagination.",
         "operationId": "list_route_api_medicines_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "page",
@@ -867,6 +935,11 @@
         "summary": "Find medicine by name",
         "description": "Match Chinese, English, training class name, or alias.",
         "operationId": "by_name_api_medicines_by_name__name__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "name",
@@ -910,6 +983,11 @@
         "summary": "Get medicine",
         "description": "Get a structured medicine record.",
         "operationId": "get_route_api_medicines__medicine_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "medicine_id",
@@ -951,6 +1029,11 @@
         "summary": "Update medicine",
         "description": "Update a structured medicine record.",
         "operationId": "update_api_medicines__medicine_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "medicine_id",
@@ -1002,6 +1085,11 @@
         "summary": "Delete medicine",
         "description": "Delete a medicine only when it has no related feature records.",
         "operationId": "delete_api_medicines__medicine_id__delete",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "medicine_id",
@@ -1045,6 +1133,11 @@
         "summary": "List medicine features",
         "description": "List structured medicine features.",
         "operationId": "feature_list_api_medicines__medicine_id__features_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "medicine_id",
@@ -1086,6 +1179,11 @@
         "summary": "Add medicine feature",
         "description": "Add a typed structured medicine feature.",
         "operationId": "feature_add_api_medicines__medicine_id__features_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "medicine_id",
@@ -1139,6 +1237,11 @@
         "summary": "List similar medicines",
         "description": "List configured look-alike medicine relations.",
         "operationId": "similar_list_api_medicines__medicine_id__similar_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "medicine_id",
@@ -1180,6 +1283,11 @@
         "summary": "Add similar medicine",
         "description": "Add a medicine comparison relation.",
         "operationId": "similar_add_api_medicines__medicine_id__similar_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "medicine_id",
@@ -1264,7 +1372,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/resources": {
@@ -1275,6 +1388,11 @@
         "summary": "List resources",
         "description": "List persisted resources with pagination.",
         "operationId": "list_route_api_resources_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "page",
@@ -1348,6 +1466,11 @@
         "summary": "Get resource",
         "description": "Get one persisted resource.",
         "operationId": "get_resource_api_resources__resource_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "resource_id",
@@ -1391,6 +1514,11 @@
         "summary": "Regenerate resource",
         "description": "Create a new resource version without replacing the original.",
         "operationId": "regenerate_api_resources__resource_id__regenerate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "resource_id",
@@ -1434,6 +1562,11 @@
         "summary": "Archive resource",
         "description": "Archive a resource without deleting its history.",
         "operationId": "archive_api_resources__resource_id__archive_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "resource_id",
@@ -1477,6 +1610,11 @@
         "summary": "Review resource",
         "description": "Run deterministic mock content checks and persist the review.",
         "operationId": "check_api_reviews_check_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "resource_id",
@@ -1520,6 +1658,11 @@
         "summary": "Get resource review",
         "description": "Get the latest persisted review for a resource.",
         "operationId": "get_review_api_reviews__resource_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "resource_id",
@@ -1563,6 +1706,11 @@
         "summary": "Rewrite resource",
         "description": "Generate a new mock resource version after a revision request.",
         "operationId": "rewrite_api_reviews__resource_id__rewrite_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "resource_id",
@@ -1664,6 +1812,11 @@
         "summary": "Update learning path",
         "description": "Create a new deterministic learning-path version.",
         "operationId": "update_api_learning_paths_update_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "learner_id",
@@ -1707,6 +1860,11 @@
         "summary": "Get current learning path",
         "description": "Get the latest immutable learning-path version.",
         "operationId": "get_path_api_learning_paths__learner_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "learner_id",
@@ -1750,6 +1908,11 @@
         "summary": "Generate learning report",
         "description": "Persist a JSON-only mock learning report.",
         "operationId": "generate_api_reports_learning__learner_id__generate_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "learner_id",
@@ -1793,6 +1956,11 @@
         "summary": "Get latest learning report",
         "description": "Get the latest JSON-only learning report.",
         "operationId": "get_learning_api_reports_learning__learner_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "learner_id",
@@ -1836,6 +2004,11 @@
         "summary": "Get report",
         "description": "Get a persisted report by identifier.",
         "operationId": "get_report_api_reports__report_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "report_id",
@@ -1844,6 +2017,124 @@
             "schema": {
               "type": "string",
               "title": "Report Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/learning/answers": {
+      "post": {
+        "tags": [
+          "learning-answers"
+        ],
+        "summary": "Submit learning answer",
+        "description": "Persist learner feedback used by deterministic path rules.",
+        "operationId": "create_answer_api_learning_answers_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LearningAnswerCreate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/learning/answers/{learner_id}": {
+      "get": {
+        "tags": [
+          "learning-answers"
+        ],
+        "summary": "List learning answers",
+        "description": "List paginated answer history for one learner.",
+        "operationId": "answer_list_api_learning_answers__learner_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "learner_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Learner Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
             }
           }
         ],
@@ -2566,7 +2857,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/metrics/hallucination": {
@@ -2588,7 +2884,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/metrics/adaptation": {
@@ -2610,7 +2911,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/metrics/coverage": {
@@ -2632,7 +2938,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/traces": {
@@ -2643,6 +2954,11 @@
         "summary": "List traces",
         "description": "List evidence-chain traces with pagination.",
         "operationId": "list_traces_api_traces_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "page",
@@ -2700,6 +3016,11 @@
         "summary": "Get trace by task",
         "description": "Get all evidence-chain traces for one task.",
         "operationId": "by_task_api_traces_by_task__task_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "task_id",
@@ -2743,6 +3064,11 @@
         "summary": "Get trace",
         "description": "Get one evidence-chain trace.",
         "operationId": "get_trace_api_traces__trace_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "trace_id",
@@ -2783,7 +3109,8 @@
         "tags": [
           "agent-tasks"
         ],
-        "summary": "Create Task",
+        "summary": "Create agent task",
+        "description": "Create and asynchronously start the fixed mock LangGraph workflow.",
         "operationId": "create_task_api_agent_tasks_post",
         "requestBody": {
           "content": {
@@ -2816,7 +3143,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/agent/tasks/{task_id}": {
@@ -2824,8 +3156,14 @@
         "tags": [
           "agent-tasks"
         ],
-        "summary": "Get Task",
+        "summary": "Get agent task",
+        "description": "Get current task status and serializable workflow result.",
         "operationId": "get_task_api_agent_tasks__task_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "task_id",
@@ -2866,8 +3204,14 @@
         "tags": [
           "agent-tasks"
         ],
-        "summary": "Events",
+        "summary": "List task events",
+        "description": "List ordered durable workflow events for a task.",
         "operationId": "events_api_agent_tasks__task_id__events_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "task_id",
@@ -2912,8 +3256,14 @@
         "tags": [
           "agent-tasks"
         ],
-        "summary": "Logs",
+        "summary": "List agent logs",
+        "description": "List redacted per-node agent execution logs.",
         "operationId": "logs_api_agent_tasks__task_id__logs_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "task_id",
@@ -2959,8 +3309,14 @@
         "tags": [
           "agent-tasks"
         ],
-        "summary": "Stream",
+        "summary": "Stream task events",
+        "description": "Stream workflow events over server-sent events until completion.",
         "operationId": "stream_api_agent_tasks__task_id__stream_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "task_id",
@@ -2999,7 +3355,8 @@
         "tags": [
           "files"
         ],
-        "summary": "Upload File",
+        "summary": "Upload file",
+        "description": "Persist an uploaded file and return its stable identifier and checksum.",
         "operationId": "upload_file_api_files_upload_post",
         "requestBody": {
           "content": {
@@ -3032,7 +3389,12 @@
               }
             }
           }
-        }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
       }
     },
     "/api/files/{file_id}": {
@@ -3040,8 +3402,14 @@
         "tags": [
           "files"
         ],
-        "summary": "Get File",
+        "summary": "Get uploaded file metadata",
+        "description": "Return metadata for a previously uploaded file.",
         "operationId": "get_file_api_files__file_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
         "parameters": [
           {
             "name": "file_id",
@@ -3341,6 +3709,84 @@
           "answers"
         ],
         "title": "InitialTestSubmission"
+      },
+      "LearningAnswerCreate": {
+        "properties": {
+          "learner_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Learner Id"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "question_id": {
+            "anyOf": [
+              {
+                "type": "integer"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Question Id"
+          },
+          "dimension_code": {
+            "$ref": "#/components/schemas/DimensionCode"
+          },
+          "knowledge_point": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Knowledge Point"
+          },
+          "answer": {
+            "additionalProperties": true,
+            "type": "object",
+            "title": "Answer"
+          },
+          "is_correct": {
+            "type": "boolean",
+            "title": "Is Correct"
+          },
+          "score": {
+            "type": "number",
+            "maximum": 100.0,
+            "minimum": 0.0,
+            "title": "Score"
+          },
+          "feedback": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Feedback"
+          }
+        },
+        "type": "object",
+        "required": [
+          "learner_id",
+          "dimension_code",
+          "knowledge_point",
+          "answer",
+          "is_correct",
+          "score"
+        ],
+        "title": "LearningAnswerCreate"
       },
       "LoginRequest": {
         "properties": {

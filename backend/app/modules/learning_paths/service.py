@@ -31,16 +31,22 @@ async def update_path(
         if dimensions
         else 0.0
     )
-    consecutive_errors = (
-        await session.scalar(
-            select(func.count())
-            .select_from(LearningAnswer)
-            .where(
-                LearningAnswer.learner_id == learner_id,
-                LearningAnswer.is_correct.is_(False),
+    recent_answers = list(
+        (
+            await session.scalars(
+                select(LearningAnswer)
+                .where(LearningAnswer.learner_id == learner_id)
+                .order_by(LearningAnswer.id.desc())
+                .limit(2)
             )
-        )
-        or 0
+        ).all()
+    )
+    consecutive_errors = (
+        2
+        if len(recent_answers) == 2
+        and all(not answer.is_correct for answer in recent_answers)
+        and recent_answers[0].knowledge_point == recent_answers[1].knowledge_point
+        else 0
     )
     current = await session.scalar(
         select(LearningPath)
@@ -167,3 +173,82 @@ async def require_report(session: AsyncSession, report_id: str) -> ReportRecord:
     if item is None:
         raise NotFoundException("Report not found")
     return item
+
+
+async def create_learning_answer(
+    session: AsyncSession,
+    *,
+    learner_id: str,
+    task_id: str | None,
+    question_id: int | None,
+    dimension_code: str,
+    knowledge_point: str,
+    answer: dict,
+    is_correct: bool,
+    score: float,
+    feedback: str | None,
+) -> LearningAnswer:
+    await require_profile(session, learner_id)
+    item = LearningAnswer(
+        learner_id=learner_id,
+        task_id=task_id,
+        question_id=question_id,
+        dimension_code=dimension_code,
+        knowledge_point=knowledge_point,
+        answer_json=answer,
+        is_correct=is_correct,
+        score=score,
+        feedback=feedback,
+    )
+    session.add(item)
+    await session.commit()
+    await session.refresh(item)
+    return item
+
+
+def answer_data(item: LearningAnswer) -> dict:
+    return {
+        "id": item.id,
+        "learner_id": item.learner_id,
+        "task_id": item.task_id,
+        "question_id": item.question_id,
+        "dimension_code": item.dimension_code,
+        "knowledge_point": item.knowledge_point,
+        "answer": item.answer_json,
+        "is_correct": item.is_correct,
+        "score": item.score,
+        "feedback": item.feedback,
+        "submitted_at": item.submitted_at,
+    }
+
+
+async def list_learning_answers(
+    session: AsyncSession, learner_id: str, page: int, page_size: int
+) -> dict:
+    await require_profile(session, learner_id)
+    total = (
+        await session.scalar(
+            select(func.count())
+            .select_from(LearningAnswer)
+            .where(LearningAnswer.learner_id == learner_id)
+        )
+        or 0
+    )
+    records = list(
+        (
+            await session.scalars(
+                select(LearningAnswer)
+                .where(LearningAnswer.learner_id == learner_id)
+                .order_by(LearningAnswer.id.desc())
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+            )
+        ).all()
+    )
+    return {
+        "items": [answer_data(item) for item in records],
+        "page": page,
+        "page_size": page_size,
+        "total": total,
+        "pages": (total + page_size - 1) // page_size,
+    }

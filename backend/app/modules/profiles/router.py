@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.responses import ApiResponse, success
+from app.modules.auth.service import get_current_user
 from app.modules.profiles.schemas import (
     InitialTestSubmission,
     ProfileCreate,
@@ -23,8 +24,16 @@ from app.modules.profiles.service import (
     weak_points,
 )
 
-profiles_router = APIRouter(prefix="/profiles", tags=["profiles"])
-tests_router = APIRouter(prefix="/tests", tags=["initial-tests"])
+profiles_router = APIRouter(
+    prefix="/profiles",
+    tags=["profiles"],
+    dependencies=[Depends(get_current_user)],
+)
+tests_router = APIRouter(
+    prefix="/tests",
+    tags=["initial-tests"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 @profiles_router.post(

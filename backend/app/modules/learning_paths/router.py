@@ -1,20 +1,90 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.responses import ApiResponse, success
+from app.modules.auth.service import get_current_user
 from app.modules.learning_paths.service import (
+    answer_data,
+    create_learning_answer,
     generate_learning_report,
     latest_learning_report,
     latest_path,
+    list_learning_answers,
     path_data,
     report_data,
     require_report,
     update_path,
 )
+from app.modules.profiles.schemas import DimensionCode
 
-paths_router = APIRouter(prefix="/learning-paths", tags=["learning-paths"])
-reports_router = APIRouter(prefix="/reports", tags=["reports"])
+paths_router = APIRouter(
+    prefix="/learning-paths",
+    tags=["learning-paths"],
+    dependencies=[Depends(get_current_user)],
+)
+reports_router = APIRouter(
+    prefix="/reports",
+    tags=["reports"],
+    dependencies=[Depends(get_current_user)],
+)
+answers_router = APIRouter(
+    prefix="/learning/answers",
+    tags=["learning-answers"],
+    dependencies=[Depends(get_current_user)],
+)
+
+
+class LearningAnswerCreate(BaseModel):
+    learner_id: str = Field(min_length=1, max_length=64)
+    task_id: str | None = Field(default=None, max_length=64)
+    question_id: int | None = None
+    dimension_code: DimensionCode
+    knowledge_point: str = Field(min_length=1, max_length=255)
+    answer: dict
+    is_correct: bool
+    score: float = Field(ge=0, le=100)
+    feedback: str | None = None
+
+
+@answers_router.post(
+    "",
+    response_model=ApiResponse,
+    summary="Submit learning answer",
+    description="Persist learner feedback used by deterministic path rules.",
+)
+async def create_answer(
+    payload: LearningAnswerCreate, session: AsyncSession = Depends(get_session)
+):
+    item = await create_learning_answer(
+        session,
+        learner_id=payload.learner_id,
+        task_id=payload.task_id,
+        question_id=payload.question_id,
+        dimension_code=payload.dimension_code,
+        knowledge_point=payload.knowledge_point,
+        answer=payload.answer,
+        is_correct=payload.is_correct,
+        score=payload.score,
+        feedback=payload.feedback,
+    )
+    return success(answer_data(item))
+
+
+@answers_router.get(
+    "/{learner_id}",
+    response_model=ApiResponse,
+    summary="List learning answers",
+    description="List paginated answer history for one learner.",
+)
+async def answer_list(
+    learner_id: str,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    session: AsyncSession = Depends(get_session),
+):
+    return success(await list_learning_answers(session, learner_id, page, page_size))
 
 
 @paths_router.post(

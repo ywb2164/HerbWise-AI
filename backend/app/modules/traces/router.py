@@ -5,9 +5,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.core.database import get_session
 from app.core.exceptions import NotFoundException
 from app.core.responses import ApiResponse, success
+from app.modules.auth.service import get_current_user
 from app.modules.traces.models import TraceRecord
 
-router = APIRouter(prefix="/traces", tags=["traces"])
+router = APIRouter(
+    prefix="/traces", tags=["traces"], dependencies=[Depends(get_current_user)]
+)
 
 
 def _data(item: TraceRecord) -> dict:

@@ -4,13 +4,16 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.responses import ApiResponse, success
+from app.modules.auth.service import get_current_user
 from app.modules.knowledge.models import KnowledgeSource, MedicineItem
 from app.modules.learning_paths.models import LearningPath
 from app.modules.resources.business_models import ResourceOutput, ResourceReview
 from app.modules.profiles.models import LearnerProfile
 from app.modules.tasks.models import TaskRecord
 
-router = APIRouter(prefix="/metrics", tags=["metrics"])
+router = APIRouter(
+    prefix="/metrics", tags=["metrics"], dependencies=[Depends(get_current_user)]
+)
 
 
 async def _count(session: AsyncSession, model, *filters) -> int:

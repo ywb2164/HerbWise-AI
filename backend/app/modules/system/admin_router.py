@@ -4,11 +4,13 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
+from app.core.exceptions import AppException, NotFoundException
 from app.core.responses import ApiResponse, success
 from app.modules.auth.models import Menu, Role, User
 from app.modules.auth.service import require_role
 from app.modules.resources.business_models import PromptTemplate
 from app.modules.system.models import AgentConfig, ModelConfig, SystemConfig, TestCase
+from app.modules.tasks.models import AgentLog
 
 router = APIRouter(
     prefix="/admin", tags=["admin"], dependencies=[Depends(require_role("admin"))]
@@ -17,6 +19,11 @@ router = APIRouter(
 
 class AdminWritePayload(BaseModel):
     data: dict[str, object]
+
+
+class AdminConflictException(AppException):
+    status_code = 409
+    code = 1409
 
 
 _WRITABLE = {
@@ -190,12 +197,23 @@ async def create_record(
 ):
     model = _WRITABLE.get(target)
     if model is None:
-        return success({"created": False, "reason": "unsupported_target"})
+        raise NotFoundException("Unsupported admin resource")
     data = dict(payload.data)
     data.pop("password_hash", None)
     data.pop("credential", None)
     item = model(**data)
     session.add(item)
+    if target == "agent-configs":
+        session.add(
+            AgentLog(
+                task_id="admin_config",
+                node_name="admin:create:agent-configs",
+                provider="system",
+                input_summary="redacted configuration payload",
+                output_summary="agent configuration created",
+                status="success",
+            )
+        )
     await session.commit()
     await session.refresh(item)
     return success(
@@ -221,13 +239,24 @@ async def update_record(
 ):
     model = _WRITABLE.get(target)
     if model is None:
-        return success({"updated": False, "reason": "unsupported_target"})
+        raise NotFoundException("Unsupported admin resource")
     item = await session.get(model, record_id)
     if item is None:
-        return success({"updated": False, "reason": "not_found"})
+        raise NotFoundException("Admin record not found")
     for key, value in payload.data.items():
         if key not in {"id", "password_hash", "credential"} and hasattr(item, key):
             setattr(item, key, value)
+    if target == "agent-configs":
+        session.add(
+            AgentLog(
+                task_id="admin_config",
+                node_name="admin:update:agent-configs",
+                provider="system",
+                input_summary="redacted configuration payload",
+                output_summary=f"agent configuration {record_id} updated",
+                status="success",
+            )
+        )
     await session.commit()
     await session.refresh(item)
     return success(
@@ -250,16 +279,22 @@ async def delete_record(
 ):
     model = _WRITABLE.get(target)
     if model is None:
-        return success({"deleted": False, "reason": "unsupported_target"})
+        raise NotFoundException("Unsupported admin resource")
     item = await session.get(model, record_id)
     if item is None:
-        return success({"deleted": False, "reason": "not_found"})
+        raise NotFoundException("Admin record not found")
     if target == "model-configs" and await session.scalar(
         select(func.count())
         .select_from(AgentConfig)
         .where(AgentConfig.model_config_id == record_id)
     ):
-        return success({"deleted": False, "reason": "referenced_by_agent_config"})
+        raise AdminConflictException("Model configuration is referenced by an agent")
+    if target == "prompt-templates" and await session.scalar(
+        select(func.count())
+        .select_from(AgentConfig)
+        .where(AgentConfig.prompt_template_id == record_id)
+    ):
+        raise AdminConflictException("Prompt template is referenced by an agent")
     await session.delete(item)
     await session.commit()
     return success({"deleted": True})
