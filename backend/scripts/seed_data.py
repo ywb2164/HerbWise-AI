@@ -3,6 +3,7 @@ import sys
 from pathlib import Path
 
 from sqlalchemy import or_, select
+from sqlalchemy.orm import selectinload
 
 sys.path.append(str(Path(__file__).resolve().parents[1]))
 
@@ -73,12 +74,18 @@ async def seed() -> None:
             "clinical_pharmacist",
             "quality_inspector",
         ):
-            role = await session.scalar(select(Role).where(Role.code == code))
+            role = await session.scalar(
+                select(Role)
+                .where(Role.code == code)
+                .options(selectinload(Role.permissions), selectinload(Role.menus))
+            )
             if role is None:
                 role = Role(
                     code=code,
                     name=code.replace("_", " ").title(),
                     description="demo_seed_data",
+                    permissions=[],
+                    menus=[],
                 )
                 session.add(role)
                 await session.flush()

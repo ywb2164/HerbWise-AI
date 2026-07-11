@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.ids import new_id
+from app.common.json import json_safe
 from app.core.exceptions import NotFoundException
 from app.modules.learning_paths.models import (
     LearningAnswer,
@@ -111,13 +112,15 @@ async def generate_learning_report(
         learner_id=learner_id,
         report_type="learning",
         title="Mock learning report",
-        content_json={
-            "data_source": "mock",
-            "is_official": False,
-            "profile": profile_data(profile),
-            "weak_points": await weak_points(session, learner_id),
-            "path": path_data(path),
-        },
+        content_json=json_safe(
+            {
+                "data_source": "mock",
+                "is_official": False,
+                "profile": profile_data(profile),
+                "weak_points": await weak_points(session, learner_id),
+                "path": path_data(path),
+            }
+        ),
         status="generated",
     )
     session.add(record)
@@ -125,9 +128,9 @@ async def generate_learning_report(
         PathReport(
             report_id=record.report_id,
             learner_id=learner_id,
-            profile_snapshot_json=profile_data(profile),
-            weak_points_json=await weak_points(session, learner_id),
-            path_snapshot_json=path_data(path),
+            profile_snapshot_json=json_safe(profile_data(profile)),
+            weak_points_json=json_safe(await weak_points(session, learner_id)),
+            path_snapshot_json=json_safe(path_data(path)),
             summary="Mock learning-path report",
         )
     )

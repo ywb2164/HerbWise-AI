@@ -1,6 +1,7 @@
 from datetime import UTC, datetime
 
 from app.core.database import async_session_factory
+from app.common.json import json_safe
 from app.modules.tasks.repository import update_task
 from app.workflows.graph import workflow
 
@@ -46,6 +47,6 @@ async def run_workflow(
             status="success",
             current_node="save_trace",
             progress=100,
-            result_json=dict(result),
+            result_json=json_safe(dict(result)),
             finished_at=datetime.now(UTC),
         )

@@ -27,11 +27,27 @@ def test_v02_migration_creates_and_drops_every_new_table(monkeypatch) -> None:
         migration.op, "drop_table", lambda name, **_kwargs: dropped.append(name)
     )
     monkeypatch.setattr(migration.op, "drop_column", lambda *_args, **_kwargs: None)
+    monkeypatch.setattr(
+        migration, "_table_names", lambda: set(migration._INITIAL_TABLES)
+    )
+    monkeypatch.setattr(migration, "_column_names", lambda _table: set())
+    monkeypatch.setattr(migration, "_unique_names", lambda _table: set())
 
     migration.upgrade()
+    monkeypatch.setattr(migration, "_table_names", lambda: set(Base.metadata.tables))
+    monkeypatch.setattr(
+        migration,
+        "_column_names",
+        lambda table: set(Base.metadata.tables[table].columns.keys()),
+    )
+    monkeypatch.setattr(
+        migration,
+        "_unique_names",
+        lambda _table: {"uq_learner_dimension_code"},
+    )
     migration.downgrade()
 
-    expected = set(Base.metadata.tables) - {"learner_profiles", "learner_dimensions"}
+    expected = set(Base.metadata.tables) - set(migration._INITIAL_TABLES)
     assert set(created) == expected
     assert set(dropped) == expected
     assert dropped == list(reversed(created))
@@ -53,6 +69,11 @@ def test_v02_migration_extends_existing_learner_tables(monkeypatch) -> None:
     monkeypatch.setattr(
         migration.op, "create_unique_constraint", lambda *_args, **_kwargs: None
     )
+    monkeypatch.setattr(
+        migration, "_table_names", lambda: set(migration._INITIAL_TABLES)
+    )
+    monkeypatch.setattr(migration, "_column_names", lambda _table: set())
+    monkeypatch.setattr(migration, "_unique_names", lambda _table: set())
 
     migration.upgrade()
 

@@ -6,6 +6,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.ids import new_id
+from app.common.json import json_safe
 from app.core.exceptions import NotFoundException
 from app.integrations.factory import get_llm_provider, get_rag_provider
 from app.modules.knowledge.service import find_medicine_by_name, require_medicine
@@ -91,8 +92,8 @@ async def generate_resource(
         model_name="mock-llm",
         prompt_template_id=template.id if template else None,
         prompt_version=template.version if template else "v1",
-        profile_snapshot_json=profile_data(profile),
-        evidence_snapshot_json={"items": evidence, "data_source": "mock"},
+        profile_snapshot_json=json_safe(profile_data(profile)),
+        evidence_snapshot_json=json_safe({"items": evidence, "data_source": "mock"}),
         generation_metadata_json={
             "mode": "mock",
             "generated_at": datetime.now(UTC).isoformat(),

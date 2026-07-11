@@ -2,6 +2,7 @@ import time
 from collections.abc import Awaitable, Callable
 
 from app.common.ids import new_id
+from app.common.json import json_safe
 from app.core.database import async_session_factory
 from app.integrations.factory import (
     get_llm_provider,
@@ -274,7 +275,7 @@ async def save_trace(state: WorkflowState) -> dict:
                     trace_id=trace_id,
                     task_id=current["task_id"],
                     learner_id=current["learner_id"],
-                    trace_data_json=data,
+                    trace_data_json=json_safe(data),
                 )
             )
             await session.commit()

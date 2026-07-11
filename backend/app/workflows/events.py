@@ -1,4 +1,5 @@
 from app.core.database import async_session_factory
+from app.common.json import json_safe
 from app.modules.tasks.models import AgentLog, TaskEvent
 from app.modules.tasks.repository import add_event, add_log, update_task
 
@@ -22,7 +23,7 @@ async def record_event(
                 status=status,
                 progress=progress,
                 summary=summary,
-                payload_json=payload,
+                payload_json=json_safe(payload),
                 elapsed_ms=elapsed_ms,
             ),
         )

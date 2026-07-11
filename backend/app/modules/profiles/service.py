@@ -5,6 +5,7 @@ from sqlalchemy import false, func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.common.ids import new_id
+from app.common.json import json_safe
 from app.core.exceptions import AppException, NotFoundException
 from app.modules.profiles.models import (
     LearnerDimension,
@@ -93,8 +94,8 @@ async def _record_history(
         LearnerHistory(
             learner_id=learner_id,
             event_type=event_type,
-            before_json=before,
-            after_json=after,
+            before_json=json_safe(before),
+            after_json=json_safe(after),
             reason=reason,
             source_task_id=source_task_id,
         )
