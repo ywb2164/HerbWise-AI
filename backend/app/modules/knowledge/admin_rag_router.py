@@ -19,6 +19,7 @@ from app.modules.knowledge.rag_models import (
 from app.modules.resources.models import UploadedFile
 from app.modules.knowledge.rag_service import _fingerprint
 from app.integrations.contracts import RAGQuery
+from app.core.config import get_settings
 
 router = APIRouter(
     prefix="/admin", tags=["admin-rag"], dependencies=[Depends(require_role("admin"))]
@@ -163,6 +164,33 @@ async def disable_dataset(
     item.status = "disabled"
     item.is_default = False
     await session.commit()
+    return success(dataset_data(item))
+
+
+@router.get(
+    "/knowledge/datasets/{dataset_id}",
+    response_model=ApiResponse,
+    summary="Get knowledge dataset",
+    description="Get safe dataset metadata.",
+)
+async def get_dataset(dataset_id: int, session: AsyncSession = Depends(get_session)):
+    return success(dataset_data(await _dataset(session, dataset_id)))
+
+
+@router.put(
+    "/knowledge/datasets/{dataset_id}",
+    response_model=ApiResponse,
+    summary="Update knowledge dataset",
+    description="Update safe dataset metadata without credentials.",
+)
+async def update_dataset(
+    dataset_id: int, payload: DatasetWrite, session: AsyncSession = Depends(get_session)
+):
+    item = await _dataset(session, dataset_id)
+    for key, value in payload.model_dump().items():
+        setattr(item, "config_json" if key == "config" else key, value)
+    await session.commit()
+    await session.refresh(item)
     return success(dataset_data(item))
 
 
@@ -345,6 +373,47 @@ async def disable_document(
     return success(document_data(item))
 
 
+@router.get(
+    "/knowledge/documents/{document_id}",
+    response_model=ApiResponse,
+    summary="Get knowledge document",
+    description="Get one document metadata record.",
+)
+async def get_document(document_id: int, session: AsyncSession = Depends(get_session)):
+    item = await session.get(KnowledgeDocument, document_id)
+    if item is None:
+        raise NotFoundException("Knowledge document not found")
+    return success(document_data(item))
+
+
+@router.post(
+    "/knowledge/documents/{document_id}/refresh-status",
+    response_model=ApiResponse,
+    summary="Refresh document status",
+    description="Perform one bounded status refresh without polling.",
+)
+async def refresh_document(
+    document_id: int, session: AsyncSession = Depends(get_session)
+):
+    from datetime import UTC, datetime
+
+    item = await session.get(KnowledgeDocument, document_id)
+    if item is None:
+        raise NotFoundException("Knowledge document not found")
+    if item.sync_status == "disabled":
+        return success(document_data(item))
+    item.last_checked_at = datetime.now(UTC)
+    if get_settings().rag_mode == "mock":
+        item.sync_status = "ready"
+        item.parse_status = "ready"
+        item.raw_status = "mock_ready"
+    else:
+        item.parse_status = "unknown"
+        item.raw_status = "provider_status_pending_confirmation"
+    await session.commit()
+    return success(document_data(item))
+
+
 def replay_data(item: RAGReplayRecord) -> dict:
     return {
         "id": item.id,
@@ -438,6 +507,19 @@ async def list_replays(session: AsyncSession = Depends(get_session)):
             ).all()
         ]
     )
+
+
+@router.get(
+    "/rag/replays/{replay_id}",
+    response_model=ApiResponse,
+    summary="Get RAG replay",
+    description="Get replay metadata explicitly marked as replay data.",
+)
+async def get_replay(replay_id: int, session: AsyncSession = Depends(get_session)):
+    item = await session.get(RAGReplayRecord, replay_id)
+    if item is None:
+        raise NotFoundException("RAG replay not found")
+    return success(replay_data(item))
 
 
 @router.post(

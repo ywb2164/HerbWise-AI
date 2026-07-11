@@ -165,3 +165,45 @@ async def list_retrievals(
         ).all()
     )
     return success({"items": [_retrieval_data(item, []) for item in items]})
+
+
+@router.get(
+    "/retrievals/by-task/{task_id}",
+    response_model=ApiResponse,
+    summary="List retrievals by task",
+    description="Return task retrievals after learner ownership checks.",
+)
+async def by_task(
+    task_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    items = list(
+        (
+            await session.scalars(
+                select(RAGRetrievalRecord).where(RAGRetrievalRecord.task_id == task_id)
+            )
+        ).all()
+    )
+    for item in items:
+        if item.learner_id:
+            ensure_learner_access(user, item.learner_id)
+    return success(
+        {
+            "items": [
+                _retrieval_data(
+                    item,
+                    list(
+                        (
+                            await session.scalars(
+                                select(RAGEvidenceRecord).where(
+                                    RAGEvidenceRecord.retrieval_id == item.retrieval_id
+                                )
+                            )
+                        ).all()
+                    ),
+                )
+                for item in items
+            ]
+        }
+    )
