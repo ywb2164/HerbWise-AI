@@ -12,6 +12,7 @@ from app.modules.knowledge.service import find_medicine_by_name, require_medicin
 from app.modules.profiles.service import profile_data, require_profile
 from app.modules.resources.business_models import (
     PromptTemplate,
+    QuizQuestion,
     ResourceOutput,
     ResourceReview,
 )
@@ -59,7 +60,11 @@ async def generate_resource(
         item.model_dump()
         for item in await get_rag_provider().retrieve(medicine.standard_name_zh)
     ]
-    generated = await get_llm_provider().generate_resource([])
+    from app.integrations.contracts import KnowledgeEvidence
+
+    generated = await get_llm_provider().generate_resource(
+        [KnowledgeEvidence.model_validate(item) for item in evidence]
+    )
     template = await session.scalar(
         select(PromptTemplate)
         .where(
@@ -94,6 +99,24 @@ async def generate_resource(
         },
     )
     session.add(item)
+    if payload.resource_type == "quiz":
+        session.add(
+            QuizQuestion(
+                resource_id=resource_id,
+                question_type="single_choice",
+                stem=f"Which medicine is this resource about: {medicine.standard_name_zh}?",
+                options_json=[
+                    {"key": "A", "text": medicine.standard_name_zh},
+                    {"key": "B", "text": "demo distractor"},
+                ],
+                correct_answer_json={"value": "A"},
+                explanation="demo_seed_data: answer derived from the requested medicine",
+                difficulty=payload.difficulty,
+                dimension_code="basic_knowledge",
+                knowledge_point=medicine.standard_name_zh,
+                sort_order=1,
+            )
+        )
     await session.commit()
     await session.refresh(item)
     return item
@@ -151,8 +174,33 @@ async def review_resource(
         issues.append("missing_evidence")
     if resource.medicine_id is None:
         issues.append("missing_medicine")
-    if len(resource.content_markdown) > 20000:
+    if len(resource.content_markdown) < 20 or len(resource.content_markdown) > 20000:
         issues.append("abnormal_length")
+    if resource.medicine_id is not None:
+        medicine = await require_medicine(session, resource.medicine_id)
+        names = [medicine.standard_name_zh, medicine.standard_name_en]
+        if not any(
+            name and name.casefold() in resource.content_markdown.casefold()
+            for name in names
+        ):
+            issues.append("medicine_mismatch")
+    if resource.resource_type == "quiz":
+        questions = list(
+            (
+                await session.scalars(
+                    select(QuizQuestion).where(
+                        QuizQuestion.resource_id == resource.resource_id
+                    )
+                )
+            ).all()
+        )
+        if not questions:
+            issues.append("missing_quiz_questions")
+        elif any(
+            not question.correct_answer_json or not question.explanation
+            for question in questions
+        ):
+            issues.append("incomplete_quiz_answer")
     status = manual_status or ("pass" if not issues else "needs_revision")
     review = ResourceReview(
         review_id=new_id("review"),

@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, Query
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -7,7 +7,7 @@ from app.core.database import get_session
 from app.core.exceptions import AppException, NotFoundException
 from app.core.responses import ApiResponse, success
 from app.modules.auth.models import Menu, Role, User
-from app.modules.auth.service import require_role
+from app.modules.auth.service import hash_password, require_role
 from app.modules.resources.business_models import PromptTemplate
 from app.modules.system.models import AgentConfig, ModelConfig, SystemConfig, TestCase
 from app.modules.tasks.models import AgentLog
@@ -19,6 +19,27 @@ router = APIRouter(
 
 class AdminWritePayload(BaseModel):
     data: dict[str, object]
+
+
+class AdminUserCreate(BaseModel):
+    username: str = Field(min_length=1, max_length=64)
+    password: str = Field(min_length=8, max_length=256)
+    display_name: str = Field(min_length=1, max_length=128)
+    email: str | None = Field(default=None, max_length=255)
+    learner_id: str | None = Field(default=None, max_length=64)
+    is_active: bool = True
+    is_superuser: bool = False
+    role_codes: list[str] = Field(default_factory=list)
+
+
+class AdminUserUpdate(BaseModel):
+    password: str | None = Field(default=None, min_length=8, max_length=256)
+    display_name: str | None = Field(default=None, min_length=1, max_length=128)
+    email: str | None = Field(default=None, max_length=255)
+    learner_id: str | None = Field(default=None, max_length=64)
+    is_active: bool | None = None
+    is_superuser: bool | None = None
+    role_codes: list[str] | None = None
 
 
 class AdminConflictException(AppException):
@@ -84,6 +105,103 @@ async def users(
     session: AsyncSession = Depends(get_session),
 ):
     return success(await _page(session, User, page, page_size, {"password_hash"}))
+
+
+def _user_data(user: User) -> dict:
+    return {
+        "id": user.id,
+        "username": user.username,
+        "display_name": user.display_name,
+        "email": user.email,
+        "learner_id": user.learner_id,
+        "is_active": user.is_active,
+        "is_superuser": user.is_superuser,
+        "roles": sorted(role.code for role in user.roles),
+        "last_login_at": user.last_login_at,
+        "created_at": user.created_at,
+        "updated_at": user.updated_at,
+    }
+
+
+async def _roles_by_code(session: AsyncSession, role_codes: list[str]) -> list[Role]:
+    if not role_codes:
+        return []
+    roles = list(
+        (
+            await session.scalars(select(Role).where(Role.code.in_(set(role_codes))))
+        ).all()
+    )
+    if len(roles) != len(set(role_codes)):
+        raise NotFoundException("One or more roles do not exist")
+    return roles
+
+
+@router.post(
+    "/users",
+    response_model=ApiResponse,
+    summary="Create user",
+    description="Create a user with an Argon2 password hash and database roles.",
+)
+async def create_user(
+    payload: AdminUserCreate, session: AsyncSession = Depends(get_session)
+):
+    if await session.scalar(select(User.id).where(User.username == payload.username)):
+        raise AdminConflictException("Username already exists")
+    user = User(
+        username=payload.username,
+        password_hash=hash_password(payload.password),
+        display_name=payload.display_name,
+        email=payload.email,
+        learner_id=payload.learner_id,
+        is_active=payload.is_active,
+        is_superuser=payload.is_superuser,
+        roles=await _roles_by_code(session, payload.role_codes),
+    )
+    session.add(user)
+    await session.commit()
+    await session.refresh(user)
+    return success(_user_data(user))
+
+
+@router.put(
+    "/users/{user_id}",
+    response_model=ApiResponse,
+    summary="Update user",
+    description="Update user fields, password hash, or assigned roles.",
+)
+async def update_user(
+    user_id: int,
+    payload: AdminUserUpdate,
+    session: AsyncSession = Depends(get_session),
+):
+    user = await session.get(User, user_id)
+    if user is None:
+        raise NotFoundException("User not found")
+    updates = payload.model_dump(exclude_unset=True, exclude={"password", "role_codes"})
+    for key, value in updates.items():
+        setattr(user, key, value)
+    if payload.password is not None:
+        user.password_hash = hash_password(payload.password)
+    if payload.role_codes is not None:
+        user.roles = await _roles_by_code(session, payload.role_codes)
+    await session.commit()
+    await session.refresh(user)
+    return success(_user_data(user))
+
+
+@router.delete(
+    "/users/{user_id}",
+    response_model=ApiResponse,
+    summary="Delete user",
+    description="Delete a user and cascading role/token associations.",
+)
+async def delete_user(user_id: int, session: AsyncSession = Depends(get_session)):
+    user = await session.get(User, user_id)
+    if user is None:
+        raise NotFoundException("User not found")
+    await session.delete(user)
+    await session.commit()
+    return success({"deleted": True})
 
 
 @router.get(
