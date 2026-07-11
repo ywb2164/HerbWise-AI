@@ -5,14 +5,18 @@ from app.integrations.contracts import (
     PathUpdateResult,
     RAGProvider,
     ReviewResult,
+    RecognitionEvidence,
     VisionCandidate,
     VisionProvider,
     VisionResult,
+    ModelCallContext,
 )
 
 
 class MockVisionProvider(VisionProvider):
-    async def recognize(self, image_path: str | None) -> VisionResult:
+    async def recognize(
+        self, image_path: str | None, context: ModelCallContext | None = None
+    ) -> VisionResult:
         candidates = [
             VisionCandidate(
                 herb_name="黄芪", english_name="Astragalus", confidence=0.91
@@ -23,9 +27,24 @@ class MockVisionProvider(VisionProvider):
             VisionCandidate(herb_name="甘草", english_name="Licorice", confidence=0.03),
         ]
         return VisionResult(
+            provider="mock",
+            model_name="mock-vision-v1",
+            file_id=context.file_id if context else None,
             candidate=candidates[0],
             top_candidates=candidates,
-            evidence=["根部呈圆柱形", "表面淡棕黄色", "断面纤维性"],
+            character_evidence=[
+                RecognitionEvidence(
+                    evidence_type="appearance",
+                    text="mock visible appearance",
+                    source="mock",
+                ),
+                RecognitionEvidence(
+                    evidence_type="surface", text="mock surface evidence", source="mock"
+                ),
+                RecognitionEvidence(
+                    evidence_type="section", text="mock section evidence", source="mock"
+                ),
+            ],
             elapsed_ms=120,
         )
 
@@ -47,7 +66,7 @@ class MockRAGProvider(RAGProvider):
 
 class MockLLMProvider(LLMProvider):
     async def generate_resource(
-        self, evidence: list[KnowledgeEvidence]
+        self, evidence: list[KnowledgeEvidence], context: ModelCallContext | None = None
     ) -> list[GeneratedResource]:
         return [
             GeneratedResource(
@@ -59,8 +78,16 @@ class MockLLMProvider(LLMProvider):
             ),
         ]
 
-    async def review_resource(self, resources: list[GeneratedResource]) -> ReviewResult:
+    async def review_resource(
+        self,
+        resources: list[GeneratedResource],
+        context: ModelCallContext | None = None,
+    ) -> ReviewResult:
         return ReviewResult(status="pass", summary="模拟审核通过", suggestions=[])
+
+    async def complete_structured(self, messages, schema, context):
+        del messages, context
+        return schema.model_validate({})
 
     async def diagnose_profile(self, learner_id: str) -> dict:
         return {

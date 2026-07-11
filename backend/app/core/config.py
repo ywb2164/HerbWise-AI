@@ -25,6 +25,27 @@ class Settings(BaseSettings):
     ai_mode: str = "mock"
     rag_mode: str = "mock"
     yolo_mode: str = "mock"
+    vision_mode: str = "mock"
+    llm_mode: str = "mock"
+    model_api_base_url: str = ""
+    model_api_key: SecretStr = SecretStr("")
+    qwen_vl_model: str = ""
+    generation_model: str = ""
+    model_connect_timeout_seconds: float = Field(default=10, gt=0)
+    model_read_timeout_seconds: float = Field(default=45, gt=0)
+    model_max_retries: int = Field(default=1, ge=0, le=3)
+    local_vision_enabled: bool = False
+    local_model_type: str = "ultralytics"
+    local_model_path: str = ""
+    local_model_device: str = "auto"
+    local_model_image_size: int = Field(default=640, ge=32)
+    local_model_confidence_threshold: float = Field(default=0.5, ge=0, le=1)
+    local_model_top_k: int = Field(default=3, ge=1, le=10)
+    fusion_agreement_bonus: float = Field(default=0.15, ge=0, le=1)
+    fusion_conflict_penalty: float = Field(default=0.15, ge=0, le=1)
+    fusion_confidence_cap: float = Field(default=0.99, ge=0, le=1)
+    fusion_local_accept_threshold: float = Field(default=0.55, ge=0, le=1)
+    real_ai_tests_enabled: bool = False
     llm_base_url: str = ""
     llm_api_key: SecretStr = SecretStr("")
     text_model: str = ""
@@ -37,6 +58,9 @@ class Settings(BaseSettings):
     report_dir: Path = Path("/data/reports")
     model_dir: Path = Path("/data/models")
     max_upload_bytes: int = Field(default=10 * 1024 * 1024, ge=1)
+
+    def effective_vision_mode(self) -> str:
+        return self.vision_mode if self.vision_mode != "mock" else self.yolo_mode
 
 
 @lru_cache

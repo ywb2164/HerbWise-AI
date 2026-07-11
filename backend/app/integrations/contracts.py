@@ -1,19 +1,99 @@
+from __future__ import annotations
+
 from abc import ABC, abstractmethod
+from typing import Any
 
 from pydantic import BaseModel, Field
 
 
-class VisionCandidate(BaseModel):
+class ModelCallContext(BaseModel):
+    request_id: str | None = None
+    task_id: str | None = None
+    learner_id: str | None = None
+    file_id: str | None = None
+    agent_code: str
+    prompt_template_code: str | None = None
+    prompt_version: str | None = None
+    provider: str | None = None
+    model_name: str | None = None
+    supported_catalog: list[dict[str, object]] = Field(default_factory=list)
+
+
+class ProviderCallResult(BaseModel):
+    success: bool
+    provider: str
+    model_name: str | None = None
+    request_id: str | None = None
+    latency_ms: float = 0
+    input_tokens: int | None = None
+    output_tokens: int | None = None
+    total_tokens: int | None = None
+    retry_count: int = 0
+    raw_response_reference: str | None = None
+    error_code: str | None = None
+    error_message: str | None = None
+
+
+class RecognitionCandidate(BaseModel):
+    medicine_id: int | None = None
     herb_name: str
-    english_name: str
-    confidence: float
+    english_name: str | None = None
+    training_class_name: str | None = None
+    confidence: float = Field(ge=0, le=1)
+    in_supported_catalog: bool = True
+    matched_by: str | None = None
+    raw_name: str | None = None
+    rank: int = Field(default=1, ge=1)
+    bbox: list[float] | None = None
 
 
-class VisionResult(BaseModel):
-    candidate: VisionCandidate
-    top_candidates: list[VisionCandidate]
-    evidence: list[str]
-    elapsed_ms: int
+VisionCandidate = RecognitionCandidate
+
+
+class RecognitionEvidence(BaseModel):
+    evidence_type: str
+    text: str
+    confidence: float | None = Field(default=None, ge=0, le=1)
+    source: str
+
+
+class VisionRecognitionResult(BaseModel):
+    provider: str = "mock"
+    model_name: str | None = "mock-vision"
+    file_id: str | None = None
+    candidate: RecognitionCandidate | None = None
+    top_candidates: list[RecognitionCandidate] = Field(default_factory=list)
+    character_evidence: list[RecognitionEvidence] = Field(default_factory=list)
+    quality_control_evidence: list[RecognitionEvidence] = Field(default_factory=list)
+    traceability_advice: list[str] = Field(default_factory=list)
+    uncertainty: str | None = None
+    elapsed_ms: float = 0
+    raw_result_reference: str | None = None
+    data_source: str = "mock"
+    fallback_used: bool = False
+    errors: list[str] = Field(default_factory=list)
+
+    @property
+    def evidence(self) -> list[str]:
+        return [item.text for item in self.character_evidence]
+
+
+VisionResult = VisionRecognitionResult
+
+
+class FusionResult(BaseModel):
+    final_candidate: RecognitionCandidate | None = None
+    local_result: VisionRecognitionResult | None = None
+    qwen_result: VisionRecognitionResult | None = None
+    agreement_status: str
+    confidence_before_adjustment: float = Field(default=0, ge=0, le=1)
+    confidence_after_adjustment: float = Field(default=0, ge=0, le=1)
+    adjustment: float = 0
+    decision_reason: str
+    manual_review_required: bool = False
+    in_supported_catalog: bool = False
+    rule_version: str = "v0.3a-fusion-v1"
+    fallback_used: bool = False
 
 
 class KnowledgeEvidence(BaseModel):
@@ -29,12 +109,21 @@ class GeneratedResource(BaseModel):
     title: str
     content: str
     resource_type: str = "study_note"
+    content_json: dict[str, Any] | None = None
 
 
 class ReviewResult(BaseModel):
     status: str
-    summary: str
+    summary: str = ""
     suggestions: list[str] = Field(default_factory=list)
+    pharmacopoeia_consistency_score: float = 0
+    terminology_accuracy_score: float = 0
+    source_completeness_score: float = 0
+    answer_accuracy_score: float = 0
+    hallucination_risk_score: float = 0
+    medical_risk_score: float = 0
+    issues: list[str] = Field(default_factory=list)
+    evidence: dict[str, Any] = Field(default_factory=dict)
 
 
 class PathUpdateResult(BaseModel):
@@ -45,13 +134,23 @@ class PathUpdateResult(BaseModel):
 class LLMProvider(ABC):
     @abstractmethod
     async def generate_resource(
-        self, evidence: list[KnowledgeEvidence]
+        self, evidence: list[KnowledgeEvidence], context: ModelCallContext | None = None
     ) -> list[GeneratedResource]: ...
 
     @abstractmethod
     async def review_resource(
-        self, resources: list[GeneratedResource]
+        self,
+        resources: list[GeneratedResource],
+        context: ModelCallContext | None = None,
     ) -> ReviewResult: ...
+
+    @abstractmethod
+    async def complete_structured(
+        self,
+        messages: list[dict[str, Any]],
+        schema: type[BaseModel],
+        context: ModelCallContext,
+    ) -> BaseModel: ...
 
     @abstractmethod
     async def diagnose_profile(self, learner_id: str) -> dict: ...
@@ -64,7 +163,18 @@ class LLMProvider(ABC):
 
 class VisionProvider(ABC):
     @abstractmethod
-    async def recognize(self, image_path: str | None) -> VisionResult: ...
+    async def recognize(
+        self,
+        image_path: str | None,
+        context: ModelCallContext | None = None,
+    ) -> VisionRecognitionResult: ...
+
+
+class LocalVisionProvider(ABC):
+    @abstractmethod
+    async def predict_image(
+        self, image_path: str | None, context: ModelCallContext
+    ) -> VisionRecognitionResult: ...
 
 
 class RAGProvider(ABC):
