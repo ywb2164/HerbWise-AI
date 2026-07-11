@@ -1502,6 +1502,995 @@
         ]
       }
     },
+    "/api/knowledge/retrievals/{retrieval_id}": {
+      "get": {
+        "tags": [
+          "knowledge-retrieval"
+        ],
+        "summary": "Get retrieval record",
+        "description": "Return one retrieval with retained evidence and learner isolation.",
+        "operationId": "get_retrieval_api_knowledge_retrievals__retrieval_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "retrieval_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Retrieval Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/knowledge/retrievals": {
+      "get": {
+        "tags": [
+          "knowledge-retrieval"
+        ],
+        "summary": "List retrieval records",
+        "description": "List retrieval records subject to learner data isolation.",
+        "operationId": "list_retrievals_api_knowledge_retrievals_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "learner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Learner Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/knowledge/retrievals/by-task/{task_id}": {
+      "get": {
+        "tags": [
+          "knowledge-retrieval"
+        ],
+        "summary": "List retrievals by task",
+        "description": "Return task retrievals after learner ownership checks.",
+        "operationId": "by_task_api_knowledge_retrievals_by_task__task_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/knowledge/datasets": {
+      "post": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "Create knowledge dataset",
+        "description": "Register a safe dataset reference without credentials.",
+        "operationId": "create_dataset_api_admin_knowledge_datasets_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatasetWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "get": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "List knowledge datasets",
+        "description": "List registered datasets without credentials.",
+        "operationId": "list_datasets_api_admin_knowledge_datasets_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/knowledge/datasets/{dataset_id}/set-default": {
+      "post": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "Set default dataset",
+        "description": "Set one active dataset as the sole default.",
+        "operationId": "set_default_api_admin_knowledge_datasets__dataset_id__set_default_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Dataset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/knowledge/datasets/{dataset_id}/disable": {
+      "post": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "Disable knowledge dataset",
+        "description": "Disable future use without deleting retrieval history.",
+        "operationId": "disable_dataset_api_admin_knowledge_datasets__dataset_id__disable_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Dataset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/knowledge/datasets/{dataset_id}": {
+      "get": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "Get knowledge dataset",
+        "description": "Get safe dataset metadata.",
+        "operationId": "get_dataset_api_admin_knowledge_datasets__dataset_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Dataset Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "Update knowledge dataset",
+        "description": "Update safe dataset metadata without credentials.",
+        "operationId": "update_dataset_api_admin_knowledge_datasets__dataset_id__put",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "dataset_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Dataset Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DatasetWrite"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/knowledge/documents": {
+      "get": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "List knowledge documents",
+        "description": "List document metadata without revealing server paths or document bodies.",
+        "operationId": "list_documents_api_admin_knowledge_documents_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      },
+      "post": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "Register knowledge document",
+        "description": "Register a validated uploaded document without automatically synchronizing it.",
+        "operationId": "create_document_api_admin_knowledge_documents_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentWrite"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/knowledge/documents/{document_id}/sync": {
+      "post": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "Start document synchronization",
+        "description": "Record one explicit synchronization attempt; provider calls are never implicit.",
+        "operationId": "sync_document_api_admin_knowledge_documents__document_id__sync_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/knowledge/documents/{document_id}/retry": {
+      "post": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "Retry document synchronization",
+        "description": "Create a new synchronization attempt for the same registered document.",
+        "operationId": "retry_document_api_admin_knowledge_documents__document_id__retry_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/knowledge/documents/{document_id}/sync-records": {
+      "get": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "List document synchronization records",
+        "description": "Return safe synchronization status history.",
+        "operationId": "sync_records_api_admin_knowledge_documents__document_id__sync_records_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/knowledge/documents/{document_id}/disable": {
+      "post": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "Disable knowledge document",
+        "description": "Disable a document without deleting synchronization or evidence history.",
+        "operationId": "disable_document_api_admin_knowledge_documents__document_id__disable_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/knowledge/documents/{document_id}": {
+      "get": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "Get knowledge document",
+        "description": "Get one document metadata record.",
+        "operationId": "get_document_api_admin_knowledge_documents__document_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/knowledge/documents/{document_id}/refresh-status": {
+      "post": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "Refresh document status",
+        "description": "Perform one bounded status refresh without polling.",
+        "operationId": "refresh_document_api_admin_knowledge_documents__document_id__refresh_status_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "document_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Document Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/rag/retrievals/{retrieval_id}/save-replay": {
+      "post": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "Save retrieval replay",
+        "description": "Persist a bounded evidence snapshot for explicit replay mode.",
+        "operationId": "save_replay_api_admin_rag_retrievals__retrieval_id__save_replay_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "retrieval_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Retrieval Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/rag/replays": {
+      "get": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "List RAG replays",
+        "description": "List replay snapshots without raw provider responses.",
+        "operationId": "list_replays_api_admin_rag_replays_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/admin/rag/replays/{replay_id}": {
+      "get": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "Get RAG replay",
+        "description": "Get replay metadata explicitly marked as replay data.",
+        "operationId": "get_replay_api_admin_rag_replays__replay_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "replay_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Replay Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/admin/rag/replays/{replay_id}/disable": {
+      "post": {
+        "tags": [
+          "admin-rag"
+        ],
+        "summary": "Disable RAG replay",
+        "description": "Disable a replay without deleting historical retrieval evidence.",
+        "operationId": "disable_replay_api_admin_rag_replays__replay_id__disable_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "replay_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Replay Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/resources/generate": {
       "post": {
         "tags": [
@@ -5255,6 +6244,69 @@
         ],
         "title": "CreateTaskRequest"
       },
+      "DatasetWrite": {
+        "properties": {
+          "dataset_code": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Dataset Code"
+          },
+          "dataset_name": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Dataset Name"
+          },
+          "provider": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Provider",
+            "default": "ragflow"
+          },
+          "external_dataset_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "External Dataset Id"
+          },
+          "status": {
+            "type": "string",
+            "pattern": "^(active|disabled|error)$",
+            "title": "Status",
+            "default": "active"
+          },
+          "is_default": {
+            "type": "boolean",
+            "title": "Is Default",
+            "default": false
+          },
+          "config": {
+            "anyOf": [
+              {
+                "additionalProperties": true,
+                "type": "object"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Config"
+          }
+        },
+        "type": "object",
+        "required": [
+          "dataset_code",
+          "dataset_name"
+        ],
+        "title": "DatasetWrite"
+      },
       "DimensionCode": {
         "type": "string",
         "enum": [
@@ -5266,6 +6318,50 @@
           "practical_review"
         ],
         "title": "DimensionCode"
+      },
+      "DocumentWrite": {
+        "properties": {
+          "document_code": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Document Code"
+          },
+          "dataset_id": {
+            "type": "integer",
+            "title": "Dataset Id"
+          },
+          "uploaded_file_id": {
+            "type": "string",
+            "title": "Uploaded File Id"
+          },
+          "title": {
+            "type": "string",
+            "maxLength": 255,
+            "minLength": 1,
+            "title": "Title"
+          },
+          "document_type": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Document Type",
+            "default": "text"
+          },
+          "copyright_status": {
+            "type": "string",
+            "maxLength": 32,
+            "title": "Copyright Status",
+            "default": "unknown"
+          }
+        },
+        "type": "object",
+        "required": [
+          "document_code",
+          "dataset_id",
+          "uploaded_file_id",
+          "title"
+        ],
+        "title": "DocumentWrite"
       },
       "FeatureCreate": {
         "properties": {
@@ -5425,6 +6521,25 @@
               }
             ],
             "title": "Task Id"
+          },
+          "retrieval_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Retrieval Id"
+          },
+          "evidence_ids": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array",
+            "title": "Evidence Ids"
           }
         },
         "type": "object",
