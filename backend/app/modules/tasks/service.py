@@ -2,6 +2,7 @@ import asyncio
 
 from app.common.ids import new_id
 from app.core.database import async_session_factory
+from app.core.exceptions import AppException
 from app.core.exceptions import NotFoundException
 from app.modules.tasks.models import TaskRecord
 from app.modules.tasks.repository import create_task, get_task, list_events, list_logs
@@ -10,6 +11,8 @@ from app.workflows.runner import run_workflow
 
 
 async def create_agent_task(payload: CreateTaskRequest) -> TaskRecord:
+    if payload.vision_mode in {"qwen", "local", "hybrid"} and not payload.file_id:
+        raise AppException("Real vision modes require a server-managed file_id")
     task = TaskRecord(
         task_id=new_id("task"),
         learner_id=payload.learner_id,
@@ -21,7 +24,13 @@ async def create_agent_task(payload: CreateTaskRequest) -> TaskRecord:
         await create_task(session, task)
     asyncio.create_task(
         run_workflow(
-            task.task_id, payload.learner_id, payload.image_id, payload.image_path
+            task.task_id,
+            payload.learner_id,
+            payload.image_id,
+            payload.image_path,
+            payload.file_id,
+            payload.vision_mode,
+            payload.llm_mode,
         )
     )
     return task

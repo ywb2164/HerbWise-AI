@@ -87,6 +87,44 @@ async def load_profile(state: WorkflowState) -> dict:
 
 async def recognize_image(state: WorkflowState) -> dict:
     async def operation(current: WorkflowState) -> dict:
+        if current.get("file_id"):
+            from app.modules.recognition.service import (
+                recognize_uploaded_file,
+                record_data,
+            )
+
+            file_id = current["file_id"]
+            if file_id is None:
+                raise RuntimeError(
+                    "A file identifier is required for persisted recognition"
+                )
+            async with async_session_factory() as session:
+                record = await recognize_uploaded_file(
+                    session,
+                    learner_id=current["learner_id"],
+                    file_id=file_id,
+                    task_id=current["task_id"],
+                    vision_mode=current.get("vision_mode"),
+                )
+            item = record_data(record)
+            fusion = item["fusion_result"] or {}
+            candidate = fusion.get("final_candidate")
+            if candidate is None:
+                raise RuntimeError("No usable recognition result")
+            return {
+                "recognition_id": record.recognition_id,
+                "recognition_result": {
+                    "candidate": candidate,
+                    "top_candidates": (
+                        item["local_result"] or item["qwen_result"] or {}
+                    ).get("top_candidates", [candidate]),
+                    "provider": current.get("vision_mode") or "mock",
+                    "model_name": None,
+                    "elapsed_ms": candidate.get("elapsed_ms", 0),
+                },
+                "fusion_result": fusion,
+                "provider_failures": item["provider_failures"] or [],
+            }
         return {
             "recognition_result": (
                 await get_vision_provider().recognize(current["image_path"])
@@ -98,6 +136,17 @@ async def recognize_image(state: WorkflowState) -> dict:
 
 async def vision_review(state: WorkflowState) -> dict:
     async def operation(current: WorkflowState) -> dict:
+        if current.get("fusion_result"):
+            fusion = current["fusion_result"]
+            return {
+                "vision_review_result": {
+                    "status": "manual_review"
+                    if fusion.get("manual_review_required")
+                    else "pass",
+                    "confidence": fusion.get("confidence_after_adjustment", 0),
+                    "agreement_status": fusion.get("agreement_status"),
+                }
+            }
         confidence = current["recognition_result"]["candidate"]["confidence"]
         return {
             "vision_review_result": {
@@ -145,6 +194,27 @@ async def retrieve_knowledge(state: WorkflowState) -> dict:
 
 async def judge_result(state: WorkflowState) -> dict:
     async def operation(current: WorkflowState) -> dict:
+        if current.get("fusion_result"):
+            fusion = current["fusion_result"]
+            candidate = fusion.get("final_candidate") or {}
+            return {
+                "judge_result": {
+                    "status": "manual_review"
+                    if fusion.get("manual_review_required")
+                    else "pass",
+                    "reason": fusion.get("decision_reason"),
+                    "rule_version": fusion.get("rule_version"),
+                    "final_medicine_id": candidate.get("medicine_id"),
+                    "fusion_rule_version": fusion.get("rule_version"),
+                    "manual_review_required": fusion.get(
+                        "manual_review_required", False
+                    ),
+                    "provider_failures": current.get("provider_failures", []),
+                    "data_source": "real"
+                    if current.get("vision_mode") != "mock"
+                    else "mock",
+                }
+            }
         return {
             "judge_result": {
                 "status": "pass",

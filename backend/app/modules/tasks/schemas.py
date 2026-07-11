@@ -10,6 +10,9 @@ class CreateTaskRequest(BaseModel):
     task_type: str = Field(default="full_loop", max_length=64)
     image_id: str | None = Field(default=None, max_length=64)
     image_path: str | None = Field(default=None, max_length=512)
+    file_id: str | None = Field(default=None, max_length=64)
+    vision_mode: str | None = Field(default=None, pattern="^(mock|qwen|local|hybrid)$")
+    llm_mode: str | None = Field(default=None, pattern="^(mock|real)$")
 
 
 class TaskCreatedResponse(BaseModel):

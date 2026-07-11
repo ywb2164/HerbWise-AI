@@ -6,6 +6,12 @@ class WorkflowState(TypedDict):
     learner_id: str
     image_id: str | None
     image_path: str | None
+    file_id: NotRequired[str | None]
+    vision_mode: NotRequired[str | None]
+    llm_mode: NotRequired[str | None]
+    recognition_id: NotRequired[str]
+    fusion_result: NotRequired[dict]
+    provider_failures: NotRequired[list[dict]]
     persistence_enabled: NotRequired[bool]
     profile: NotRequired[dict]
     recognition_result: NotRequired[dict]

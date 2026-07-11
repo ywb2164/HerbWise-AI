@@ -12,13 +12,15 @@ async def record_event(
     summary: str,
     elapsed_ms: float | None = None,
     payload: dict | None = None,
+    event_type: str | None = None,
 ) -> None:
     async with async_session_factory() as session:
         await add_event(
             session,
             TaskEvent(
                 task_id=task_id,
-                event_type="node_completed" if status == "success" else "node_started",
+                event_type=event_type
+                or ("node_completed" if status == "success" else "node_started"),
                 node_name=node_name,
                 status=status,
                 progress=progress,

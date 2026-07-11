@@ -7,7 +7,13 @@ from app.workflows.graph import workflow
 
 
 async def run_workflow(
-    task_id: str, learner_id: str, image_id: str | None, image_path: str | None
+    task_id: str,
+    learner_id: str,
+    image_id: str | None,
+    image_path: str | None,
+    file_id: str | None = None,
+    vision_mode: str | None = None,
+    llm_mode: str | None = None,
 ) -> None:
     async with async_session_factory() as session:
         await update_task(
@@ -25,6 +31,9 @@ async def run_workflow(
                 "learner_id": learner_id,
                 "image_id": image_id,
                 "image_path": image_path,
+                "file_id": file_id,
+                "vision_mode": vision_mode,
+                "llm_mode": llm_mode,
                 "persistence_enabled": True,
                 "retry_count": 0,
                 "errors": [],
