@@ -1,0 +1,13 @@
+{
+  "code": 0,
+  "message": "success",
+  "request_id": "req_mock_v02",
+  "data": {
+    "trace_id": "trace_mock",
+    "task_id": "task_mock",
+    "learner_id": "stu_001",
+    "trace_data": {
+      "data_source": "mock"
+    }
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "code": 0,
+  "message": "success",
+  "request_id": "req_mock_v02",
+  "data": {
+    "learner_count": 1,
+    "medicine_count": 3,
+    "data_source": "mixed",
+    "is_official": false
+  }
+}

@@ -1,0 +1,11 @@
+{
+  "code": 0,
+  "message": "success",
+  "request_id": "req_mock_v02",
+  "data": {
+    "learner_id": "stu_001",
+    "name": "Demo learner",
+    "identity_type": "student",
+    "overall_level": "basic"
+  }
+}

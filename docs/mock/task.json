@@ -1,0 +1,10 @@
+{
+  "code": 0,
+  "message": "success",
+  "request_id": "req_mock_v02",
+  "data": {
+    "task_id": "task_mock",
+    "status": "success",
+    "progress": 100
+  }
+}

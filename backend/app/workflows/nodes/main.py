@@ -53,6 +53,30 @@ async def execute_node(
 
 async def load_profile(state: WorkflowState) -> dict:
     async def operation(current: WorkflowState) -> dict:
+        if current.get("persistence_enabled"):
+            from app.modules.profiles.service import (
+                profile_data,
+                profile_dimensions,
+                require_profile,
+            )
+
+            async with async_session_factory() as session:
+                try:
+                    profile = await require_profile(session, current["learner_id"])
+                except Exception:
+                    fallback = await get_llm_provider().diagnose_profile(
+                        current["learner_id"]
+                    )
+                    return {"profile": fallback, "fallback_used": True}
+                return {
+                    "profile": {
+                        **profile_data(profile),
+                        "dimensions": await profile_dimensions(
+                            session, current["learner_id"]
+                        ),
+                    },
+                    "fallback_used": False,
+                }
         return {
             "profile": await get_llm_provider().diagnose_profile(current["learner_id"])
         }
@@ -87,6 +111,28 @@ async def vision_review(state: WorkflowState) -> dict:
 async def retrieve_knowledge(state: WorkflowState) -> dict:
     async def operation(current: WorkflowState) -> dict:
         herb = current["recognition_result"]["candidate"]["herb_name"]
+        if current.get("persistence_enabled"):
+            from app.modules.knowledge.service import features, find_medicine_by_name
+
+            async with async_session_factory() as session:
+                try:
+                    medicine = await find_medicine_by_name(
+                        session,
+                        current["recognition_result"]["candidate"]["english_name"],
+                    )
+                    structured = await features(session, medicine["id"])
+                    evidence = [
+                        item.model_dump()
+                        for item in await get_rag_provider().retrieve(herb)
+                    ]
+                    return {
+                        "knowledge_evidence": evidence,
+                        "medicine": medicine,
+                        "medicine_features": structured,
+                        "fallback_used": False,
+                    }
+                except Exception:
+                    pass
         return {
             "knowledge_evidence": [
                 item.model_dump() for item in await get_rag_provider().retrieve(herb)
@@ -102,6 +148,9 @@ async def judge_result(state: WorkflowState) -> dict:
             "judge_result": {
                 "status": "pass",
                 "reason": "Mock confidence and knowledge evidence passed",
+                "rule_version": "v0.2-mock-rule",
+                "evidence_count": len(current["knowledge_evidence"]),
+                "fallback_used": bool(current.get("fallback_used", False)),
             }
         }
 
@@ -110,6 +159,35 @@ async def judge_result(state: WorkflowState) -> dict:
 
 async def generate_resources(state: WorkflowState) -> dict:
     async def operation(current: WorkflowState) -> dict:
+        if current.get("persistence_enabled"):
+            from app.modules.resources.business_schemas import (
+                GenerateResourceRequest,
+                ResourceType,
+            )
+            from app.modules.resources.business_service import (
+                generate_resource,
+                resource_data,
+            )
+
+            medicine_name = (
+                current.get("medicine", {}).get("standard_name_en")
+                or current["recognition_result"]["candidate"]["english_name"]
+            )
+            async with async_session_factory() as session:
+                item = await generate_resource(
+                    session,
+                    GenerateResourceRequest(
+                        learner_id=current["learner_id"],
+                        medicine_name=medicine_name,
+                        resource_type=ResourceType.lecture,
+                        difficulty="basic",
+                        task_id=current["task_id"],
+                    ),
+                )
+                return {
+                    "resource_ids": [item.resource_id],
+                    "generated_resources": [resource_data(item)],
+                }
         from app.integrations.contracts import KnowledgeEvidence
 
         evidence = [
@@ -128,6 +206,23 @@ async def generate_resources(state: WorkflowState) -> dict:
 
 async def review_resources(state: WorkflowState) -> dict:
     async def operation(current: WorkflowState) -> dict:
+        if current.get("persistence_enabled") and current.get("resource_ids"):
+            from app.modules.resources.business_service import (
+                review_data,
+                review_resource,
+            )
+
+            async with async_session_factory() as session:
+                persisted_review = await review_resource(
+                    session, current["resource_ids"][0]
+                )
+                result = review_data(persisted_review)
+                return {
+                    "review_result": result,
+                    "review_id": persisted_review.review_id,
+                    "retry_count": current["retry_count"]
+                    + (1 if persisted_review.status == "reject" else 0),
+                }
         from app.integrations.contracts import GeneratedResource
 
         resources = [
@@ -146,6 +241,17 @@ async def review_resources(state: WorkflowState) -> dict:
 
 async def update_learning_path(state: WorkflowState) -> dict:
     async def operation(current: WorkflowState) -> dict:
+        if current.get("persistence_enabled"):
+            from app.modules.learning_paths.service import path_data, update_path
+
+            async with async_session_factory() as session:
+                return {
+                    "path_update": path_data(
+                        await update_path(
+                            session, current["learner_id"], "workflow_update"
+                        )
+                    )
+                }
         from app.integrations.contracts import ReviewResult
 
         result = await get_llm_provider().update_learning_path(

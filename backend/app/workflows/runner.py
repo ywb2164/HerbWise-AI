@@ -24,6 +24,7 @@ async def run_workflow(
                 "learner_id": learner_id,
                 "image_id": image_id,
                 "image_path": image_path,
+                "persistence_enabled": True,
                 "retry_count": 0,
                 "errors": [],
             }

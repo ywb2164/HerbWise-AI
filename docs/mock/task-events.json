@@ -1,0 +1,14 @@
+{
+  "code": 0,
+  "message": "success",
+  "request_id": "req_mock_v02",
+  "data": [
+    {
+      "event": "node_completed",
+      "task_id": "task_mock",
+      "node": "save_trace",
+      "status": "success",
+      "progress": 100
+    }
+  ]
+}

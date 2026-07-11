@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query
+from pydantic import BaseModel
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -12,6 +13,21 @@ from app.modules.system.models import AgentConfig, ModelConfig, SystemConfig, Te
 router = APIRouter(
     prefix="/admin", tags=["admin"], dependencies=[Depends(require_role("admin"))]
 )
+
+
+class AdminWritePayload(BaseModel):
+    data: dict[str, object]
+
+
+_WRITABLE = {
+    "roles": Role,
+    "menus": Menu,
+    "model-configs": ModelConfig,
+    "agent-configs": AgentConfig,
+    "prompt-templates": PromptTemplate,
+    "system-configs": SystemConfig,
+    "test-cases": TestCase,
+}
 
 
 async def _page(
@@ -159,3 +175,91 @@ async def test_cases(
     session: AsyncSession = Depends(get_session),
 ):
     return success(await _page(session, TestCase, page, page_size))
+
+
+@router.post(
+    "/{target}",
+    response_model=ApiResponse,
+    summary="Create admin record",
+    description="Create an allow-listed configuration record; credential values are not accepted.",
+)
+async def create_record(
+    target: str,
+    payload: AdminWritePayload,
+    session: AsyncSession = Depends(get_session),
+):
+    model = _WRITABLE.get(target)
+    if model is None:
+        return success({"created": False, "reason": "unsupported_target"})
+    data = dict(payload.data)
+    data.pop("password_hash", None)
+    data.pop("credential", None)
+    item = model(**data)
+    session.add(item)
+    await session.commit()
+    await session.refresh(item)
+    return success(
+        {
+            column.name: getattr(item, column.name)
+            for column in item.__table__.columns
+            if column.name not in {"password_hash"}
+        }
+    )
+
+
+@router.put(
+    "/{target}/{record_id}",
+    response_model=ApiResponse,
+    summary="Update admin record",
+    description="Update an allow-listed configuration record.",
+)
+async def update_record(
+    target: str,
+    record_id: int,
+    payload: AdminWritePayload,
+    session: AsyncSession = Depends(get_session),
+):
+    model = _WRITABLE.get(target)
+    if model is None:
+        return success({"updated": False, "reason": "unsupported_target"})
+    item = await session.get(model, record_id)
+    if item is None:
+        return success({"updated": False, "reason": "not_found"})
+    for key, value in payload.data.items():
+        if key not in {"id", "password_hash", "credential"} and hasattr(item, key):
+            setattr(item, key, value)
+    await session.commit()
+    await session.refresh(item)
+    return success(
+        {
+            column.name: getattr(item, column.name)
+            for column in item.__table__.columns
+            if column.name not in {"password_hash"}
+        }
+    )
+
+
+@router.delete(
+    "/{target}/{record_id}",
+    response_model=ApiResponse,
+    summary="Delete admin record",
+    description="Delete an allow-listed configuration record when it is not referenced.",
+)
+async def delete_record(
+    target: str, record_id: int, session: AsyncSession = Depends(get_session)
+):
+    model = _WRITABLE.get(target)
+    if model is None:
+        return success({"deleted": False, "reason": "unsupported_target"})
+    item = await session.get(model, record_id)
+    if item is None:
+        return success({"deleted": False, "reason": "not_found"})
+    if target == "model-configs" and await session.scalar(
+        select(func.count())
+        .select_from(AgentConfig)
+        .where(AgentConfig.model_config_id == record_id)
+    ):
+        return success({"deleted": False, "reason": "referenced_by_agent_config"})
+    await session.delete(item)
+    await session.commit()
+    return success({"deleted": True})
