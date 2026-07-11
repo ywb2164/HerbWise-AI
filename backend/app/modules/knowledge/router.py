@@ -3,7 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.responses import ApiResponse, success
-from app.modules.auth.service import get_current_user
+from app.modules.auth.service import get_current_user, require_role
 from app.modules.knowledge.schemas import (
     FeatureCreate,
     FeatureUpdate,
@@ -40,7 +40,13 @@ router = APIRouter(
     summary="Create medicine",
     description="Create a structured demo medicine record.",
 )
-async def create(payload: MedicineCreate, session: AsyncSession = Depends(get_session)):
+async def create(
+    payload: MedicineCreate,
+    session: AsyncSession = Depends(get_session),
+    _user=Depends(
+        require_role("admin", "teacher", "clinical_pharmacist", "quality_inspector")
+    ),
+):
     return success(medicine_data(await create_medicine(session, payload)))
 
 
@@ -89,6 +95,9 @@ async def update(
     medicine_id: int,
     payload: MedicineUpdate,
     session: AsyncSession = Depends(get_session),
+    _user=Depends(
+        require_role("admin", "teacher", "clinical_pharmacist", "quality_inspector")
+    ),
 ):
     return success(medicine_data(await update_medicine(session, medicine_id, payload)))
 
@@ -99,7 +108,13 @@ async def update(
     summary="Delete medicine",
     description="Delete a medicine only when it has no related feature records.",
 )
-async def delete(medicine_id: int, session: AsyncSession = Depends(get_session)):
+async def delete(
+    medicine_id: int,
+    session: AsyncSession = Depends(get_session),
+    _user=Depends(
+        require_role("admin", "teacher", "clinical_pharmacist", "quality_inspector")
+    ),
+):
     await delete_medicine(session, medicine_id)
     return success({"deleted": True})
 
@@ -124,6 +139,9 @@ async def feature_add(
     medicine_id: int,
     payload: FeatureCreate,
     session: AsyncSession = Depends(get_session),
+    _user=Depends(
+        require_role("admin", "teacher", "clinical_pharmacist", "quality_inspector")
+    ),
 ):
     return success(await add_feature(session, medicine_id, payload))
 
@@ -139,6 +157,9 @@ async def feature_update(
     feature_id: int,
     payload: FeatureUpdate,
     session: AsyncSession = Depends(get_session),
+    _user=Depends(
+        require_role("admin", "teacher", "clinical_pharmacist", "quality_inspector")
+    ),
 ):
     return success(await update_feature(session, medicine_id, feature_id, payload))
 
@@ -153,6 +174,9 @@ async def feature_delete(
     medicine_id: int,
     feature_id: int,
     session: AsyncSession = Depends(get_session),
+    _user=Depends(
+        require_role("admin", "teacher", "clinical_pharmacist", "quality_inspector")
+    ),
 ):
     await delete_feature(session, medicine_id, feature_id)
     return success({"deleted": True})
@@ -178,5 +202,8 @@ async def similar_add(
     medicine_id: int,
     payload: SimilarCreate,
     session: AsyncSession = Depends(get_session),
+    _user=Depends(
+        require_role("admin", "teacher", "clinical_pharmacist", "quality_inspector")
+    ),
 ):
     return success(await add_similar(session, medicine_id, payload))

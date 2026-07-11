@@ -10,6 +10,7 @@ from app.modules.auth.service import (
     AuthenticationException,
     _token,
     decode_token,
+    ensure_learner_access,
     hash_password,
     login,
     require_role,
@@ -111,12 +112,18 @@ class FakeAuthSession:
         return None
 
 
-def make_user(role_code: str = "student", *, superuser: bool = False) -> User:
+def make_user(
+    role_code: str = "student",
+    *,
+    superuser: bool = False,
+    learner_id: str | None = "stu_001",
+) -> User:
     user = User(
         id=1,
         username="student",
         password_hash=hash_password("HerbWise@2026"),
         display_name="Demo student",
+        learner_id=learner_id,
         is_active=True,
         is_superuser=superuser,
     )
@@ -157,3 +164,15 @@ async def test_admin_role_and_superuser_are_allowed() -> None:
 
     assert (await dependency(make_user("admin"))).roles[0].code == "admin"
     assert (await dependency(make_user(superuser=True))).is_superuser
+
+
+def test_student_data_access_is_scoped_to_own_learner() -> None:
+    student = make_user(learner_id="stu_001")
+
+    ensure_learner_access(student, "stu_001")
+    with pytest.raises(PermissionDeniedException):
+        ensure_learner_access(student, "stu_002")
+
+
+def test_staff_data_access_is_not_scoped_to_one_learner() -> None:
+    ensure_learner_access(make_user("teacher"), "stu_002")

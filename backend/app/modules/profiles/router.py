@@ -3,7 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.responses import ApiResponse, success
-from app.modules.auth.service import get_current_user
+from app.modules.auth.models import User
+from app.modules.auth.service import ensure_learner_access, get_current_user
 from app.modules.profiles.schemas import (
     InitialTestSubmission,
     ProfileCreate,
@@ -42,7 +43,12 @@ tests_router = APIRouter(
     summary="Create learner profile",
     description="Create one learner profile and its six capability dimensions.",
 )
-async def create(payload: ProfileCreate, session: AsyncSession = Depends(get_session)):
+async def create(
+    payload: ProfileCreate,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    ensure_learner_access(user, payload.learner_id)
     return success(profile_data(await create_profile(session, payload)))
 
 
@@ -57,7 +63,26 @@ async def list_route(
     page_size: int = Query(20, ge=1, le=100),
     identity_type: str | None = None,
     session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
 ):
+    if "student" in {role.code for role in user.roles} and not user.is_superuser:
+        if user.learner_id is None:
+            return success(
+                {"items": [], "total": 0, "page": page, "page_size": page_size}
+            )
+        profile = await require_profile(session, user.learner_id)
+        if identity_type is not None and profile.identity_type != identity_type:
+            return success(
+                {"items": [], "total": 0, "page": page, "page_size": page_size}
+            )
+        return success(
+            {
+                "items": [profile_data(profile)],
+                "total": 1,
+                "page": page,
+                "page_size": page_size,
+            }
+        )
     return success(await list_profiles(session, page, page_size, identity_type))
 
 
@@ -67,7 +92,12 @@ async def list_route(
     summary="Get learner profile",
     description="Get one learner profile.",
 )
-async def get_profile(learner_id: str, session: AsyncSession = Depends(get_session)):
+async def get_profile(
+    learner_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    ensure_learner_access(user, learner_id)
     return success(profile_data(await require_profile(session, learner_id)))
 
 
@@ -81,7 +111,9 @@ async def update(
     learner_id: str,
     payload: ProfileUpdate,
     session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
 ):
+    ensure_learner_access(user, learner_id)
     return success(profile_data(await update_profile(session, learner_id, payload)))
 
 
@@ -91,7 +123,12 @@ async def update(
     summary="Get learner dimensions",
     description="Return the learner's six assessed capability dimensions.",
 )
-async def dimensions(learner_id: str, session: AsyncSession = Depends(get_session)):
+async def dimensions(
+    learner_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    ensure_learner_access(user, learner_id)
     return success(await profile_dimensions(session, learner_id))
 
 
@@ -102,8 +139,11 @@ async def dimensions(learner_id: str, session: AsyncSession = Depends(get_sessio
     description="Return traceable unresolved and resolved learner weak points.",
 )
 async def weak_point_list(
-    learner_id: str, session: AsyncSession = Depends(get_session)
+    learner_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
 ):
+    ensure_learner_access(user, learner_id)
     return success(await weak_points(session, learner_id))
 
 
@@ -113,7 +153,12 @@ async def weak_point_list(
     summary="Get learner history",
     description="Return auditable learner-profile history.",
 )
-async def history_list(learner_id: str, session: AsyncSession = Depends(get_session)):
+async def history_list(
+    learner_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    ensure_learner_access(user, learner_id)
     return success(await history(session, learner_id))
 
 
@@ -123,7 +168,12 @@ async def history_list(learner_id: str, session: AsyncSession = Depends(get_sess
     summary="Diagnose learner",
     description="Run deterministic six-dimension profile diagnostics without an LLM.",
 )
-async def diagnose_route(learner_id: str, session: AsyncSession = Depends(get_session)):
+async def diagnose_route(
+    learner_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    ensure_learner_access(user, learner_id)
     return success(await diagnose_profile(session, learner_id))
 
 
@@ -144,8 +194,11 @@ async def questions(session: AsyncSession = Depends(get_session)):
     description="Score an initial test, update dimensions and return deterministic diagnostics.",
 )
 async def submit(
-    payload: InitialTestSubmission, session: AsyncSession = Depends(get_session)
+    payload: InitialTestSubmission,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
 ):
+    ensure_learner_access(user, payload.learner_id)
     return success(await submit_initial_test(session, payload))
 
 
@@ -155,5 +208,11 @@ async def submit(
     summary="Get test record",
     description="Get a completed initial-test record.",
 )
-async def record(record_id: str, session: AsyncSession = Depends(get_session)):
-    return success(await get_test_record(session, record_id))
+async def record(
+    record_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    item = await get_test_record(session, record_id)
+    ensure_learner_access(user, item["learner_id"])
+    return success(item)

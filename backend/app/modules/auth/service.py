@@ -228,6 +228,22 @@ def require_permission(*required_permissions: str):
     return dependency
 
 
+def ensure_learner_access(user: User, learner_id: str) -> None:
+    """Apply the V0.2 data boundary for student accounts.
+
+    Students may only read or create records belonging to the learner profile
+    associated with their account.  Staff roles retain the cross-learner view
+    needed for teaching, quality review, and administration.
+    """
+    roles = {role.code for role in user.roles}
+    if user.is_superuser or "student" not in roles:
+        return
+    if user.learner_id != learner_id:
+        raise PermissionDeniedException(
+            "Students may only access their own learner data"
+        )
+
+
 async def list_menus(user: User, session: AsyncSession) -> list[Menu]:
     if user.is_superuser:
         return list(

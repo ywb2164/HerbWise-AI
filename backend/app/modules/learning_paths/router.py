@@ -4,7 +4,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.responses import ApiResponse, success
-from app.modules.auth.service import get_current_user
+from app.modules.auth.models import User
+from app.modules.auth.service import ensure_learner_access, get_current_user
 from app.modules.learning_paths.service import (
     answer_data,
     create_learning_answer,
@@ -55,8 +56,11 @@ class LearningAnswerCreate(BaseModel):
     description="Persist learner feedback used by deterministic path rules.",
 )
 async def create_answer(
-    payload: LearningAnswerCreate, session: AsyncSession = Depends(get_session)
+    payload: LearningAnswerCreate,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
 ):
+    ensure_learner_access(user, payload.learner_id)
     item = await create_learning_answer(
         session,
         learner_id=payload.learner_id,
@@ -83,7 +87,9 @@ async def answer_list(
     page: int = Query(1, ge=1),
     page_size: int = Query(20, ge=1, le=100),
     session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
 ):
+    ensure_learner_access(user, learner_id)
     return success(await list_learning_answers(session, learner_id, page, page_size))
 
 
@@ -93,7 +99,12 @@ async def answer_list(
     summary="Update learning path",
     description="Create a new deterministic learning-path version.",
 )
-async def update(learner_id: str, session: AsyncSession = Depends(get_session)):
+async def update(
+    learner_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    ensure_learner_access(user, learner_id)
     return success(path_data(await update_path(session, learner_id)))
 
 
@@ -103,7 +114,12 @@ async def update(learner_id: str, session: AsyncSession = Depends(get_session)):
     summary="Get current learning path",
     description="Get the latest immutable learning-path version.",
 )
-async def get_path(learner_id: str, session: AsyncSession = Depends(get_session)):
+async def get_path(
+    learner_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    ensure_learner_access(user, learner_id)
     return success(path_data(await latest_path(session, learner_id)))
 
 
@@ -113,7 +129,12 @@ async def get_path(learner_id: str, session: AsyncSession = Depends(get_session)
     summary="Generate learning report",
     description="Persist a JSON-only mock learning report.",
 )
-async def generate(learner_id: str, session: AsyncSession = Depends(get_session)):
+async def generate(
+    learner_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    ensure_learner_access(user, learner_id)
     return success(report_data(await generate_learning_report(session, learner_id)))
 
 
@@ -123,7 +144,12 @@ async def generate(learner_id: str, session: AsyncSession = Depends(get_session)
     summary="Get latest learning report",
     description="Get the latest JSON-only learning report.",
 )
-async def get_learning(learner_id: str, session: AsyncSession = Depends(get_session)):
+async def get_learning(
+    learner_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    ensure_learner_access(user, learner_id)
     return success(report_data(await latest_learning_report(session, learner_id)))
 
 

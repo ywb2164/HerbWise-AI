@@ -1,4 +1,5 @@
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
@@ -15,7 +16,9 @@ def client() -> TestClient:
     app = create_app()
 
     async def authenticated_user() -> object:
-        return object()
+        return SimpleNamespace(
+            roles=[SimpleNamespace(code="teacher")], is_superuser=False, learner_id=None
+        )
 
     app.dependency_overrides[get_current_user] = authenticated_user
     with TestClient(app) as test_client:

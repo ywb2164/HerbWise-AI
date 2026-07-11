@@ -3,7 +3,12 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
 from app.core.responses import ApiResponse, success
-from app.modules.auth.service import get_current_user, require_role
+from app.modules.auth.models import User
+from app.modules.auth.service import (
+    ensure_learner_access,
+    get_current_user,
+    require_role,
+)
 from app.modules.resources.business_schemas import (
     GenerateResourceRequest,
     ManualDecisionRequest,
@@ -39,8 +44,11 @@ reviews_router = APIRouter(
     description="Persist a mock educational resource with profile and evidence snapshots.",
 )
 async def generate(
-    payload: GenerateResourceRequest, session: AsyncSession = Depends(get_session)
+    payload: GenerateResourceRequest,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
 ):
+    ensure_learner_access(user, payload.learner_id)
     return success(resource_data(await generate_resource(session, payload)))
 
 
@@ -55,7 +63,12 @@ async def list_route(
     page_size: int = Query(20, ge=1, le=100),
     learner_id: str | None = None,
     session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
 ):
+    if learner_id is not None:
+        ensure_learner_access(user, learner_id)
+    elif "student" in {role.code for role in user.roles} and not user.is_superuser:
+        learner_id = user.learner_id
     return success(await list_resources(session, page, page_size, learner_id))
 
 
@@ -65,8 +78,14 @@ async def list_route(
     summary="Get resource",
     description="Get one persisted resource.",
 )
-async def get_resource(resource_id: str, session: AsyncSession = Depends(get_session)):
-    return success(resource_data(await require_resource(session, resource_id)))
+async def get_resource(
+    resource_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    resource = await require_resource(session, resource_id)
+    ensure_learner_access(user, resource.learner_id)
+    return success(resource_data(resource))
 
 
 @resources_router.post(
@@ -75,8 +94,13 @@ async def get_resource(resource_id: str, session: AsyncSession = Depends(get_ses
     summary="Regenerate resource",
     description="Create a new resource version without replacing the original.",
 )
-async def regenerate(resource_id: str, session: AsyncSession = Depends(get_session)):
+async def regenerate(
+    resource_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
     original = await require_resource(session, resource_id)
+    ensure_learner_access(user, original.learner_id)
     medicine = await require_resource(session, resource_id)
     del medicine
     from app.modules.knowledge.service import require_medicine
@@ -110,7 +134,13 @@ async def regenerate(resource_id: str, session: AsyncSession = Depends(get_sessi
     summary="Archive resource",
     description="Archive a resource without deleting its history.",
 )
-async def archive(resource_id: str, session: AsyncSession = Depends(get_session)):
+async def archive(
+    resource_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    resource = await require_resource(session, resource_id)
+    ensure_learner_access(user, resource.learner_id)
     return success(resource_data(await archive_resource(session, resource_id)))
 
 
@@ -120,7 +150,13 @@ async def archive(resource_id: str, session: AsyncSession = Depends(get_session)
     summary="Review resource",
     description="Run deterministic mock content checks and persist the review.",
 )
-async def check(resource_id: str, session: AsyncSession = Depends(get_session)):
+async def check(
+    resource_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    resource = await require_resource(session, resource_id)
+    ensure_learner_access(user, resource.learner_id)
     return success(review_data(await review_resource(session, resource_id)))
 
 
@@ -130,7 +166,13 @@ async def check(resource_id: str, session: AsyncSession = Depends(get_session)):
     summary="Get resource review",
     description="Get the latest persisted review for a resource.",
 )
-async def get_review(resource_id: str, session: AsyncSession = Depends(get_session)):
+async def get_review(
+    resource_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    resource = await require_resource(session, resource_id)
+    ensure_learner_access(user, resource.learner_id)
     return success(review_data(await latest_review(session, resource_id)))
 
 
@@ -140,8 +182,13 @@ async def get_review(resource_id: str, session: AsyncSession = Depends(get_sessi
     summary="Rewrite resource",
     description="Generate a new mock resource version after a revision request.",
 )
-async def rewrite(resource_id: str, session: AsyncSession = Depends(get_session)):
+async def rewrite(
+    resource_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
     original = await require_resource(session, resource_id)
+    ensure_learner_access(user, original.learner_id)
     from app.modules.knowledge.service import require_medicine
 
     medicine = (
