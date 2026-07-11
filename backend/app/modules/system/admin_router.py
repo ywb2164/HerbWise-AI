@@ -4,6 +4,7 @@ from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
+from app.core.config import Settings
 from app.core.exceptions import AppException, NotFoundException
 from app.core.responses import ApiResponse, success
 from app.modules.auth.models import Menu, Role, User
@@ -11,6 +12,8 @@ from app.modules.auth.service import hash_password, require_role
 from app.modules.resources.business_models import PromptTemplate
 from app.modules.system.models import AgentConfig, ModelConfig, SystemConfig, TestCase
 from app.modules.tasks.models import AgentLog
+from app.integrations.contracts import ModelCallContext
+from app.integrations.openai_compatible import OpenAICompatibleLLMProvider
 
 router = APIRouter(
     prefix="/admin", tags=["admin"], dependencies=[Depends(require_role("admin"))]
@@ -45,6 +48,15 @@ class AdminUserUpdate(BaseModel):
 class AdminConflictException(AppException):
     status_code = 409
     code = 1409
+
+
+class ModelConfigTestPayload(BaseModel):
+    message: str = Field(default="ping", min_length=1, max_length=64)
+
+
+class ModelConfigTestResult(BaseModel):
+    ok: bool
+    reply: str
 
 
 _WRITABLE = {
@@ -244,6 +256,50 @@ async def model_configs(
     session: AsyncSession = Depends(get_session),
 ):
     return success(await _page(session, ModelConfig, page, page_size))
+
+
+@router.post(
+    "/model-configs/{config_id}/test",
+    response_model=ApiResponse,
+    summary="Test a model configuration",
+    description="Perform one minimal administrator-triggered call without returning credentials or raw provider output.",
+)
+async def test_model_config(
+    config_id: int,
+    payload: ModelConfigTestPayload,
+    session: AsyncSession = Depends(get_session),
+):
+    config = await session.get(ModelConfig, config_id)
+    if config is None or not config.is_active:
+        raise NotFoundException("Active model configuration not found")
+    settings = Settings(
+        model_api_base_url=config.base_url or "",
+        model_connect_timeout_seconds=config.timeout_seconds,
+        model_read_timeout_seconds=config.timeout_seconds,
+        model_max_retries=config.max_retries,
+    )
+    provider = OpenAICompatibleLLMProvider(
+        config.model_name, settings, config.credential_reference
+    )
+    started = __import__("time").perf_counter()
+    result = await provider.complete_structured(
+        [{"role": "user", "content": payload.message}],
+        ModelConfigTestResult,
+        ModelCallContext(
+            agent_code="admin_model_test",
+            provider=config.provider,
+            model_name=config.model_name,
+        ),
+    )
+    elapsed = round((__import__("time").perf_counter() - started) * 1000, 2)
+    return success(
+        {
+            "connected": True,
+            "model_name": config.model_name,
+            "elapsed_ms": elapsed,
+            "result": result.model_dump(),
+        }
+    )
 
 
 @router.get(

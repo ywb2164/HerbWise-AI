@@ -121,6 +121,58 @@ def main() -> None:
             "is_official": False,
         },
     )
+    write(
+        "vision-qwen-result.json",
+        {
+            "provider": "qwen",
+            "model_name": "qwen-vl-demo",
+            "candidate": {"medicine_id": 1, "herb_name": "黄芪", "confidence": 0.81},
+            "top_candidates": [],
+            "data_source": "real",
+        },
+    )
+    write(
+        "vision-local-result.json",
+        {
+            "provider": "local",
+            "model_name": "demo.pt",
+            "candidate": {"medicine_id": 1, "herb_name": "黄芪", "confidence": 0.78},
+            "top_candidates": [],
+            "data_source": "local",
+        },
+    )
+    write(
+        "vision-fusion-agree.json",
+        {
+            "agreement_status": "agree",
+            "confidence_before_adjustment": 0.81,
+            "confidence_after_adjustment": 0.96,
+            "manual_review_required": False,
+            "rule_version": "v0.3a-fusion-v1",
+        },
+    )
+    write(
+        "vision-fusion-conflict.json",
+        {
+            "agreement_status": "conflict",
+            "confidence_before_adjustment": 0.78,
+            "confidence_after_adjustment": 0.63,
+            "manual_review_required": True,
+            "rule_version": "v0.3a-fusion-v1",
+        },
+    )
+    write(
+        "model-call-record.json",
+        {
+            "call_id": "mcall_mock",
+            "provider": "qwen",
+            "model_name": "qwen-vl-demo",
+            "call_type": "vision_qwen",
+            "success": True,
+            "latency_ms": 420.0,
+            "total_tokens": 123,
+        },
+    )
 
 
 if __name__ == "__main__":

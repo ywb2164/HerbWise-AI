@@ -1,0 +1,14 @@
+{
+  "code": 0,
+  "message": "success",
+  "request_id": "req_mock_v02",
+  "data": {
+    "call_id": "mcall_mock",
+    "provider": "qwen",
+    "model_name": "qwen-vl-demo",
+    "call_type": "vision_qwen",
+    "success": true,
+    "latency_ms": 420.0,
+    "total_tokens": 123
+  }
+}

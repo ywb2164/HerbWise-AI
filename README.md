@@ -1,15 +1,17 @@
 # 本草智策 HerbWise AI
 
-## V0.2 backend status
+## V0.3A backend status
 
-The active backend branch is `feature/backend-v0.2`. It adds database-backed
+The V0.3A branch builds on the V0.2 database-backed
 JWT/RBAC, learner profiles and initial assessment, structured demonstration
 medicine knowledge, persisted mock resources/reviews, versioned learning paths,
 traces, metrics, OpenAPI export, and frontend mock contracts.
 
-The only supported runtime mode remains `AI_MODE=mock`, `RAG_MODE=mock`, and
-`YOLO_MODE=mock`. Qwen, Qwen-VL, DeepSeek, YOLO, and RAGFlow are **not**
-integrated. Demo accounts created by `backend/scripts/seed_data.py` are
+V0.3A retains Mock defaults while adding OpenAI-compatible real LLM/Qwen-VL
+adapters, a lazy local Ultralytics adapter, database name normalization, and
+deterministic hybrid fusion. Supported vision modes are `mock`, `qwen`,
+`local`, and `hybrid`; LLM modes are `mock` and `real`; `RAG_MODE` remains
+`mock`. Demo accounts created by `backend/scripts/seed_data.py` are
 `admin` / `HerbWise@2026` and `student` / `HerbWise@2026`.
 
 Run migrations and seed twice in Docker before exercising the smoke script:
@@ -19,6 +21,7 @@ docker compose exec api uv run alembic upgrade head
 docker compose exec api uv run python scripts/seed_data.py
 docker compose exec api uv run python scripts/seed_data.py
 docker compose exec api uv run python scripts/smoke_v02.py
+docker compose exec api uv run python scripts/smoke_v03a_fake.py
 ```
 
 Swagger is available at `http://localhost:8000/docs`; exported API contract is

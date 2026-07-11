@@ -1,0 +1,12 @@
+{
+  "code": 0,
+  "message": "success",
+  "request_id": "req_mock_v02",
+  "data": {
+    "agreement_status": "conflict",
+    "confidence_before_adjustment": 0.78,
+    "confidence_after_adjustment": 0.63,
+    "manual_review_required": true,
+    "rule_version": "v0.3a-fusion-v1"
+  }
+}

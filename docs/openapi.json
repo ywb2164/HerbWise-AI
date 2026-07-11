@@ -2816,6 +2816,64 @@
         }
       }
     },
+    "/api/admin/model-configs/{config_id}/test": {
+      "post": {
+        "tags": [
+          "admin"
+        ],
+        "summary": "Test a model configuration",
+        "description": "Perform one minimal administrator-triggered call without returning credentials or raw provider output.",
+        "operationId": "test_model_config_api_admin_model_configs__config_id__test_post",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "config_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer",
+              "title": "Config Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ModelConfigTestPayload"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/admin/agent-configs": {
       "get": {
         "tags": [
@@ -4484,6 +4542,267 @@
         }
       }
     },
+    "/api/vision/recognize": {
+      "post": {
+        "tags": [
+          "vision"
+        ],
+        "summary": "Recognize an uploaded herb image",
+        "description": "Run the configured mock, Qwen, local, or hybrid recognition path and persist a traceable result.",
+        "operationId": "recognize_api_vision_recognize_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/VisionRecognizeRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
+    "/api/vision/records": {
+      "get": {
+        "tags": [
+          "vision"
+        ],
+        "summary": "List vision recognition records",
+        "description": "List persisted recognition records subject to learner data isolation.",
+        "operationId": "records_api_vision_records_get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "learner_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Learner Id"
+            }
+          },
+          {
+            "name": "task_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "Task Id"
+            }
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 20,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vision/records/{recognition_id}": {
+      "get": {
+        "tags": [
+          "vision"
+        ],
+        "summary": "Get vision recognition record",
+        "description": "Return one persisted recognition record including redacted provider outcomes.",
+        "operationId": "record_api_vision_records__recognition_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "recognition_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Recognition Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/vision/records/by-task/{task_id}": {
+      "get": {
+        "tags": [
+          "vision"
+        ],
+        "summary": "List recognition records by task",
+        "description": "Return all recognition records associated with a task after access checks.",
+        "operationId": "records_by_task_api_vision_records_by_task__task_id__get",
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "task_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Task Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/capabilities": {
+      "get": {
+        "tags": [
+          "capabilities"
+        ],
+        "summary": "Get configured AI capabilities",
+        "description": "Expose safe mode and availability flags without secrets, provider URLs, or local model paths.",
+        "operationId": "capabilities_api_capabilities_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "additionalProperties": true,
+                  "type": "object",
+                  "title": "Response Capabilities Api Capabilities Get"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/api/files/upload": {
       "post": {
         "tags": [
@@ -4845,6 +5164,42 @@
               }
             ],
             "title": "Image Path"
+          },
+          "file_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "File Id"
+          },
+          "vision_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(mock|qwen|local|hybrid)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vision Mode"
+          },
+          "llm_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(mock|real)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Llm Mode"
           }
         },
         "type": "object",
@@ -5408,6 +5763,19 @@
         "type": "object",
         "title": "MedicineUpdate"
       },
+      "ModelConfigTestPayload": {
+        "properties": {
+          "message": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Message",
+            "default": "ping"
+          }
+        },
+        "type": "object",
+        "title": "ModelConfigTestPayload"
+      },
       "ProfileCreate": {
         "properties": {
           "learner_id": {
@@ -5968,6 +6336,52 @@
           "type"
         ],
         "title": "ValidationError"
+      },
+      "VisionRecognizeRequest": {
+        "properties": {
+          "learner_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Learner Id"
+          },
+          "file_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "File Id"
+          },
+          "task_id": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 64
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Task Id"
+          },
+          "vision_mode": {
+            "anyOf": [
+              {
+                "type": "string",
+                "pattern": "^(mock|qwen|local|hybrid)$"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Vision Mode"
+          }
+        },
+        "type": "object",
+        "required": [
+          "learner_id",
+          "file_id"
+        ],
+        "title": "VisionRecognizeRequest"
       }
     },
     "securitySchemes": {
