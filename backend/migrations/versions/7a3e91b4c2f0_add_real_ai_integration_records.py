@@ -30,11 +30,15 @@ def upgrade() -> None:
             continue
         table = Base.metadata.tables[name]
         constraints = [
-            UniqueConstraint(*[column.name for column in constraint.columns], name=constraint.name)
+            UniqueConstraint(
+                *[column.name for column in constraint.columns], name=constraint.name
+            )
             for constraint in table.constraints
             if isinstance(constraint, UniqueConstraint)
         ]
-        op.create_table(name, *[column._copy() for column in table.columns], *constraints)
+        op.create_table(
+            name, *[column._copy() for column in table.columns], *constraints
+        )
 
 
 def downgrade() -> None:
