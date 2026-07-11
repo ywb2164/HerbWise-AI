@@ -273,7 +273,7 @@ Replay 包含：
 
 ```mermaid
 flowchart LR
-    UI[Vue 3 前端] --> API[FastAPI API]
+    UI[Soybean Admin 前端] --> API[FastAPI API]
     API --> AUTH[JWT / RBAC]
     API --> WF[LangGraph Workflow]
     API --> DB[(MySQL)]
