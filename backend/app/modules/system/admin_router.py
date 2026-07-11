@@ -307,6 +307,7 @@ async def test_cases(
     response_model=ApiResponse,
     summary="Create admin record",
     description="Create an allow-listed configuration record; credential values are not accepted.",
+    include_in_schema=False,
 )
 async def create_record(
     target: str,
@@ -348,6 +349,7 @@ async def create_record(
     response_model=ApiResponse,
     summary="Update admin record",
     description="Update an allow-listed configuration record.",
+    include_in_schema=False,
 )
 async def update_record(
     target: str,
@@ -391,6 +393,7 @@ async def update_record(
     response_model=ApiResponse,
     summary="Delete admin record",
     description="Delete an allow-listed configuration record when it is not referenced.",
+    include_in_schema=False,
 )
 async def delete_record(
     target: str, record_id: int, session: AsyncSession = Depends(get_session)
@@ -416,3 +419,69 @@ async def delete_record(
     await session.delete(item)
     await session.commit()
     return success({"deleted": True})
+
+
+def _register_concrete_crud_routes() -> None:
+    for target in _WRITABLE:
+        if target == "users":
+            continue
+
+        def create_factory(resource: str):
+            async def concrete_create(
+                payload: AdminWritePayload,
+                session: AsyncSession = Depends(get_session),
+            ):
+                return await create_record(resource, payload, session)
+
+            return concrete_create
+
+        def update_factory(resource: str):
+            async def concrete_update(
+                record_id: int,
+                payload: AdminWritePayload,
+                session: AsyncSession = Depends(get_session),
+            ):
+                return await update_record(resource, record_id, payload, session)
+
+            return concrete_update
+
+        def delete_factory(resource: str):
+            async def concrete_delete(
+                record_id: int,
+                session: AsyncSession = Depends(get_session),
+            ):
+                return await delete_record(resource, record_id, session)
+
+            return concrete_delete
+
+        label = target.replace("-", " ")
+        router.add_api_route(
+            f"/{target}",
+            create_factory(target),
+            methods=["POST"],
+            response_model=ApiResponse,
+            summary=f"Create {label}",
+            description=f"Create one {label} administration record.",
+            operation_id=f"admin_create_{target.replace('-', '_')}",
+        )
+        router.add_api_route(
+            f"/{target}/{{record_id}}",
+            update_factory(target),
+            methods=["PUT"],
+            response_model=ApiResponse,
+            summary=f"Update {label}",
+            description=f"Update one {label} administration record.",
+            operation_id=f"admin_update_{target.replace('-', '_')}",
+        )
+        router.add_api_route(
+            f"/{target}/{{record_id}}",
+            delete_factory(target),
+            methods=["DELETE"],
+            response_model=ApiResponse,
+            summary=f"Delete {label}",
+            description=f"Delete one unreferenced {label} administration record.",
+            operation_id=f"admin_delete_{target.replace('-', '_')}",
+        )
+
+
+_register_concrete_crud_routes()

@@ -22,7 +22,7 @@ _EXISTING = {"learner_profiles", "learner_dimensions"}
 
 
 def _copy_column(table_name: str, column_name: str) -> Column:
-    return Base.metadata.tables[table_name].c[column_name].copy()
+    return Base.metadata.tables[table_name].c[column_name]._copy()
 
 
 def upgrade() -> None:
@@ -46,10 +46,13 @@ def upgrade() -> None:
     for table in Base.metadata.sorted_tables:
         if table.name in _EXISTING:
             continue
-        columns = [column.copy() for column in table.columns]
+        columns = [column._copy() for column in table.columns]
         constraints = [
-            constraint.copy()
-            for constraint in table.constraints
+            UniqueConstraint(
+                *[column.name for column in constraint.columns],
+                name=constraint.name,
+            )
+            for constraint in list(table.constraints)
             if isinstance(constraint, UniqueConstraint)
         ]
         op.create_table(table.name, *columns, *constraints)
