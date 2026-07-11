@@ -1455,6 +1455,53 @@
         }
       }
     },
+    "/api/knowledge/retrieve": {
+      "post": {
+        "tags": [
+          "knowledge-retrieval"
+        ],
+        "summary": "Retrieve knowledge evidence",
+        "description": "Retrieve structured and configured RAG evidence without accepting provider credentials or dataset overrides.",
+        "operationId": "retrieve_api_knowledge_retrieve_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RetrievePayload"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json; charset=utf-8": {
+                "schema": {
+                  "$ref": "#/components/schemas/ApiResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "HTTPBearer": []
+          }
+        ]
+      }
+    },
     "/api/resources/generate": {
       "post": {
         "tags": [
@@ -6001,6 +6048,58 @@
           "learning_report"
         ],
         "title": "ResourceType"
+      },
+      "RetrievePayload": {
+        "properties": {
+          "learner_id": {
+            "type": "string",
+            "maxLength": 64,
+            "minLength": 1,
+            "title": "Learner Id"
+          },
+          "medicine_name": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 128
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Medicine Name"
+          },
+          "task_type": {
+            "type": "string",
+            "maxLength": 64,
+            "title": "Task Type",
+            "default": "identification"
+          },
+          "query": {
+            "anyOf": [
+              {
+                "type": "string",
+                "maxLength": 500
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Query"
+          },
+          "top_k": {
+            "type": "integer",
+            "maximum": 20.0,
+            "minimum": 1.0,
+            "title": "Top K",
+            "default": 8
+          }
+        },
+        "type": "object",
+        "required": [
+          "learner_id"
+        ],
+        "title": "RetrievePayload"
       },
       "SimilarCreate": {
         "properties": {

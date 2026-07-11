@@ -6,6 +6,7 @@ from app.integrations.contracts import (
     VisionProvider,
 )
 from app.integrations.mock import MockLLMProvider, MockRAGProvider, MockVisionProvider
+from app.integrations.rag.ragflow import RAGFlowProvider
 from app.integrations.openai_compatible import OpenAICompatibleLLMProvider
 from app.integrations.vision.local import UltralyticsLocalVisionProvider
 from app.integrations.vision.qwen import QwenVisionProvider
@@ -50,6 +51,6 @@ def get_local_vision_provider() -> LocalVisionProvider:
 
 
 def get_rag_provider() -> RAGProvider:
-    if get_settings().rag_mode == "mock":
+    if get_settings().rag_mode in {"mock", "replay"}:
         return MockRAGProvider()
-    raise NotImplementedError("Real RAG provider has not been configured")
+    return RAGFlowProvider()

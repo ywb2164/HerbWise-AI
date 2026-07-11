@@ -162,7 +162,13 @@ async def retrieve_knowledge(state: WorkflowState) -> dict:
     async def operation(current: WorkflowState) -> dict:
         herb = current["recognition_result"]["candidate"]["herb_name"]
         if current.get("persistence_enabled"):
-            from app.modules.knowledge.service import features, find_medicine_by_name
+            from app.integrations.contracts import RAGQuery
+            from app.modules.knowledge.models import MedicineItem
+            from app.modules.knowledge.rag_service import (
+                HybridKnowledgeService,
+                KnowledgeQueryBuilder,
+            )
+            from app.modules.knowledge.service import find_medicine_by_name
 
             async with async_session_factory() as session:
                 try:
@@ -170,15 +176,25 @@ async def retrieve_knowledge(state: WorkflowState) -> dict:
                         session,
                         current["recognition_result"]["candidate"]["english_name"],
                     )
-                    structured = await features(session, medicine["id"])
-                    evidence = [
-                        item.model_dump()
-                        for item in await get_rag_provider().retrieve(herb)
-                    ]
+                    model = await session.get(MedicineItem, medicine["id"])
+                    query = KnowledgeQueryBuilder().build(model, "identification")
+                    retrieval_id, result = await HybridKnowledgeService().retrieve(
+                        session,
+                        RAGQuery(
+                            query=query,
+                            learner_id=current["learner_id"],
+                            task_id=current["task_id"],
+                            medicine_id=medicine["id"],
+                            medicine_name=herb,
+                        ),
+                    )
                     return {
-                        "knowledge_evidence": evidence,
+                        "knowledge_evidence": [
+                            item.model_dump(mode="json") for item in result.evidences
+                        ],
                         "medicine": medicine,
-                        "medicine_features": structured,
+                        "retrieval_id": retrieval_id,
+                        "rag_retrieval": result.model_dump(mode="json"),
                         "fallback_used": False,
                     }
                 except Exception:

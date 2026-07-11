@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 from typing import Any
 
 from pydantic import BaseModel, Field
@@ -105,6 +106,65 @@ class KnowledgeEvidence(BaseModel):
     source_type: str
 
 
+class RAGQuery(BaseModel):
+    query: str
+    learner_id: str | None = None
+    task_id: str | None = None
+    medicine_id: int | None = None
+    medicine_name: str | None = None
+    task_type: str = "identification"
+    top_k: int = Field(default=8, ge=1, le=20)
+    score_threshold: float = Field(default=0.25, ge=0, le=1)
+    filters: dict[str, Any] = Field(default_factory=dict)
+    request_id: str | None = None
+    trace_id: str | None = None
+
+
+class RAGEvidence(BaseModel):
+    evidence_id: str
+    medicine_id: int | None = None
+    source_id: int | None = None
+    dataset_id: str | None = None
+    document_id: str | None = None
+    document_name: str
+    chunk_id: str | None = None
+    page_number: int | None = None
+    section_title: str | None = None
+    content: str
+    highlighted_content: str | None = None
+    score: float = Field(ge=0, le=1)
+    vector_score: float | None = None
+    keyword_score: float | None = None
+    rerank_score: float | None = None
+    source_type: str
+    citation: str
+    coordinates_json: dict[str, Any] | None = None
+    metadata: dict[str, Any] = Field(default_factory=dict)
+    data_source: str
+    retrieved_at: datetime | None = None
+    rank: int | None = None
+    retained_reason: str | None = None
+    duplicate_of: str | None = None
+
+
+class RAGRetrievalResult(BaseModel):
+    success: bool
+    query: str
+    provider: str
+    dataset_id: str | None = None
+    evidences: list[RAGEvidence] = Field(default_factory=list)
+    total_candidates: int = 0
+    returned_count: int = 0
+    latency_ms: float = 0
+    cache_hit: bool = False
+    replay_used: bool = False
+    fallback_used: bool = False
+    error_code: str | None = None
+    error_message: str | None = None
+    retrieval_metadata: dict[str, Any] = Field(default_factory=dict)
+    data_source: str = "mock"
+
+
 class GeneratedResource(BaseModel):
     title: str
     content: str
@@ -180,3 +240,20 @@ class LocalVisionProvider(ABC):
 class RAGProvider(ABC):
     @abstractmethod
     async def retrieve(self, query: str) -> list[KnowledgeEvidence]: ...
+
+    @abstractmethod
+    async def retrieve_detailed(self, query: RAGQuery) -> RAGRetrievalResult: ...
+
+    @abstractmethod
+    async def health_check(self) -> dict[str, object]: ...
+
+    @abstractmethod
+    async def list_documents(
+        self, dataset_id: str | None = None
+    ) -> list[dict[str, object]]: ...
+
+    @abstractmethod
+    async def sync_document(self, document: dict[str, object]) -> dict[str, object]: ...
+
+    @abstractmethod
+    async def delete_document_mapping(self, external_document_id: str) -> None: ...

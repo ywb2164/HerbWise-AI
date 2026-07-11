@@ -54,6 +54,20 @@ class Settings(BaseSettings):
     ragflow_base_url: str = ""
     ragflow_api_key: SecretStr = SecretStr("")
     ragflow_dataset_id: str = ""
+    ragflow_dataset_name: str = ""
+    ragflow_connect_timeout_seconds: float = Field(default=10, gt=0)
+    ragflow_read_timeout_seconds: float = Field(default=60, gt=0)
+    ragflow_max_retries: int = Field(default=1, ge=0, le=3)
+    ragflow_top_k: int = Field(default=8, ge=1, le=20)
+    ragflow_score_threshold: float = Field(default=0.25, ge=0, le=1)
+    ragflow_rerank_enabled: bool = True
+    ragflow_vector_weight: float = Field(default=0.70, ge=0, le=1)
+    ragflow_keyword_weight: float = Field(default=0.30, ge=0, le=1)
+    rag_max_evidence_items: int = Field(default=8, ge=1, le=20)
+    rag_max_evidence_characters: int = Field(default=12000, ge=256)
+    rag_cache_ttl_seconds: int = Field(default=3600, ge=1)
+    rag_replay_enabled: bool = True
+    real_rag_tests_enabled: bool = False
     upload_dir: Path = Path("/data/uploads")
     report_dir: Path = Path("/data/reports")
     model_dir: Path = Path("/data/models")
