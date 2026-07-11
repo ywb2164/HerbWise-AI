@@ -10,10 +10,13 @@ from app.core.responses import ApiResponse, success
 from app.modules.auth.service import require_role
 from app.modules.knowledge.rag_models import (
     KnowledgeDataset,
+    KnowledgeDocument,
+    KnowledgeSyncRecord,
     RAGEvidenceRecord,
     RAGReplayRecord,
     RAGRetrievalRecord,
 )
+from app.modules.resources.models import UploadedFile
 from app.modules.knowledge.rag_service import _fingerprint
 from app.integrations.contracts import RAGQuery
 
@@ -161,6 +164,185 @@ async def disable_dataset(
     item.is_default = False
     await session.commit()
     return success(dataset_data(item))
+
+
+def document_data(item: KnowledgeDocument) -> dict:
+    return {
+        "id": item.id,
+        "document_code": item.document_code,
+        "dataset_id": item.dataset_id,
+        "uploaded_file_id": item.uploaded_file_id,
+        "external_document_id": item.external_document_id,
+        "title": item.title,
+        "document_type": item.document_type,
+        "sync_status": item.sync_status,
+        "parse_status": item.parse_status,
+        "chunk_count": item.chunk_count,
+        "copyright_status": item.copyright_status,
+        "is_active": item.is_active,
+    }
+
+
+class DocumentWrite(BaseModel):
+    document_code: str = Field(min_length=1, max_length=64)
+    dataset_id: int
+    uploaded_file_id: str
+    title: str = Field(min_length=1, max_length=255)
+    document_type: str = Field(default="text", max_length=64)
+    copyright_status: str = Field(default="unknown", max_length=32)
+
+
+@router.post(
+    "/knowledge/documents",
+    response_model=ApiResponse,
+    summary="Register knowledge document",
+    description="Register a validated uploaded document without automatically synchronizing it.",
+)
+async def create_document(
+    payload: DocumentWrite, session: AsyncSession = Depends(get_session)
+):
+    dataset = await _dataset(session, payload.dataset_id)
+    if dataset.status != "active":
+        raise AppException("Dataset is not active")
+    file = await session.scalar(
+        select(UploadedFile).where(UploadedFile.file_id == payload.uploaded_file_id)
+    )
+    if file is None:
+        raise NotFoundException("Uploaded file not found")
+    if file.mime_type not in {
+        "application/pdf",
+        "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        "text/plain",
+        "text/markdown",
+    }:
+        raise AppException("Unsupported knowledge document MIME type")
+    existing = await session.scalar(
+        select(KnowledgeDocument).where(
+            KnowledgeDocument.dataset_id == payload.dataset_id,
+            KnowledgeDocument.checksum_sha256 == file.sha256,
+        )
+    )
+    if existing:
+        return success(document_data(existing))
+    item = KnowledgeDocument(
+        document_code=payload.document_code,
+        dataset_id=payload.dataset_id,
+        uploaded_file_id=file.file_id,
+        title=payload.title,
+        document_type=payload.document_type,
+        checksum_sha256=file.sha256,
+        copyright_status=payload.copyright_status,
+    )
+    session.add(item)
+    await session.commit()
+    await session.refresh(item)
+    return success(document_data(item))
+
+
+@router.get(
+    "/knowledge/documents",
+    response_model=ApiResponse,
+    summary="List knowledge documents",
+    description="List document metadata without revealing server paths or document bodies.",
+)
+async def list_documents(session: AsyncSession = Depends(get_session)):
+    return success(
+        [
+            document_data(item)
+            for item in (
+                await session.scalars(
+                    select(KnowledgeDocument).order_by(KnowledgeDocument.id.desc())
+                )
+            ).all()
+        ]
+    )
+
+
+@router.post(
+    "/knowledge/documents/{document_id}/sync",
+    response_model=ApiResponse,
+    summary="Start document synchronization",
+    description="Record one explicit synchronization attempt; provider calls are never implicit.",
+)
+async def sync_document(document_id: int, session: AsyncSession = Depends(get_session)):
+    item = await session.get(KnowledgeDocument, document_id)
+    if item is None or not item.is_active:
+        raise NotFoundException("Active knowledge document not found")
+    record = KnowledgeSyncRecord(
+        sync_id=new_id("sync"),
+        document_id=item.id,
+        operation="sync",
+        status="syncing",
+        request_summary_json={"document_code": item.document_code},
+    )
+    item.sync_status = "syncing"
+    session.add(record)
+    await session.commit()
+    await session.refresh(record)
+    return success({"sync_id": record.sync_id, "status": record.status})
+
+
+@router.post(
+    "/knowledge/documents/{document_id}/retry",
+    response_model=ApiResponse,
+    summary="Retry document synchronization",
+    description="Create a new synchronization attempt for the same registered document.",
+)
+async def retry_document(
+    document_id: int, session: AsyncSession = Depends(get_session)
+):
+    return await sync_document(document_id, session)
+
+
+@router.get(
+    "/knowledge/documents/{document_id}/sync-records",
+    response_model=ApiResponse,
+    summary="List document synchronization records",
+    description="Return safe synchronization status history.",
+)
+async def sync_records(document_id: int, session: AsyncSession = Depends(get_session)):
+    records = list(
+        (
+            await session.scalars(
+                select(KnowledgeSyncRecord).where(
+                    KnowledgeSyncRecord.document_id == document_id
+                )
+            )
+        ).all()
+    )
+    return success(
+        [
+            {
+                "sync_id": item.sync_id,
+                "operation": item.operation,
+                "status": item.status,
+                "error_code": item.error_code,
+                "error_message": item.error_message,
+                "started_at": item.started_at,
+                "finished_at": item.finished_at,
+            }
+            for item in records
+        ]
+    )
+
+
+@router.post(
+    "/knowledge/documents/{document_id}/disable",
+    response_model=ApiResponse,
+    summary="Disable knowledge document",
+    description="Disable a document without deleting synchronization or evidence history.",
+)
+async def disable_document(
+    document_id: int, session: AsyncSession = Depends(get_session)
+):
+    item = await session.get(KnowledgeDocument, document_id)
+    if item is None:
+        raise NotFoundException("Knowledge document not found")
+    item.is_active = False
+    item.sync_status = "disabled"
+    item.parse_status = "disabled"
+    await session.commit()
+    return success(document_data(item))
 
 
 def replay_data(item: RAGReplayRecord) -> dict:

@@ -269,11 +269,20 @@ async def generate_resources(state: WorkflowState) -> dict:
                         resource_type=ResourceType.lecture,
                         difficulty="basic",
                         task_id=current["task_id"],
+                        retrieval_id=str(current["retrieval_id"])
+                        if current.get("retrieval_id")
+                        else None,
+                        evidence_ids=[
+                            str(item["evidence_id"])
+                            for item in current.get("knowledge_evidence", [])
+                            if item.get("evidence_id")
+                        ],
                     ),
                 )
                 return {
                     "resource_ids": [item.resource_id],
                     "generated_resources": [resource_data(item)],
+                    "resource_citations": item.citations_json or [],
                 }
         from app.integrations.contracts import KnowledgeEvidence
 
