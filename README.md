@@ -1,5 +1,34 @@
 # 本草智策 HerbWise AI
 
+## V0.3A backend status
+
+The V0.3A branch builds on the V0.2 database-backed
+JWT/RBAC, learner profiles and initial assessment, structured demonstration
+medicine knowledge, persisted mock resources/reviews, versioned learning paths,
+traces, metrics, OpenAPI export, and frontend mock contracts.
+
+V0.3A retains Mock defaults while adding OpenAI-compatible real LLM/Qwen-VL
+adapters, a lazy local Ultralytics adapter, database name normalization, and
+deterministic hybrid fusion. Supported vision modes are `mock`, `qwen`,
+`local`, and `hybrid`; LLM modes are `mock` and `real`; `RAG_MODE` remains
+`mock`. Demo accounts created by `backend/scripts/seed_data.py` are
+`admin` / `HerbWise@2026` and `student` / `HerbWise@2026`.
+
+Run migrations and seed twice in Docker before exercising the smoke script:
+
+```powershell
+docker compose exec api uv run alembic upgrade head
+docker compose exec api uv run python scripts/seed_data.py
+docker compose exec api uv run python scripts/seed_data.py
+docker compose exec api uv run python scripts/smoke_v02.py
+docker compose exec api uv run python scripts/smoke_v03a_fake.py
+```
+
+Swagger is available at `http://localhost:8000/docs`; exported API contract is
+`docs/openapi.json`. V0.3 should introduce real providers in this order:
+OpenAI-compatible client, Qwen-VL, structured name matching, RAGFlow, resource
+generation/review, then YOLO or ONNX inference.
+
 > 中药智能鉴别与临床药事质控实训个性化知识生成与多智能体协同决策系统
 
 本项目面向中药饮片鉴别、临床药事质控、院校实训教学与药企质检培训场景，计划构建“学习者画像 → 图像识别 → 视觉复核 → 药典知识检索 → 纠错裁判 → 个性化资源生成 → 内容审核 → 学习路径更新 → 证据链归档”的完整闭环。

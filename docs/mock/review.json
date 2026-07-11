@@ -1,0 +1,11 @@
+{
+  "code": 0,
+  "message": "success",
+  "request_id": "req_mock_v02",
+  "data": {
+    "review_id": "review_mock",
+    "resource_id": "res_mock",
+    "status": "pass",
+    "provider": "mock"
+  }
+}

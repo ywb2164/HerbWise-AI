@@ -1,9 +1,11 @@
 from datetime import UTC, datetime
+from types import SimpleNamespace
 
 import pytest
 from fastapi.testclient import TestClient
 
 from app.main import create_app
+from app.modules.auth.service import get_current_user
 from app.modules.resources.models import UploadedFile
 from app.modules.system import router as system_router
 from app.modules.tasks.models import AgentLog, TaskEvent, TaskRecord
@@ -11,8 +13,24 @@ from app.modules.tasks.models import AgentLog, TaskEvent, TaskRecord
 
 @pytest.fixture
 def client() -> TestClient:
-    with TestClient(create_app()) as test_client:
+    app = create_app()
+
+    async def authenticated_user() -> object:
+        return SimpleNamespace(
+            roles=[SimpleNamespace(code="teacher")], is_superuser=False, learner_id=None
+        )
+
+    app.dependency_overrides[get_current_user] = authenticated_user
+    with TestClient(app) as test_client:
         yield test_client
+
+
+def test_business_endpoint_requires_authentication() -> None:
+    with TestClient(create_app()) as test_client:
+        response = test_client.get("/api/agent/tasks/missing")
+
+    assert response.status_code == 401
+    assert response.json()["code"] == 1401
 
 
 def test_ready_reports_dependencies(

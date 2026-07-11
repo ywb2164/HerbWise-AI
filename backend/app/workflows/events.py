@@ -1,4 +1,5 @@
 from app.core.database import async_session_factory
+from app.common.json import json_safe
 from app.modules.tasks.models import AgentLog, TaskEvent
 from app.modules.tasks.repository import add_event, add_log, update_task
 
@@ -11,18 +12,20 @@ async def record_event(
     summary: str,
     elapsed_ms: float | None = None,
     payload: dict | None = None,
+    event_type: str | None = None,
 ) -> None:
     async with async_session_factory() as session:
         await add_event(
             session,
             TaskEvent(
                 task_id=task_id,
-                event_type="node_completed" if status == "success" else "node_started",
+                event_type=event_type
+                or ("node_completed" if status == "success" else "node_started"),
                 node_name=node_name,
                 status=status,
                 progress=progress,
                 summary=summary,
-                payload_json=payload,
+                payload_json=json_safe(payload),
                 elapsed_ms=elapsed_ms,
             ),
         )

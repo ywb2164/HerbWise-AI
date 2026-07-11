@@ -1,0 +1,12 @@
+{
+  "code": 0,
+  "message": "success",
+  "request_id": "req_mock_v02",
+  "data": {
+    "id": 1,
+    "medicine_code": "astragalus",
+    "standard_name_zh": "黄芪",
+    "standard_name_en": "Astragalus",
+    "matched_by": "standard_name_zh"
+  }
+}

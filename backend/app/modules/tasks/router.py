@@ -2,10 +2,12 @@ import asyncio
 import json
 from collections.abc import AsyncIterator
 
-from fastapi import APIRouter
+from fastapi import APIRouter, Depends
 from sse_starlette.sse import EventSourceResponse
 
 from app.common.datetime import to_api_datetime
+from app.modules.auth.models import User
+from app.modules.auth.service import ensure_learner_access, get_current_user
 from app.modules.tasks.models import TaskRecord
 from app.modules.tasks.schemas import (
     CreateTaskRequest,
@@ -20,7 +22,11 @@ from app.modules.tasks.service import (
     require_task,
 )
 
-router = APIRouter(prefix="/agent/tasks", tags=["agent-tasks"])
+router = APIRouter(
+    prefix="/agent/tasks",
+    tags=["agent-tasks"],
+    dependencies=[Depends(get_current_user)],
+)
 
 
 def serialize_task(task: TaskRecord) -> TaskRecordResponse:
@@ -39,20 +45,46 @@ def serialize_task(task: TaskRecord) -> TaskRecordResponse:
     )
 
 
-@router.post("", response_model=TaskCreatedResponse, status_code=202)
-async def create_task(payload: CreateTaskRequest) -> TaskCreatedResponse:
+@router.post(
+    "",
+    response_model=TaskCreatedResponse,
+    status_code=202,
+    summary="Create agent task",
+    description="Create and asynchronously start the fixed mock LangGraph workflow.",
+)
+async def create_task(
+    payload: CreateTaskRequest, user: User = Depends(get_current_user)
+) -> TaskCreatedResponse:
+    ensure_learner_access(user, payload.learner_id)
     task = await create_agent_task(payload)
     return TaskCreatedResponse(task_id=task.task_id, status=task.status)
 
 
-@router.get("/{task_id}", response_model=TaskRecordResponse)
-async def get_task(task_id: str) -> TaskRecordResponse:
-    return serialize_task(await require_task(task_id))
+@router.get(
+    "/{task_id}",
+    response_model=TaskRecordResponse,
+    summary="Get agent task",
+    description="Get current task status and serializable workflow result.",
+)
+async def get_task(
+    task_id: str, user: User = Depends(get_current_user)
+) -> TaskRecordResponse:
+    task = await require_task(task_id)
+    ensure_learner_access(user, task.learner_id)
+    return serialize_task(task)
 
 
-@router.get("/{task_id}/events", response_model=list[TaskEventResponse])
-async def events(task_id: str) -> list[TaskEventResponse]:
-    await require_task(task_id)
+@router.get(
+    "/{task_id}/events",
+    response_model=list[TaskEventResponse],
+    summary="List task events",
+    description="List ordered durable workflow events for a task.",
+)
+async def events(
+    task_id: str, user: User = Depends(get_current_user)
+) -> list[TaskEventResponse]:
+    task = await require_task(task_id)
+    ensure_learner_access(user, task.learner_id)
     records = await get_task_events(task_id)
     return [
         TaskEventResponse(
@@ -69,9 +101,16 @@ async def events(task_id: str) -> list[TaskEventResponse]:
     ]
 
 
-@router.get("/{task_id}/logs")
-async def logs(task_id: str) -> list[dict[str, object]]:
-    await require_task(task_id)
+@router.get(
+    "/{task_id}/logs",
+    summary="List agent logs",
+    description="List redacted per-node agent execution logs.",
+)
+async def logs(
+    task_id: str, user: User = Depends(get_current_user)
+) -> list[dict[str, object]]:
+    task = await require_task(task_id)
+    ensure_learner_access(user, task.learner_id)
     return [
         {
             "node": item.node_name,
@@ -87,9 +126,16 @@ async def logs(task_id: str) -> list[dict[str, object]]:
     ]
 
 
-@router.get("/{task_id}/stream")
-async def stream(task_id: str) -> EventSourceResponse:
-    await require_task(task_id)
+@router.get(
+    "/{task_id}/stream",
+    summary="Stream task events",
+    description="Stream workflow events over server-sent events until completion.",
+)
+async def stream(
+    task_id: str, user: User = Depends(get_current_user)
+) -> EventSourceResponse:
+    task = await require_task(task_id)
+    ensure_learner_access(user, task.learner_id)
 
     async def event_source() -> AsyncIterator[dict[str, str]]:
         sent = 0

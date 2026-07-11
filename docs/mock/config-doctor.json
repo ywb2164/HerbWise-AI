@@ -1,0 +1,1 @@
+[{"name":"settings","status":"pass","detail":"APP_ENV=development; RUN_MODE=mock"},{"name":"model_api_key","status":"warning","detail":"configured=false"}]

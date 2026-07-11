@@ -1,0 +1,16 @@
+{
+  "code": 0,
+  "message": "success",
+  "request_id": "req_mock_v02",
+  "data": {
+    "provider": "local",
+    "model_name": "demo.pt",
+    "candidate": {
+      "medicine_id": 1,
+      "herb_name": "黄芪",
+      "confidence": 0.78
+    },
+    "top_candidates": [],
+    "data_source": "local"
+  }
+}

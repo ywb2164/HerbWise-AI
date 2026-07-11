@@ -13,6 +13,9 @@ backend/.env
 data/uploads/
 data/reports/
 data/models/
+data/backups/
+infra/ragflow/runtime/
+.env.demo
 
 # Editor and OS files
 .vscode/

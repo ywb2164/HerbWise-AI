@@ -1,0 +1,15 @@
+{
+  "code": 0,
+  "message": "success",
+  "request_id": "req_mock_v02",
+  "data": [
+    {
+      "dimension_code": "basic_knowledge",
+      "score": 50,
+      "level": "weak",
+      "evidence_json": {
+        "seed": "demo_seed_data"
+      }
+    }
+  ]
+}

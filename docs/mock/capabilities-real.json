@@ -1,0 +1,1 @@
+{"ai_mode":"real","vision_mode":"qwen","llm_mode":"real","rag_mode":"ragflow","qwen_configured":true,"local_model_configured":false,"local_model_loaded":false,"generation_model_configured":true,"review_model_configured":true,"mock_fallback_available":true}

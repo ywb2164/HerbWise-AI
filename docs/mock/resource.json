@@ -1,0 +1,11 @@
+{
+  "code": 0,
+  "message": "success",
+  "request_id": "req_mock_v02",
+  "data": {
+    "resource_id": "res_mock",
+    "resource_type": "lecture",
+    "status": "generated",
+    "provider": "mock"
+  }
+}

@@ -9,7 +9,7 @@ from app.core.exceptions import install_exception_handlers
 from app.core.logging import configure_logging
 from app.core.middleware import RequestContextMiddleware
 from app.core.redis import close_redis, open_redis
-from app.core.responses import UTF8ORJSONResponse
+from app.core.responses import UTF8JSONResponse
 from app.modules.system.router import router as system_router
 
 
@@ -28,7 +28,7 @@ def create_app() -> FastAPI:
         title=settings.app_name,
         debug=settings.debug,
         lifespan=lifespan,
-        default_response_class=UTF8ORJSONResponse,
+        default_response_class=UTF8JSONResponse,
     )
     app.add_middleware(RequestContextMiddleware)
     install_exception_handlers(app)
