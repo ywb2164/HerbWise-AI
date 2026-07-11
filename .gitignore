@@ -1,0 +1,21 @@
+# Local Python environments and caches
+backend/.venv/
+backend/.uv-cache/
+backend/.mypy_cache/
+backend/.pytest_cache/
+backend/.ruff_cache/
+__pycache__/
+*.py[cod]
+
+# Secrets and local runtime data
+backend/.env
+.env
+data/uploads/
+data/reports/
+data/models/
+
+# Editor and OS files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
