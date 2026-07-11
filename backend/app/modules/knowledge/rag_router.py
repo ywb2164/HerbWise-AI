@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Depends
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.database import get_session
@@ -8,6 +9,7 @@ from app.modules.auth.models import User
 from app.modules.auth.service import ensure_learner_access, get_current_user
 from app.modules.knowledge.normalizer import MedicineNameNormalizer
 from app.modules.knowledge.models import MedicineItem
+from app.modules.knowledge.rag_models import RAGEvidenceRecord, RAGRetrievalRecord
 from app.modules.knowledge.rag_service import (
     HybridKnowledgeService,
     KnowledgeQueryBuilder,
@@ -62,3 +64,104 @@ async def retrieve(
         ),
     )
     return success({"retrieval_id": retrieval_id, **result.model_dump(mode="json")})
+
+
+def _retrieval_data(
+    item: RAGRetrievalRecord, evidence: list[RAGEvidenceRecord]
+) -> dict:
+    return {
+        "retrieval_id": item.retrieval_id,
+        "task_id": item.task_id,
+        "learner_id": item.learner_id,
+        "query": item.query,
+        "provider": item.provider,
+        "dataset_id": item.dataset_id,
+        "medicine_id": item.medicine_id,
+        "returned_count": item.returned_count,
+        "latency_ms": item.latency_ms,
+        "cache_hit": item.cache_hit,
+        "replay_used": item.replay_used,
+        "fallback_used": item.fallback_used,
+        "status": item.status,
+        "error_code": item.error_code,
+        "metadata": item.metadata_json or {},
+        "evidences": [
+            {
+                "evidence_id": row.evidence_id,
+                "document_id": row.document_id,
+                "document_name": row.document_name,
+                "chunk_id": row.chunk_id,
+                "page_number": row.page_number,
+                "content": row.content_snapshot,
+                "score": row.score,
+                "citation": row.citation,
+                "rank": row.rank,
+                "retained_reason": row.retained_reason,
+                "duplicate_of": row.duplicate_of,
+            }
+            for row in evidence
+        ],
+        "created_at": item.created_at,
+    }
+
+
+@router.get(
+    "/retrievals/{retrieval_id}",
+    response_model=ApiResponse,
+    summary="Get retrieval record",
+    description="Return one retrieval with retained evidence and learner isolation.",
+)
+async def get_retrieval(
+    retrieval_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    item = await session.scalar(
+        select(RAGRetrievalRecord).where(
+            RAGRetrievalRecord.retrieval_id == retrieval_id
+        )
+    )
+    if item is None:
+        raise __import__(
+            "app.core.exceptions", fromlist=["NotFoundException"]
+        ).NotFoundException("Retrieval not found")
+    if item.learner_id:
+        ensure_learner_access(user, item.learner_id)
+    evidence = list(
+        (
+            await session.scalars(
+                select(RAGEvidenceRecord).where(
+                    RAGEvidenceRecord.retrieval_id == retrieval_id
+                )
+            )
+        ).all()
+    )
+    return success(_retrieval_data(item, evidence))
+
+
+@router.get(
+    "/retrievals",
+    response_model=ApiResponse,
+    summary="List retrieval records",
+    description="List retrieval records subject to learner data isolation.",
+)
+async def list_retrievals(
+    learner_id: str | None = None,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    if learner_id:
+        ensure_learner_access(user, learner_id)
+    elif "student" in {role.code for role in user.roles} and not user.is_superuser:
+        learner_id = user.learner_id
+    stmt = select(RAGRetrievalRecord)
+    if learner_id:
+        stmt = stmt.where(RAGRetrievalRecord.learner_id == learner_id)
+    items = list(
+        (
+            await session.scalars(
+                stmt.order_by(RAGRetrievalRecord.id.desc()).limit(100)
+            )
+        ).all()
+    )
+    return success({"items": [_retrieval_data(item, []) for item in items]})
