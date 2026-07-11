@@ -75,6 +75,28 @@ class KnowledgeDocument(Base):
     )
 
 
+class KnowledgeSyncRecord(Base):
+    __tablename__ = "knowledge_sync_records"
+    id: Mapped[int] = mapped_column(primary_key=True)
+    sync_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    document_id: Mapped[int] = mapped_column(
+        ForeignKey("knowledge_documents.id"), index=True
+    )
+    operation: Mapped[str] = mapped_column(String(32))
+    status: Mapped[str] = mapped_column(String(32), index=True)
+    external_task_id: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    request_summary_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    response_summary_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    started_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    finished_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+
+
 class RAGRetrievalRecord(Base):
     __tablename__ = "rag_retrieval_records"
     id: Mapped[int] = mapped_column(primary_key=True)
@@ -116,6 +138,9 @@ class RAGEvidenceRecord(Base):
     score: Mapped[float] = mapped_column(Float)
     citation: Mapped[str] = mapped_column(String(512))
     metadata_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    rank: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    retained_reason: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    duplicate_of: Mapped[str | None] = mapped_column(String(128), nullable=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -128,6 +153,8 @@ class RAGReplayRecord(Base):
     query_fingerprint: Mapped[str] = mapped_column(String(64), index=True)
     evidence_snapshot_json: Mapped[list] = mapped_column(JSON)
     source_retrieval_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    medicine_id: Mapped[int | None] = mapped_column(nullable=True)
+    task_type: Mapped[str] = mapped_column(String(64), default="identification")
     is_active: Mapped[bool] = mapped_column(Boolean, default=True)
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

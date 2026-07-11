@@ -28,6 +28,8 @@ class GenerateResourceRequest(BaseModel):
     resource_type: ResourceType
     difficulty: str = Field(default="basic", max_length=32)
     task_id: str | None = Field(default=None, max_length=64)
+    retrieval_id: str | None = Field(default=None, max_length=64)
+    evidence_ids: list[str] = Field(default_factory=list)
 
 
 class ManualDecisionRequest(BaseModel):

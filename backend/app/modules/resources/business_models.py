@@ -61,6 +61,12 @@ class ResourceOutput(Base):
     profile_snapshot_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     evidence_snapshot_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     generation_metadata_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    retrieval_id: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    evidence_ids_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    citations_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    data_source: Mapped[str] = mapped_column(String(32), default="mock")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
@@ -107,6 +113,14 @@ class ResourceReview(Base):
     reviewed_at: Mapped[datetime | None] = mapped_column(
         DateTime(timezone=True), nullable=True
     )
+    retrieval_id: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    citation_validity_score: Mapped[float] = mapped_column(default=0)
+    evidence_coverage_score: Mapped[float] = mapped_column(default=0)
+    citation_check_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    evidence_ids_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    data_source: Mapped[str] = mapped_column(String(32), default="mock")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

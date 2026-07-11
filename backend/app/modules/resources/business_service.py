@@ -24,6 +24,10 @@ from app.modules.resources.business_models import (
     ResourceReview,
 )
 from app.modules.resources.business_schemas import GenerateResourceRequest
+from app.modules.resources.citations import (
+    resolve_citations,
+    validate_resource_citations,
+)
 from app.modules.recognition.models import ModelCallRecord
 from app.modules.system.models import ModelConfig
 
@@ -63,6 +67,11 @@ async def generate_resource(
     parent_resource_id: str | None = None,
 ) -> ResourceOutput:
     profile = await require_profile(session, payload.learner_id)
+    citations = (
+        await resolve_citations(session, payload.retrieval_id, payload.evidence_ids)
+        if payload.retrieval_id
+        else []
+    )
     medicine_match = await find_medicine_by_name(session, payload.medicine_name)
     medicine = await require_medicine(session, medicine_match["id"])
     evidence = [
@@ -135,6 +144,10 @@ async def generate_resource(
             "mode": mode,
             "generated_at": datetime.now(UTC).isoformat(),
         },
+        retrieval_id=payload.retrieval_id,
+        evidence_ids_json=payload.evidence_ids,
+        citations_json=citations,
+        data_source="ragflow" if payload.retrieval_id else "mock",
     )
     session.add(item)
     session.add(
@@ -218,9 +231,17 @@ async def review_resource(
     suggestions: list[str] | None = None,
 ) -> ResourceReview:
     resource = await require_resource(session, resource_id)
+    citation_check = await validate_resource_citations(
+        session,
+        resource.retrieval_id,
+        resource.evidence_ids_json,
+        resource.content_markdown,
+    )
     issues: list[str] = []
     if not resource.content_markdown.strip():
         issues.append("empty_content")
+    if not citation_check["valid"]:
+        issues.extend(citation_check["issues"])
     if not resource.evidence_snapshot_json:
         issues.append("missing_evidence")
     if resource.medicine_id is None:
@@ -334,6 +355,12 @@ async def review_resource(
             else []
         ),
         evidence_json=resource.evidence_snapshot_json,
+        retrieval_id=resource.retrieval_id,
+        citation_validity_score=100 if citation_check["valid"] else 0,
+        evidence_coverage_score=100 if resource.evidence_ids_json else 0,
+        citation_check_json=citation_check,
+        evidence_ids_json=resource.evidence_ids_json,
+        data_source=resource.data_source,
         provider=(review_config.provider if review_config else "openai_compatible")
         if model_review
         else "mock",
