@@ -12,6 +12,7 @@ from app.modules.knowledge.models import (
 )
 from app.modules.knowledge.schemas import (
     FeatureCreate,
+    FeatureUpdate,
     MedicineCreate,
     MedicineUpdate,
     SimilarCreate,
@@ -209,6 +210,51 @@ async def add_feature(
         "evidence_source_id": item.evidence_source_id,
         "sort_order": item.sort_order,
     }
+
+
+async def update_feature(
+    session: AsyncSession,
+    medicine_id: int,
+    feature_id: int,
+    payload: FeatureUpdate,
+) -> dict:
+    await require_medicine(session, medicine_id)
+    item = await session.scalar(
+        select(MedicineFeature).where(
+            MedicineFeature.id == feature_id,
+            MedicineFeature.medicine_id == medicine_id,
+        )
+    )
+    if item is None:
+        raise NotFoundException("Medicine feature not found")
+    for field, value in payload.model_dump(exclude_unset=True).items():
+        setattr(item, field, value)
+    await session.commit()
+    await session.refresh(item)
+    return {
+        "id": item.id,
+        "feature_type": item.feature_type,
+        "feature_name": item.feature_name,
+        "feature_value": item.feature_value,
+        "evidence_source_id": item.evidence_source_id,
+        "sort_order": item.sort_order,
+    }
+
+
+async def delete_feature(
+    session: AsyncSession, medicine_id: int, feature_id: int
+) -> None:
+    await require_medicine(session, medicine_id)
+    item = await session.scalar(
+        select(MedicineFeature).where(
+            MedicineFeature.id == feature_id,
+            MedicineFeature.medicine_id == medicine_id,
+        )
+    )
+    if item is None:
+        raise NotFoundException("Medicine feature not found")
+    await session.delete(item)
+    await session.commit()
 
 
 async def similar(session: AsyncSession, medicine_id: int) -> list[dict]:

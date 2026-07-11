@@ -6,6 +6,7 @@ from app.core.responses import ApiResponse, success
 from app.modules.auth.service import get_current_user
 from app.modules.knowledge.schemas import (
     FeatureCreate,
+    FeatureUpdate,
     MedicineCreate,
     MedicineUpdate,
     SimilarCreate,
@@ -14,6 +15,7 @@ from app.modules.knowledge.service import (
     add_feature,
     add_similar,
     create_medicine,
+    delete_feature,
     delete_medicine,
     features,
     find_medicine_by_name,
@@ -22,6 +24,7 @@ from app.modules.knowledge.service import (
     require_medicine,
     similar,
     update_medicine,
+    update_feature,
 )
 
 router = APIRouter(
@@ -123,6 +126,36 @@ async def feature_add(
     session: AsyncSession = Depends(get_session),
 ):
     return success(await add_feature(session, medicine_id, payload))
+
+
+@router.put(
+    "/{medicine_id}/features/{feature_id}",
+    response_model=ApiResponse,
+    summary="Update medicine feature",
+    description="Update one typed structured medicine feature.",
+)
+async def feature_update(
+    medicine_id: int,
+    feature_id: int,
+    payload: FeatureUpdate,
+    session: AsyncSession = Depends(get_session),
+):
+    return success(await update_feature(session, medicine_id, feature_id, payload))
+
+
+@router.delete(
+    "/{medicine_id}/features/{feature_id}",
+    response_model=ApiResponse,
+    summary="Delete medicine feature",
+    description="Delete a single structured medicine feature.",
+)
+async def feature_delete(
+    medicine_id: int,
+    feature_id: int,
+    session: AsyncSession = Depends(get_session),
+):
+    await delete_feature(session, medicine_id, feature_id)
+    return success({"deleted": True})
 
 
 @router.get(

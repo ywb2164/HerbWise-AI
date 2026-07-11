@@ -49,6 +49,14 @@ class FeatureCreate(BaseModel):
     sort_order: int = Field(default=0, ge=0)
 
 
+class FeatureUpdate(BaseModel):
+    feature_type: FeatureType | None = None
+    feature_name: str | None = Field(default=None, min_length=1, max_length=128)
+    feature_value: str | None = Field(default=None, min_length=1)
+    evidence_source_id: int | None = None
+    sort_order: int | None = Field(default=None, ge=0)
+
+
 class SimilarCreate(BaseModel):
     similar_medicine_id: int
     confusion_reason: str | None = None
