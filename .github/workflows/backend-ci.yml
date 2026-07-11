@@ -1,0 +1,23 @@
+name: backend-ci
+on: [push, pull_request]
+jobs:
+  quality:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: backend
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v5
+      - run: uv sync --frozen
+      - run: uv run ruff format --check .
+      - run: uv run ruff check .
+      - run: uv run mypy app
+      - run: uv run pytest -q
+      - run: uv run python scripts/export_openapi.py
+      - run: uv run python scripts/smoke_v03b_fake.py
+      - run: uv run python scripts/smoke_demo_replay.py
+      - run: uv run python scripts/smoke_degradation.py
+      - run: uv run python scripts/repository_guard.py
+      - run: uv run alembic heads | grep -c '^b9f2c8d04a71 (head)$'
+      - run: uv run python -c "import importlib; importlib.import_module('migrations.versions.b9f2c8d04a71_add_report_output_path')"

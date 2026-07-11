@@ -14,6 +14,7 @@ class Settings(BaseSettings):
 
     app_name: str = "HerbWise AI API"
     app_env: str = "development"
+    app_timezone: str = "Asia/Shanghai"
     debug: bool = True
     api_prefix: str = "/api"
     database_url: str = "mysql+asyncmy://herbwise:herbwise@db:3306/herbwise"
@@ -67,14 +68,25 @@ class Settings(BaseSettings):
     rag_max_evidence_characters: int = Field(default=12000, ge=256)
     rag_cache_ttl_seconds: int = Field(default=3600, ge=1)
     rag_replay_enabled: bool = True
+    demo_replay_enabled: bool = True
+    demo_replay_code: str = ""
+    demo_test_image_path: str = ""
     real_rag_tests_enabled: bool = False
+    real_full_loop_tests_enabled: bool = False
+    run_mode: str = "mock"
     upload_dir: Path = Path("/data/uploads")
     report_dir: Path = Path("/data/reports")
+    report_output_dir: Path | None = None
+    report_template_dir: Path = Path("templates/reports")
     model_dir: Path = Path("/data/models")
     max_upload_bytes: int = Field(default=10 * 1024 * 1024, ge=1)
 
     def effective_vision_mode(self) -> str:
         return self.vision_mode if self.vision_mode != "mock" else self.yolo_mode
+
+    def effective_report_dir(self) -> Path:
+        """Keep the legacy REPORT_DIR working while accepting V0.4 naming."""
+        return self.report_output_dir or self.report_dir
 
 
 @lru_cache

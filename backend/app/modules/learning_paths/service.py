@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from pathlib import Path
+
 from sqlalchemy import func, select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -21,6 +23,9 @@ from app.modules.profiles.service import (
     require_profile,
     weak_points,
 )
+from app.modules.learning_paths.word_reports import safe_filename, write_docx
+from app.modules.recognition.models import RecognitionRecord
+from app.modules.tasks.models import TaskRecord
 
 
 async def update_path(
@@ -167,6 +172,7 @@ def report_data(item: ReportRecord) -> dict:
         "title": item.title,
         "content": item.content_json,
         "file_id": item.file_id,
+        "download_available": bool(item.output_path),
         "status": item.status,
         "created_at": item.created_at,
         "updated_at": item.updated_at,
@@ -196,6 +202,99 @@ async def require_report(session: AsyncSession, report_id: str) -> ReportRecord:
     if item is None:
         raise NotFoundException("Report not found")
     return item
+
+
+def _report_path(report_id: str) -> tuple[Path, str]:
+    from app.core.config import get_settings
+
+    root = get_settings().effective_report_dir().resolve()
+    filename = safe_filename(report_id) + ".docx"
+    target = (root / filename).resolve()
+    if root not in target.parents:
+        raise ValueError("Unsafe report path")
+    return target, filename
+
+
+async def export_learning_word(session: AsyncSession, learner_id: str) -> ReportRecord:
+    report = await generate_learning_report(session, learner_id)
+    content = report.content_json
+    profile = content.get("profile", {})
+    path = content.get("path", {})
+    target, relative = _report_path(report.report_id)
+    write_docx(
+        target,
+        "HerbWise-AI 学情报告",
+        [
+            f"报告编号：{report.report_id}",
+            f"学习者：{learner_id}",
+            "数据来源：" + str(content.get("data_source", "mock")),
+            "说明：本报告用于学习反馈，不构成临床诊断或处方。",
+            "学习画像：" + str(profile),
+            "薄弱点：" + str(content.get("weak_points", [])),
+            "学习路径：" + str(path),
+        ],
+    )
+    report.output_path = relative
+    report.title = "Learning report (Word)"
+    await session.commit()
+    return report
+
+
+async def export_recognition_word(session: AsyncSession, task_id: str) -> ReportRecord:
+    task = await session.scalar(select(TaskRecord).where(TaskRecord.task_id == task_id))
+    if task is None:
+        raise NotFoundException("Task not found")
+    recognition = await session.scalar(
+        select(RecognitionRecord)
+        .where(RecognitionRecord.task_id == task_id)
+        .order_by(RecognitionRecord.id.desc())
+    )
+    target_id = new_id("report")
+    target, relative = _report_path(target_id)
+    data_source = recognition.data_source if recognition else "unknown"
+    write_docx(
+        target,
+        "HerbWise-AI 识别审核报告",
+        [
+            f"报告编号：{target_id}",
+            f"任务：{task_id}",
+            f"学习者：{task.learner_id}",
+            f"最终识别：{recognition.final_name if recognition else '未生成'}",
+            f"置信度：{recognition.confidence if recognition else 'N/A'}",
+            f"人工复核：{recognition.manual_review_required if recognition else True}",
+            f"数据来源：{data_source}",
+            "说明：识别结果仅用于教学演示，不构成临床诊断或处方。",
+        ],
+    )
+    report = ReportRecord(
+        report_id=target_id,
+        learner_id=task.learner_id,
+        report_type="recognition_review",
+        title="Recognition review report (Word)",
+        content_json={
+            "task_id": task_id,
+            "data_source": data_source,
+            "recognition_id": recognition.recognition_id if recognition else None,
+        },
+        status="generated",
+        output_path=relative,
+    )
+    session.add(report)
+    await session.commit()
+    await session.refresh(report)
+    return report
+
+
+def report_file_path(report: ReportRecord) -> Path:
+    if not report.output_path:
+        raise NotFoundException("Report file not found")
+    from app.core.config import get_settings
+
+    root = get_settings().effective_report_dir().resolve()
+    candidate = (root / report.output_path).resolve()
+    if root not in candidate.parents or not candidate.is_file():
+        raise NotFoundException("Report file not found")
+    return candidate
 
 
 async def create_learning_answer(

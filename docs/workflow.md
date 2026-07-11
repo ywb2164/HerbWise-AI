@@ -7,3 +7,6 @@
 V0.2 实际任务由 runner 设置 `persistence_enabled=true`：画像优先读取数据库，知识节点优先读取 `medicine_items`/`medicine_features`，资源、审核和学习路径分别调用对应 Service，并把 `resource_ids`、`review_id`、路径版本和数据来源写入可序列化 state/trace。直接调用图的单元测试保持原 Mock 分支，以验证固定 DAG 和一次重试约束。
 
 V0.3A keeps the node order. `recognize_image` selects Mock, Qwen, Local, or Hybrid by the optional task mode. Hybrid executes both paths concurrently, normalizes names from the database, records both raw internal results, and writes a fusion result before `vision_review` and `judge_result`.
+# V0.4 modes
+
+Real full-loop execution is gated by explicit configuration. Replay mode persists/uses bounded evidence snapshots and must surface `data_source=replay`; degradation uses safe mock/fallback behavior without implicit network calls.

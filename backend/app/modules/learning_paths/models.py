@@ -104,6 +104,7 @@ class ReportRecord(Base):
     title: Mapped[str] = mapped_column(String(255))
     content_json: Mapped[dict] = mapped_column(JSON)
     file_id: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    output_path: Mapped[str | None] = mapped_column(String(512), nullable=True)
     status: Mapped[str] = mapped_column(String(32), default="generated")
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()

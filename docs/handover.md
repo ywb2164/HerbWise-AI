@@ -5,3 +5,6 @@
 V0.2 已提供 `docs/openapi.json`、`docs/frontend-api-map.md`、`docs/enums.md`、`docs/error-codes.md` 和 `docs/mock/*.json`。测试账号为 `admin` / `HerbWise@2026` 与 `student` / `HerbWise@2026`。当前所有 AI、视觉、RAG 和质量指标仍为 Mock/非正式数据；V0.3 推荐按 OpenAI 兼容客户端、Qwen-VL、名称归一化、RAGFlow、生成/二次审核、YOLO/ONNX 的顺序接入。
 
 V0.3A now provides OpenAI-compatible adapters and an optional lazy local adapter. RAGFlow and video streams remain intentionally out of scope. Configure real keys only through environment variables; run `scripts/smoke_v03a_real.py` only after explicit opt-in.
+# V0.4 operational handoff
+
+Use root `scripts/start-dev.ps1`, `start-demo.ps1`, `verify-backend.ps1`, `verify-real-services.ps1`, and `backup-database.ps1`. Detailed user-local commands and frontend contracts are in `pending-user-commands.md` and `frontend-handoff/`.

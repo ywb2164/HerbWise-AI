@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, Query
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -16,6 +17,9 @@ from app.modules.learning_paths.service import (
     path_data,
     report_data,
     require_report,
+    export_learning_word,
+    export_recognition_word,
+    report_file_path,
     update_path,
 )
 from app.modules.profiles.schemas import DimensionCode
@@ -153,11 +157,70 @@ async def get_learning(
     return success(report_data(await latest_learning_report(session, learner_id)))
 
 
+@reports_router.post(
+    "/learning/{learner_id}/export-word",
+    response_model=ApiResponse,
+    summary="Export learning report as Word",
+    description="Generate a controlled Word learning report for the requested learner.",
+)
+async def export_learning(
+    learner_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    ensure_learner_access(user, learner_id)
+    return success(report_data(await export_learning_word(session, learner_id)))
+
+
+@reports_router.post(
+    "/tasks/{task_id}/export-word",
+    response_model=ApiResponse,
+    summary="Export recognition review as Word",
+    description="Generate a controlled Word recognition-review report for one task.",
+)
+async def export_recognition(
+    task_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    from app.modules.tasks.service import require_task
+
+    task = await require_task(task_id)
+    ensure_learner_access(user, task.learner_id)
+    return success(report_data(await export_recognition_word(session, task_id)))
+
+
 @reports_router.get(
     "/{report_id}",
     response_model=ApiResponse,
     summary="Get report",
     description="Get a persisted report by identifier.",
 )
-async def get_report(report_id: str, session: AsyncSession = Depends(get_session)):
-    return success(report_data(await require_report(session, report_id)))
+async def get_report(
+    report_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    report = await require_report(session, report_id)
+    ensure_learner_access(user, report.learner_id)
+    return success(report_data(report))
+
+
+@reports_router.get(
+    "/{report_id}/download",
+    summary="Download generated Word report",
+    description="Download an existing controlled report file after learner ownership checks.",
+)
+async def download_report(
+    report_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+) -> FileResponse:
+    report = await require_report(session, report_id)
+    ensure_learner_access(user, report.learner_id)
+    path = report_file_path(report)
+    return FileResponse(
+        path,
+        media_type="application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+        filename=path.name,
+    )

@@ -12,3 +12,9 @@
 - V0.3A 模型追踪：`recognition_records`、`model_call_records`。二者只保存结构化摘要、token/耗时和错误代码，不保存密钥、完整 Prompt、Base64 或原始供应商响应。
 
 联合唯一约束覆盖用户/角色关联、角色/权限关联、角色/菜单关联、学习者维度、题目选项、测试答案、相似药材和路径版本。JSON 字段在 MySQL 中使用原生 JSON；时间字段使用带时区的应用层 ISO 8601 表示。
+# V0.4 report persistence
+
+`report_records.output_path` stores only a safe relative DOCX path below `REPORT_OUTPUT_DIR`; the V0.4 Alembic head is `b9f2c8d04a71`.
+# V0.4 report persistence
+
+`report_records.output_path` stores only a safe relative DOCX path below `REPORT_OUTPUT_DIR`; the V0.4 Alembic head is `b9f2c8d04a71`.

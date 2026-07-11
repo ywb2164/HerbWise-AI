@@ -11,3 +11,6 @@ Profile dimensions: `basic_knowledge`, `character_identification`, `similar_medi
 - `LLM_MODE`: `mock`, `real`
 - Fusion agreement: `agree`, `conflict`, `local_only`, `qwen_only`, `no_result`, `mock`
 - Provider error codes: `configuration_error`, `authentication_error`, `rate_limit_error`, `timeout_error`, `network_error`, `invalid_response`, `schema_validation_error`, `provider_unavailable`, `local_model_unavailable`, `unsupported_file`, `unknown_error`
+# V0.4 source/status values
+
+`data_source`: `mock`, `replay`, `real`, `hybrid`, `structured`; report type: `learning`, `recognition_review`; diagnostic status: `pass`, `fail`, `skipped`, `warning`.

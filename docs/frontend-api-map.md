@@ -9,3 +9,6 @@
 | Review | `POST /api/reviews/check`, `GET /api/reviews/{resource_id}` |
 | Learning path | `GET /api/learning-paths/{learner_id}`, `GET /api/reports/learning/{learner_id}` |
 | AI capabilities | `GET /api/capabilities`; admin only: `POST /api/admin/model-configs/{config_id}/test` |
+# V0.4 additions
+
+Report export and download are available at `/reports/learning/{learner_id}/export-word`, `/reports/tasks/{task_id}/export-word`, and `/reports/{report_id}/download`. Frontends must expose mock/replay/real source labels and manual-review/fallback states.
