@@ -1,17 +1,12 @@
-from datetime import UTC, datetime, timedelta
+"""Compatibility exports for authentication helpers.
 
-import jwt
+New code should import from :mod:`app.modules.auth.service`.
+"""
 
-from app.core.config import get_settings
+from datetime import timedelta
+
+from app.modules.auth.service import _token
 
 
 def create_access_token(subject: str) -> str:
-    settings = get_settings()
-    return jwt.encode(
-        {
-            "sub": subject,
-            "exp": datetime.now(UTC) + timedelta(minutes=settings.jwt_expire_minutes),
-        },
-        settings.jwt_secret_key.get_secret_value(),
-        algorithm=settings.jwt_algorithm,
-    )
+    return _token(subject, "access", timedelta(minutes=60))[0]

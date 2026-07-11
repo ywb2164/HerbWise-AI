@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     jwt_secret_key: SecretStr = SecretStr("replace-me")
     jwt_algorithm: str = "HS256"
     jwt_expire_minutes: int = Field(default=60, ge=1)
+    jwt_refresh_expire_days: int = Field(default=7, ge=1)
     ai_mode: str = "mock"
     rag_mode: str = "mock"
     yolo_mode: str = "mock"
