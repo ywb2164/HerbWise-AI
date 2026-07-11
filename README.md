@@ -1,5 +1,31 @@
 # 本草智策 HerbWise AI
 
+## V0.2 backend status
+
+The active backend branch is `feature/backend-v0.2`. It adds database-backed
+JWT/RBAC, learner profiles and initial assessment, structured demonstration
+medicine knowledge, persisted mock resources/reviews, versioned learning paths,
+traces, metrics, OpenAPI export, and frontend mock contracts.
+
+The only supported runtime mode remains `AI_MODE=mock`, `RAG_MODE=mock`, and
+`YOLO_MODE=mock`. Qwen, Qwen-VL, DeepSeek, YOLO, and RAGFlow are **not**
+integrated. Demo accounts created by `backend/scripts/seed_data.py` are
+`admin` / `HerbWise@2026` and `student` / `HerbWise@2026`.
+
+Run migrations and seed twice in Docker before exercising the smoke script:
+
+```powershell
+docker compose exec api uv run alembic upgrade head
+docker compose exec api uv run python scripts/seed_data.py
+docker compose exec api uv run python scripts/seed_data.py
+docker compose exec api uv run python scripts/smoke_v02.py
+```
+
+Swagger is available at `http://localhost:8000/docs`; exported API contract is
+`docs/openapi.json`. V0.3 should introduce real providers in this order:
+OpenAI-compatible client, Qwen-VL, structured name matching, RAGFlow, resource
+generation/review, then YOLO or ONNX inference.
+
 > 中药智能鉴别与临床药事质控实训个性化知识生成与多智能体协同决策系统
 
 本项目面向中药饮片鉴别、临床药事质控、院校实训教学与药企质检培训场景，计划构建“学习者画像 → 图像识别 → 视觉复核 → 药典知识检索 → 纠错裁判 → 个性化资源生成 → 内容审核 → 学习路径更新 → 证据链归档”的完整闭环。
