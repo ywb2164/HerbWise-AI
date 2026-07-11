@@ -1,577 +1,1103 @@
-# 本草智策 HerbWise AI
+[README(2).md](https://github.com/user-attachments/files/29927006/README.2.md)
+# 本草智策 HerbWise-AI
 
-## V0.3A backend status
+> 面向中药智能鉴别、临床药事质控实训与个性化学习的 AI 教学平台
 
-The V0.3A branch builds on the V0.2 database-backed
-JWT/RBAC, learner profiles and initial assessment, structured demonstration
-medicine knowledge, persisted mock resources/reviews, versioned learning paths,
-traces, metrics, OpenAPI export, and frontend mock contracts.
+本草智策（HerbWise-AI）是一套面向中药学教学、饮片识别、知识检索、学习路径生成与药事质控训练的智能化平台。项目通过本地视觉模型、Qwen-VL、多模型融合、RAGFlow 知识检索、LangGraph 工作流编排、结构化药材知识库与可追溯审核机制，将“识别—检索—生成—审核—学习路径—报告导出”连接为完整闭环。
 
-V0.3A retains Mock defaults while adding OpenAI-compatible real LLM/Qwen-VL
-adapters, a lazy local Ultralytics adapter, database name normalization, and
-deterministic hybrid fusion. Supported vision modes are `mock`, `qwen`,
-`local`, and `hybrid`; LLM modes are `mock` and `real`; `RAG_MODE` remains
-`mock`. Demo accounts created by `backend/scripts/seed_data.py` are
-`admin` / `HerbWise@2026` and `student` / `HerbWise@2026`.
-
-Run migrations and seed twice in Docker before exercising the smoke script:
-
-```powershell
-docker compose exec api uv run alembic upgrade head
-docker compose exec api uv run python scripts/seed_data.py
-docker compose exec api uv run python scripts/seed_data.py
-docker compose exec api uv run python scripts/smoke_v02.py
-docker compose exec api uv run python scripts/smoke_v03a_fake.py
-```
-
-Swagger is available at `http://localhost:8000/docs`; exported API contract is
-`docs/openapi.json`. V0.3 should introduce real providers in this order:
-OpenAI-compatible client, Qwen-VL, structured name matching, RAGFlow, resource
-generation/review, then YOLO or ONNX inference.
-
-> 中药智能鉴别与临床药事质控实训个性化知识生成与多智能体协同决策系统
-
-本项目面向中药饮片鉴别、临床药事质控、院校实训教学与药企质检培训场景，计划构建“学习者画像 → 图像识别 → 视觉复核 → 药典知识检索 → 纠错裁判 → 个性化资源生成 → 内容审核 → 学习路径更新 → 证据链归档”的完整闭环。
-
-当前仓库处于 **V0.1 后端骨架阶段**：已完成 FastAPI、MySQL、Redis、Alembic、LangGraph 与 Mock Provider 的基础集成，并已成功跑通一次完整 Mock 工作流。
+当前仓库已经完成后端 V0.4 交付版本，具备稳定的 Mock、Fake、Replay 演示能力，并已为真实 RAGFlow、真实大模型 API、本地视觉模型和前端联调预留完整接口。
 
 ---
 
-## 1. 当前进度
+## 1. 项目目标
 
-### 已完成
+本项目主要解决以下问题：
 
-- Windows 11 + WSL2 + Docker Desktop 开发环境。
-- Python 3.12 + `uv` 项目依赖管理。
-- FastAPI 单体分模块后端骨架。
-- SQLAlchemy 2.x 异步数据库访问。
-- MySQL 8.4 与 Redis 7.2 Docker 容器。
-- Alembic 数据库迁移。
-- 统一配置、响应、异常、日志和 `request_id` 中间件。
-- 基础任务数据表与证据链数据表。
-- Provider 抽象层与 Mock 实现。
-- LangGraph 固定 DAG 工作流。
-- 任务创建、状态查询、事件查询和 Agent 日志接口骨架。
-- Mock 工作流成功完成并写入 MySQL。
-- 中文 UTF-8 返回问题已修复。
-- Ruff 检查通过。
-- mypy 类型检查通过。
-- Git 仓库已创建并上传当前代码。
+1. **中药饮片识别训练**  
+   支持本地视觉模型、Qwen-VL 或双路并行识别，并对识别结果进行名称标准化和确定性融合。
 
-### 已跑通的 Mock 闭环
+2. **药材知识检索与证据追溯**  
+   结合 MySQL 中的结构化药材知识与 RAGFlow 非结构化文档检索，保留文档、章节、页码、Chunk 和引用信息。
+
+3. **个性化学习路径**  
+   根据学习者画像、六维能力、历史任务和薄弱点，生成个性化学习资源与学习路径。
+
+4. **资源生成与质量审核**  
+   支持讲义、指南、题目、对比卡片、复习报告等资源生成，并通过独立审核模型和确定性规则进行复核。
+
+5. **任务全过程可解释**  
+   保存识别、融合、检索、证据、生成、审核、学习路径和模型调用信息，形成完整 Trace。
+
+6. **比赛与离线演示**  
+   支持将真实成功任务保存为 Replay，在无网络、无模型 API、无 RAGFlow 的环境中离线回放完整任务流程。
+
+---
+
+## 2. 当前项目状态
+
+| 模块 | 状态 | 说明 |
+|---|---|---|
+| FastAPI 后端 | 已完成 | 单体分模块架构 |
+| JWT 认证与 RBAC | 已完成 | 支持管理员、教师、学生等角色 |
+| learner_id 数据隔离 | 已完成 | 学生跨用户访问返回 403 |
+| 学习者画像 | 已完成 | 支持六维能力与初始测试 |
+| 药材结构化知识 | 已完成 | 药材、别名、性状、相似药材等 |
+| 本地视觉模型 Provider | 已完成 | 支持 Ultralytics，惰性加载 |
+| Qwen-VL Provider | 已完成 | OpenAI 兼容异步调用 |
+| 双路识别融合 | 已完成 | 一致加分、冲突减分、人工复核 |
+| 资源生成与审核 | 已完成 | Mock/Real 两种模式 |
+| RAGFlow Provider | 已完成 | 支持真实接入、Mock、Hybrid、Replay |
+| Evidence 与 Citation | 已完成 | 支持来源、页码、章节、Chunk 和引用 |
+| LangGraph 工作流 | 已完成 | 完整 full_loop |
+| Trace 证据链 | 已完成 | 识别到报告的全过程追踪 |
+| Replay 离线演示 | 已完成 | 可捕获、验证和回放 |
+| Word 报告导出 | 已完成 | 学情报告、识别审核报告 |
+| OpenAPI 与前端交接 | 已完成 | API Freeze 与 Mock 数据 |
+| GitHub Actions CI | 已完成 | 自动运行测试、Ruff、mypy 等 |
+| Docker/PowerShell 运维脚本 | 已完成 | 启动、验证、备份、停止 |
+| 真实 RAGFlow 验证 | 待配置 | 需要 API 地址、Key、Dataset ID |
+| 真实大模型验证 | 待配置 | 需要模型 API Key 和模型名 |
+| 本地模型真实权重验证 | 待配置 | 需要提供 `.pt` 或其他权重 |
+| 正式中药资料导入 | 待完善 | 需要授权文档与正式类别映射 |
+| Vue 前端 | 待完善 | 后端接口已冻结，可开始联调 |
+| 摄像头实时视频识别 | 待开发 | 当前主要支持图片和任务式识别 |
+
+当前后端验证结果：
 
 ```text
-load_profile
-    ↓
-recognize_image
-    ↓
-vision_review
-    ↓
-retrieve_knowledge
-    ↓
-judge_result
-    ↓
-generate_resources
-    ↓
-review_resources
-    ↓
-update_learning_path
-    ↓
-save_trace
+pytest：76 passed
+Ruff format：通过
+Ruff check：通过
+mypy：通过
+Fake RAG Smoke：通过
+Fake Evaluation：通过
+Replay Smoke：通过
+Degradation Smoke：通过
+Repository Guard：通过
+Alembic：单一 head
 ```
-
-成功任务示例：
-
-```json
-{
-  "status": "success",
-  "current_node": "save_trace",
-  "progress": 100,
-  "retry_count": 0,
-  "errors": []
-}
-```
-
-### 尚未完成
-
-- 完整用户认证、JWT、刷新令牌与 RBAC。
-- 学生、教师、临床药师、药企质检人员、管理员五角色权限。
-- 学习者画像完整 CRUD、诊断与动态更新规则。
-- 药材结构化知识库与别名字典。
-- 真实 Qwen / Qwen-VL / DeepSeek 接入。
-- 真实 YOLO 或 ONNX Runtime 推理。
-- RAGFlow 知识库接入。
-- New API / one-api 模型网关接入。
-- 在线资源生成、审核纠偏与报告导出。
-- 完整 SSE 前端联调与断线恢复验收。
-- 文件上传接口完整验收。
-- RAGAS / DeepEval 离线评测。
-- 生产级异步任务队列、失败恢复和限流。
 
 ---
 
-## 2. 当前技术栈
+## 3. 核心功能
 
-### 后端
+### 3.1 用户、角色与数据隔离
 
-- FastAPI
+- JWT 登录与刷新令牌
+- 数据库 RBAC
+- 管理员、教师、学生、药师、质控人员等角色
+- 学生只能访问自己的学习者画像、任务、识别记录、检索记录、资源、报告和 Trace
+- 跨 learner_id 访问返回 HTTP 403
+- 药材知识写操作仅限后台角色
+
+### 3.2 学习者画像与能力诊断
+
+- 学习者基本画像
+- 六维能力记录
+- 初始测试
+- 薄弱知识点分析
+- 学习路径生成
+- 学习资源推荐
+- 学习报告导出
+
+### 3.3 中药图片识别
+
+支持四种视觉模式：
+
+| 模式 | 说明 |
+|---|---|
+| `mock` | 使用固定 Mock 结果，适合开发与演示 |
+| `qwen` | 使用 Qwen-VL 进行图片识别 |
+| `local` | 使用本地 Ultralytics 模型 |
+| `hybrid` | 本地模型与 Qwen-VL 并行识别并融合 |
+
+统一输出包括：
+
+- 药材中文名
+- 英文名
+- 训练类别名
+- Top-K 候选
+- 置信度
+- 性状证据
+- 质控证据
+- 不确定性
+- 是否属于当前支持药材目录
+- 是否需要人工复核
+
+### 3.4 名称标准化
+
+识别结果不会直接作为最终药材名，而是通过数据库进行标准化。
+
+匹配顺序包括：
+
+1. `training_class_name`
+2. 英文标准名
+3. 中文标准名
+4. 中文或英文别名
+5. 规范化后的大小写、空格和标点匹配
+
+别名不写死在业务代码中，统一维护在数据库。
+
+### 3.5 双路识别融合
+
+默认融合规则：
+
+- 本地模型与 Qwen-VL 识别为同一药材：本地置信度增加 `0.15`，最大不超过 `0.99`
+- 两者结果冲突：本地置信度减少 `0.15`，标记 `manual_review_required=true`
+- Qwen 结果超出支持目录、本地模型有效：使用本地模型结果
+- 本地模型失败、Qwen 有效：使用 Qwen 结果
+- Qwen 失败、本地模型有效：使用本地模型结果
+- 两路都失败：不伪造识别结果，任务进入失败状态
+
+### 3.6 RAG 知识检索
+
+支持四种 RAG 模式：
+
+| 模式 | 说明 |
+|---|---|
+| `mock` | 使用 Mock Evidence |
+| `ragflow` | 调用真实 RAGFlow |
+| `hybrid` | MySQL 结构化知识 + RAGFlow |
+| `replay` | 使用已保存的检索快照 |
+
+检索流程：
+
+1. 从 MySQL 读取结构化药材知识
+2. 构造标准化检索查询
+3. 调用 RAGFlow 或 Replay
+4. 过滤低分证据
+5. 去重
+6. 排序
+7. 截断
+8. 持久化检索记录与 Evidence
+9. 将 Evidence 传递给资源生成与审核模块
+
+每条 Evidence 可包含：
+
+- 文档名
+- 文档 ID
+- Chunk ID
+- 页码
+- 章节
+- 内容摘要
+- 相关度分数
+- 来源类型
+- 引用字符串
+- 数据来源
+
+### 3.7 资源生成与审核
+
+可生成：
+
+- 讲义
+- 学习指南
+- 练习题
+- 相似药材对比卡
+- 复习报告
+- 学情报告
+
+审核机制：
+
+- 先执行确定性规则
+- 再执行审核模型
+- 校验 Evidence 是否存在
+- 校验 Evidence 是否属于当前 Retrieval
+- 校验引用是否跨任务
+- 校验是否虚构页码
+- 校验无证据时是否错误声称“根据《中国药典》”
+- 自动重写最多一次
+- 严重规则问题不能被模型静默改为通过
+
+### 3.8 Trace 证据链
+
+Trace 保存完整链路：
+
+```text
+图片上传
+→ 视觉识别
+→ 名称标准化
+→ 双路融合
+→ 知识查询构造
+→ 结构化知识
+→ RAG Evidence
+→ 证据去重与排序
+→ 资源生成
+→ Citation 回填
+→ 资源审核
+→ 学习路径更新
+→ 报告导出
+```
+
+Trace 中明确标记 `mock`、`real`、`hybrid`、`replay`、`fallback` 和 `manual_review_required`。
+
+### 3.9 Replay 离线演示
+
+真实任务成功后，可以保存为 Replay。
+
+Replay 包含：
+
+- Recognition
+- Retrieval
+- Evidence
+- Resource
+- Review
+- Trace
+- Agent 事件
+- 节点耗时
+- 模型名称
+- Prompt 版本
+- 数据来源
+
+离线演示时：
+
+- 不调用真实模型
+- 不调用 RAGFlow
+- 不要求本地权重
+- 仍按原节点顺序回放
+- SSE 可逐步接收事件
+- 最终任务状态为成功
+- 页面必须明确显示“Replay 演示模式”
+
+### 3.10 Word 报告
+
+支持导出：
+
+1. 学情报告
+2. 中药识别审核报告
+
+报告内容可包括学习者信息、六维能力、薄弱点、学习路径、最近任务、识别结果、融合结果、Evidence、Citation、审核状态、Trace ID 和数据来源。
+
+---
+
+## 4. 技术架构
+
+```mermaid
+flowchart LR
+    UI[Vue 3 前端] --> API[FastAPI API]
+    API --> AUTH[JWT / RBAC]
+    API --> WF[LangGraph Workflow]
+    API --> DB[(MySQL)]
+    API --> REDIS[(Redis)]
+
+    WF --> VISION[Vision Providers]
+    VISION --> LOCAL[Local Ultralytics]
+    VISION --> QWEN[Qwen-VL]
+
+    WF --> RAG[Hybrid Knowledge Service]
+    RAG --> DB
+    RAG --> RAGFLOW[RAGFlow]
+    RAG --> REPLAY[Replay]
+
+    WF --> LLM[LLM Provider]
+    LLM --> GEN[Resource Generation]
+    LLM --> REVIEW[Resource Review]
+
+    WF --> TRACE[Trace / Events]
+    WF --> REPORT[Word Reports]
+```
+
+主要技术：
+
 - Python 3.12
-- uv
+- FastAPI
+- Pydantic
 - SQLAlchemy 2.x Async
 - Alembic
-- Pydantic Settings
+- MySQL 8
+- Redis 7
 - LangGraph
-- Redis Async Client
-- OpenAI Python SDK（预留）
-- Structlog / ORJSON
-- Pytest / Ruff / mypy
-
-### 基础设施
-
-- Docker Desktop
+- httpx
+- OpenAI Compatible API
+- Qwen-VL
+- Ultralytics
+- RAGFlow
+- docxtpl / python-docx
+- pytest
+- Ruff
+- mypy
 - Docker Compose
-- MySQL 8.4
-- Redis 7.2 Alpine
-
-### 后续计划接入
-
-- Qwen-VL：视觉识别与复核
-- Qwen / DeepSeek：资源生成与审核
-- RAGFlow：药典、教材与质控资料检索
-- YOLO / ONNX Runtime：本地识别与备用推理
-- New API / one-api：多模型统一网关
-- ECharts / Vue Flow：画像与智能体流程可视化
+- GitHub Actions
 
 ---
 
-## 3. 当前系统架构
-
-```text
-┌─────────────────────────────────────────┐
-│               Vue3 前端（待接入）       │
-└───────────────────┬─────────────────────┘
-                    │ REST / SSE
-┌───────────────────▼─────────────────────┐
-│              FastAPI 后端               │
-│                                         │
-│ 任务管理 │ 画像 │ 识别 │ RAG │ 资源 │ 审核 │
-│ 路径规划 │ 证据链 │ 指标 │ 文件管理      │
-│                                         │
-│         LangGraph 固定 DAG              │
-└──────────────┬──────────────┬───────────┘
-               │              │
-        ┌──────▼──────┐ ┌────▼─────┐
-        │ MySQL 8.4   │ │ Redis 7.2│
-        └─────────────┘ └──────────┘
-
-当前：Mock Provider
-后续：Qwen-VL / Qwen / DeepSeek / RAGFlow / YOLO
-```
-
----
-
-## 4. 项目目录
+## 5. 目录结构
 
 ```text
 HerbWise-AI/
 ├─ backend/
-│  ├─ app/
-│  │  ├─ api/                 # 总路由
-│  │  ├─ core/                # 配置、数据库、Redis、日志、异常、中间件
-│  │  ├─ common/              # 公共枚举、Schema、ID 工具
-│  │  ├─ modules/             # 业务模块
-│  │  ├─ integrations/        # LLM、Vision、RAG、Storage Provider
-│  │  ├─ workflows/           # LangGraph 状态、节点和执行器
-│  │  └─ main.py
-│  ├─ migrations/             # Alembic 迁移
-│  ├─ scripts/                # 初始化与种子数据脚本
-│  ├─ tests/
+│  ├─ app/                         # FastAPI 后端
+│  │  ├─ core/                     # 配置、异常、响应、权限
+│  │  ├─ integrations/             # AI、视觉、RAGFlow 等 Provider
+│  │  ├─ modules/                  # 业务模块
+│  │  └─ workflows/                # LangGraph 工作流
+│  ├─ migrations/                  # Alembic 迁移
+│  ├─ scripts/                     # Smoke、诊断、导入、评测脚本
+│  ├─ templates/reports/           # Word 报告模板
+│  ├─ tests/                       # 自动化测试
+│  ├─ .env.example
 │  ├─ pyproject.toml
-│  ├─ uv.lock
-│  ├─ Dockerfile
-│  ├─ .dockerignore
-│  └─ .env.example
-├─ data/
-│  ├─ uploads/
-│  ├─ reports/
-│  ├─ models/
-│  └─ knowledge/
+│  └─ uv.lock
 ├─ docs/
+│  ├─ frontend-handoff/            # 前端交接包
+│  ├─ mock/                        # 接口 Mock
+│  ├─ api-freeze-v0.4.md
+│  ├─ pending-user-commands.md
+│  └─ user-validation-checklist.md
+├─ infra/ragflow/                  # RAGFlow 辅助脚本与说明
+├─ scripts/                        # 根目录 PowerShell 运维脚本
 ├─ compose.yaml
+├─ compose.dev.yaml
+├─ compose.demo.yaml
+├─ .env.demo.example
 └─ README.md
 ```
 
-> 实际目录以仓库当前代码为准；后续新增模块应保持 `router / schemas / service / repository / models` 的统一结构。
-
 ---
 
-## 5. 环境要求
+## 6. 环境要求
 
-- Windows 11
-- WSL2
+### 6.1 推荐方式：Docker Desktop
+
+推荐环境：
+
+- Windows 10 / 11
 - Docker Desktop
-- Docker Compose
+- Docker Compose v2
 - Git
-- uv
-- Python 3.12（宿主机调试时使用）
+- PowerShell 5.1 或 PowerShell 7
 
-检查环境：
+建议 Docker Desktop 至少分配：
+
+- 4 CPU
+- 8 GB 内存
+- 20 GB 可用磁盘空间
+
+真实部署 RAGFlow 时建议增加到：
+
+- 8 CPU
+- 12–16 GB 内存
+- 40 GB 以上可用磁盘空间
+
+### 6.2 本地开发方式
+
+不使用 Docker 时需要：
+
+- Python 3.12
+- uv
+- MySQL 8.x
+- Redis 7.x
+- Git
+
+安装 uv：
 
 ```powershell
-docker --version
-docker compose version
+powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+```
+
+验证：
+
+```powershell
 uv --version
-git --version
+python --version
 ```
 
 ---
 
-## 6. 快速启动
-
-### 6.1 克隆仓库
+## 7. 获取项目
 
 ```powershell
-git clone <仓库地址>
-Set-Location HerbWise-AI
+git clone <你的仓库地址>
+cd HerbWise-AI
 ```
 
-### 6.2 创建本地环境变量
+当前稳定后端交付分支：
+
+```powershell
+git switch feature/real-demo-delivery-v0.4
+```
+
+---
+
+## 8. 配置环境变量
+
+复制后端环境变量模板：
 
 ```powershell
 Copy-Item backend\.env.example backend\.env
 ```
 
-开发模式默认建议：
-
-```env
-AI_MODE=mock
-RAG_MODE=mock
-YOLO_MODE=mock
-```
-
-不要将真实 `.env`、API Key、模型权重或药典全文提交到 Git。
-
-### 6.3 启动容器
+演示模式可复制：
 
 ```powershell
-docker compose config
+Copy-Item .env.demo.example .env.demo
+```
+
+不要提交真实 `.env`。
+
+### 8.1 基础配置示例
+
+```env
+APP_ENV=development
+APP_TIMEZONE=Asia/Shanghai
+
+DATABASE_URL=mysql+aiomysql://herbwise:CHANGE_ME@db:3306/herbwise
+REDIS_URL=redis://redis:6379/0
+
+AI_MODE=mock
+VISION_MODE=mock
+LLM_MODE=mock
+RAG_MODE=mock
+RUN_MODE=real
+```
+
+### 8.2 模型 API 配置
+
+```env
+MODEL_API_BASE_URL=https://example.com/v1
+MODEL_API_KEY=YOUR_API_KEY
+
+QWEN_VL_MODEL=qwen-vl-model-name
+GENERATION_MODEL=your-generation-model
+REVIEW_MODEL=your-review-model
+
+REAL_AI_TESTS_ENABLED=false
+REAL_FULL_LOOP_TESTS_ENABLED=false
+```
+
+只有显式设置 `REAL_AI_TESTS_ENABLED=true`，相关诊断脚本才会真实调用 API。
+
+### 8.3 RAGFlow 配置
+
+```env
+RAGFLOW_API_BASE_URL=http://localhost:9380
+RAGFLOW_API_KEY=YOUR_RAGFLOW_API_KEY
+RAGFLOW_DATASET_ID=YOUR_DATASET_ID
+RAGFLOW_DATASET_NAME=HerbWise Knowledge
+
+RAG_MODE=ragflow
+REAL_RAG_TESTS_ENABLED=true
+```
+
+真实地址、端口和 API 路径以当前 RAGFlow 部署版本和项目适配器为准。
+
+### 8.4 本地模型配置
+
+```env
+LOCAL_VISION_ENABLED=true
+LOCAL_MODEL_TYPE=ultralytics
+LOCAL_MODEL_PATH=D:/models/herbwise/best.pt
+LOCAL_MODEL_DEVICE=auto
+LOCAL_MODEL_IMAGE_SIZE=640
+LOCAL_MODEL_CONFIDENCE_THRESHOLD=0.50
+```
+
+模型权重不应提交 Git。
+
+### 8.5 Replay 演示配置
+
+```env
+RUN_MODE=replay
+RAG_MODE=replay
+DEMO_REPLAY_ENABLED=true
+DEMO_REPLAY_CODE=competition-demo-v1
+```
+
+---
+
+## 9. 快速启动
+
+### 9.1 一键启动开发环境
+
+```powershell
+Set-Location D:\HerbWise-AI
+.\scripts\start-dev.ps1
+```
+
+该脚本会执行：
+
+1. 检查 Docker
+2. 启动 API、MySQL、Redis
+3. 执行 Alembic 迁移
+4. 执行 Seed
+5. 输出接口和 Swagger 地址
+
+### 9.2 一键启动演示环境
+
+```powershell
+.\scripts\start-demo.ps1
+```
+
+默认使用安全的 Mock/Replay 模式，不会调用真实 API。
+
+启用真实环境检查：
+
+```powershell
+.\scripts\start-demo.ps1 -Real
+```
+
+### 9.3 手动启动
+
+```powershell
 docker compose up -d --build
 docker compose ps
 ```
 
-当前服务端口：
-
-| 服务 | 宿主机地址 |
-|---|---|
-| FastAPI | `http://localhost:8000` |
-| Swagger | `http://localhost:8000/docs` |
-| MySQL | `localhost:3307` |
-| Redis | `localhost:6380` |
-
-### 6.4 执行数据库迁移
+执行迁移：
 
 ```powershell
 docker compose exec api uv run alembic upgrade head
+docker compose exec api uv run alembic current
 ```
 
-### 6.5 写入示例数据
+初始化数据：
 
 ```powershell
 docker compose exec api uv run python scripts/seed_data.py
 ```
 
-### 6.6 验证服务
+启动完成后，以 `docker compose ps` 显示的端口为准。常见地址通常为：
 
-```powershell
-Invoke-RestMethod http://localhost:8000/health
-Invoke-RestMethod http://localhost:8000/ready
+```text
+Swagger: http://localhost:8000/docs
+OpenAPI: http://localhost:8000/openapi.json
+Health:  http://localhost:8000/health
+Ready:   http://localhost:8000/ready
 ```
 
 ---
 
-## 7. 当前基础接口
+## 10. 不使用 Docker 启动后端
 
-### 系统接口
-
-```text
-GET /
-GET /health
-GET /ready
-```
-
-### Agent 任务
-
-```text
-POST /api/agent/tasks
-GET  /api/agent/tasks/{task_id}
-GET  /api/agent/tasks/{task_id}/events
-GET  /api/agent/tasks/{task_id}/logs
-GET  /api/agent/tasks/{task_id}/stream
-```
-
-### 文件接口
-
-```text
-POST /api/files/upload
-GET  /api/files/{file_id}
-```
-
-接口详情以 Swagger 为准：
-
-```text
-http://localhost:8000/docs
+```powershell
+cd backend
+uv sync
+uv run alembic upgrade head
+uv run python scripts/seed_data.py
+uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
 ---
 
-## 8. 创建并查询 Mock 任务
+## 11. 项目运行模式
 
-### 创建任务
+### Mock 开发模式
 
-```powershell
-$response = Invoke-RestMethod `
-  -Method Post `
-  -Uri "http://localhost:8000/api/agent/tasks" `
-  -ContentType "application/json" `
-  -Body '{"learner_id":"stu_001","task_type":"full_loop","image_id":"img_mock_001"}'
-
-$response | ConvertTo-Json -Depth 20
+```env
+VISION_MODE=mock
+LLM_MODE=mock
+RAG_MODE=mock
 ```
 
-### 获取任务 ID
+适合本地开发、前端联调、CI 和无网络演示。
 
-```powershell
-$taskId = $response.data.task_id
-if (-not $taskId) {
-    $taskId = $response.task_id
-}
-$taskId
+### Hybrid 识别模式
+
+```env
+VISION_MODE=hybrid
 ```
 
-### 查询任务
+同时使用本地视觉模型、Qwen-VL 和确定性融合。
 
-```powershell
-Start-Sleep -Seconds 3
+### 真实 RAG 模式
 
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8000/api/agent/tasks/$taskId" |
-  ConvertTo-Json -Depth 20
+```env
+RAG_MODE=ragflow
 ```
 
-### 查询事件
+要求 RAGFlow 可访问、API Key 已配置、Dataset 已创建、文档解析完成。
 
-```powershell
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8000/api/agent/tasks/$taskId/events" |
-  ConvertTo-Json -Depth 20
+### Replay 演示模式
+
+```env
+RUN_MODE=replay
+RAG_MODE=replay
 ```
 
-### 查询 Agent 日志
-
-```powershell
-Invoke-RestMethod `
-  -Method Get `
-  -Uri "http://localhost:8000/api/agent/tasks/$taskId/logs" |
-  ConvertTo-Json -Depth 20
-```
+不调用真实大模型、不调用 RAGFlow、不要求本地权重。
 
 ---
 
-## 9. 当前数据库表
+## 12. RAGFlow 配置与运行
 
-V0.1 阶段至少包含：
+相关资料：
 
 ```text
-alembic_version
-agent_logs
-learner_dimensions
-learner_profiles
-task_events
-task_records
-trace_records
-uploaded_files
+infra/ragflow/
+docs/ragflow-deployment.md
+docs/ragflow-dataset-setup.md
+docs/ragflow-document-guidelines.md
+docs/ragflow-version-lock.md
 ```
 
-查看数据库表：
+安装、启动、状态和停止：
 
 ```powershell
-docker compose exec db `
-  mysql -uherbwise -pherbwise herbwise `
-  -e "SHOW TABLES;"
+.\infra\ragflow\install-ragflow.ps1
+.\infra\ragflow\start-ragflow.ps1
+.\infra\ragflow\status-ragflow.ps1
+.\infra\ragflow\stop-ragflow.ps1
 ```
 
-数据库结构变化必须通过 Alembic 迁移完成，不应依赖手工建表。
+停止脚本默认不会删除 Volume。
+
+完成部署后：
+
+1. 创建 Dataset
+2. 获取 API Key
+3. 获取 Dataset ID
+4. 将配置写入 `.env`
+5. 上传一份有授权的测试文档
+6. 等待文档状态变为 `ready`
+7. 执行诊断
+
+```powershell
+cd backend
+uv run python scripts/ragflow_doctor.py --all
+```
 
 ---
 
-## 10. 代码质量检查
+## 13. 真实模型与本地模型诊断
 
 ```powershell
-docker compose exec api uv run pytest
-docker compose exec api uv run ruff format --check .
-docker compose exec api uv run ruff check .
-docker compose exec api uv run mypy app
+cd backend
+
+uv run python scripts/config_doctor.py --check all
+uv run python scripts/config_doctor.py --json
+
+uv run python scripts/ragflow_doctor.py --all
+uv run python scripts/ai_provider_doctor.py --all
+uv run python scripts/local_model_doctor.py --info
+uv run python scripts/local_model_doctor.py --load
+uv run python scripts/local_model_doctor.py --predict "D:\test\herb.jpg"
+
+uv run python scripts/smoke_v03c_real.py
 ```
 
-当前已确认：
+配置不完整时，真实脚本应输出 `SKIPPED`。
+
+---
+
+## 14. 文档注册与同步
+
+```powershell
+uv run python scripts/register_knowledge_document.py `
+  --uploaded-file-id "file_xxx" `
+  --dataset-code "default"
+
+uv run python scripts/sync_knowledge_document.py `
+  --document-code "doc_xxx"
+
+uv run python scripts/check_knowledge_document.py `
+  --document-code "doc_xxx"
+
+uv run python scripts/verify_rag_citations.py `
+  --medicine-name "黄芪" `
+  --query "黄芪的性状和切面特征"
+```
+
+---
+
+## 15. 药材类别映射导入
+
+模板：
 
 ```text
-Ruff：通过
-mypy：通过
+docs/data-import/medicine-class-mapping.template.csv
 ```
 
-Pytest 结果应以当前分支实际执行结果为准。
+预演：
+
+```powershell
+uv run python scripts/import_medicine_class_mapping.py `
+  --file "D:\data\medicine-class-mapping.csv" `
+  --dry-run
+```
+
+正式导入：
+
+```powershell
+uv run python scripts/import_medicine_class_mapping.py `
+  --file "D:\data\medicine-class-mapping.csv"
+```
+
+脚本不会伪造缺失类别，也不会默认覆盖人工维护数据。
 
 ---
 
-## 11. 常用 Docker 命令
-
-### 启动
+## 16. 保存与验证 Replay
 
 ```powershell
-docker compose up -d
+uv run python scripts/capture_demo_replay.py `
+  --task-id "task_xxx" `
+  --replay-code "competition-demo-v1" `
+  --description "比赛完整演示链路"
+
+uv run python scripts/verify_demo_replay.py `
+  --replay-code "competition-demo-v1"
+
+uv run python scripts/smoke_demo_replay.py
 ```
 
-### 重新构建 API
+---
+
+## 17. 报告导出
+
+```http
+POST /api/reports/learning/{learner_id}/export-word
+POST /api/reports/tasks/{task_id}/export-word
+GET  /api/reports/{report_id}/download
+```
+
+报告文件存储在受控目录，数据库只保存相对路径。
+
+---
+
+## 18. 测试与验收
+
+一键验证：
 
 ```powershell
-docker compose up -d --build api
+.\scripts\verify-backend.ps1
 ```
 
-### 查看状态
+手动验证：
+
+```powershell
+cd backend
+
+uv sync
+uv run pytest -q
+uv run ruff format --check .
+uv run ruff check .
+uv run mypy app
+
+uv run python scripts/export_openapi.py
+uv run python scripts/smoke_v03b_fake.py
+uv run python scripts/evaluate_rag_retrieval.py --mode fake
+uv run python scripts/smoke_demo_replay.py
+uv run python scripts/smoke_degradation.py
+uv run python scripts/repository_guard.py
+```
+
+当前测试基线：
+
+```text
+76 passed
+```
+
+真实服务验证：
+
+```powershell
+.\scripts\verify-real-services.ps1
+```
+
+---
+
+## 19. 数据库备份与停止服务
+
+备份：
+
+```powershell
+.\scripts\backup-database.ps1
+```
+
+停止：
+
+```powershell
+.\scripts\stop-services.ps1
+```
+
+默认不会删除数据库 Volume。
+
+不要随意执行：
+
+```powershell
+docker compose down -v
+```
+
+该命令可能导致数据库和 Redis 数据丢失。
+
+---
+
+## 20. API 与前端联调
+
+后端接口冻结：
+
+```text
+docs/api-freeze-v0.4.md
+```
+
+前端交接：
+
+```text
+docs/frontend-handoff/README.md
+```
+
+OpenAPI：
+
+```text
+docs/openapi.json
+```
+
+主要模块包括：
+
+- `/api/auth`
+- `/api/learners`
+- `/api/tests`
+- `/api/medicines`
+- `/api/vision`
+- `/api/knowledge`
+- `/api/agent/tasks`
+- `/api/resources`
+- `/api/reviews`
+- `/api/traces`
+- `/api/reports`
+- `/api/admin/knowledge`
+- `/api/admin/rag`
+- `/api/admin/demo-replays`
+
+实际路径以 `docs/openapi.json` 和 Swagger 为准。
+
+---
+
+## 21. 安全说明
+
+项目已经实现或约束：
+
+- API Key 仅通过环境变量读取
+- 不在接口中返回 Secret
+- 不在日志中记录 Authorization Header
+- 不记录图片 Base64
+- 不提交模型权重
+- 不提交 `.env`
+- 不提交上传图片
+- 不提交生成报告
+- 不提交 RAGFlow 数据卷
+- 不提交受版权保护的完整药典文档
+- 学生数据按 learner_id 隔离
+- 报告下载防目录穿越
+- 文件上传进行 MIME 和路径校验
+- Repository Guard 检查危险文件
+
+运行：
+
+```powershell
+cd backend
+uv run python scripts/repository_guard.py
+```
+
+---
+
+## 22. 等待完善的功能
+
+### 22.1 真实 RAGFlow 数据
+
+仍需：
+
+- 部署并锁定真实 RAGFlow 版本
+- 创建正式 Dataset
+- 导入有授权的中药资料
+- 验证文档解析
+- 验证 page_number、document_id、chunk_id
+- 评估检索准确率
+- 建立比赛 Replay
+
+### 22.2 真实模型验证
+
+仍需：
+
+- 配置 Qwen-VL API
+- 配置生成模型
+- 配置审核模型
+- 验证 JSON Schema 兼容性
+- 评估延迟与调用成本
+- 测试超时与降级
+
+### 22.3 本地视觉模型
+
+仍需：
+
+- 提供正式权重路径
+- 导入完整类别映射
+- 验证实际类别数量
+- 测试 Top-K
+- 测试 CPU/GPU 回退
+- 评估真实图片效果
+
+### 22.4 正式知识数据
+
+仍需完善：
+
+- 药材标准名
+- 英文训练类别
+- 常用别名
+- 性状特征
+- 质控要点
+- 炮制特征
+- 相似药材
+- 测试题
+- 引用来源
+- 版权状态
+
+### 22.5 前端
+
+仍需完成：
+
+- 登录
+- 首页
+- 学情画像
+- 初始测试
+- 图片识别
+- Agent 工作流展示
+- Evidence 与 Citation 展示
+- 学习资源
+- 审核中心
+- 学习路径
+- Trace 时间线
+- Word 报告下载
+- Dataset 与文档管理
+- Replay 管理
+- 数据大屏
+
+### 22.6 后续可选能力
+
+暂未纳入当前版本：
+
+- 摄像头实时识别
+- 视频流识别
+- 模型在线训练
+- 自动数据标注
+- 3D 药材展示
+- 课堂班级画像
+- 生产级监控与告警
+- 多租户
+- Celery 分布式队列
+- MinIO 对象存储
+- 正式医疗合规认证
+
+---
+
+## 23. 常见问题
+
+### Docker 命令不存在
+
+```powershell
+where.exe docker
+docker version
+docker compose version
+```
+
+典型路径：
+
+```text
+C:\Program Files\Docker\Docker\resources\bin
+```
+
+### API 容器启动但无法访问
 
 ```powershell
 docker compose ps
+docker compose logs api
 ```
 
-### 查看 API 日志
+### 数据库迁移失败
 
 ```powershell
-docker compose logs -f api
+docker compose exec api uv run alembic current
+docker compose exec api uv run alembic heads
+docker compose exec api uv run alembic upgrade head
 ```
 
-### 停止服务
+### Seed 重复执行报错
+
+Seed 应保持幂等：
 
 ```powershell
-docker compose down
+docker compose exec api uv run python scripts/seed_data.py
+docker compose exec api uv run python scripts/seed_data.py
 ```
 
-> 不要随意执行 `docker compose down -v`，该命令会删除 MySQL 与 Redis 数据卷。
+### 真实脚本输出 SKIPPED
+
+```powershell
+cd backend
+uv run python scripts/config_doctor.py --check all
+```
+
+### 本地模型不可用
+
+```powershell
+uv run python scripts/local_model_doctor.py --info
+```
+
+检查 `LOCAL_VISION_ENABLED`、`LOCAL_MODEL_PATH`、权重文件、Ultralytics 依赖和 CUDA 状态。
 
 ---
 
-## 12. 开发约定
+## 24. 开发规范
 
-### 分支建议
+提交前执行：
+
+```powershell
+cd backend
+uv run pytest -q
+uv run ruff format --check .
+uv run ruff check .
+uv run mypy app
+uv run python scripts/repository_guard.py
+```
+
+建议分支：
 
 ```text
-main        稳定版本
-develop     日常集成
-feature/*   功能开发
-fix/*       缺陷修复
-release/*   候选发布
+main
+develop
+feature/*
+fix/*
+docs/*
 ```
 
-### 模块原则
-
-- 不把业务代码堆入 `main.py`。
-- Router 只处理 HTTP 请求与响应。
-- Service 负责业务逻辑。
-- Repository 负责数据库访问。
-- Pydantic Schema 与 SQLAlchemy Model 分离。
-- AI、视觉和 RAG 必须通过 Provider 抽象调用。
-- 数据库迁移只新增 Alembic revision，不修改已经使用的历史迁移。
-- 所有新增接口必须包含类型注解、错误处理和测试。
-
-### 敏感文件
-
-以下内容禁止提交：
-
-```text
-backend/.env
-API Key
-.venv/
-*.pt
-*.pth
-*.onnx
-真实上传文件
-数据库数据卷
-药典全文
-生成报告
-```
+不要直接在 `main` 上开发。
 
 ---
 
-## 13. 下一阶段计划
+## 25. 文档索引
 
-### V0.2：完整业务后端框架
-
-- JWT 与 RBAC。
-- 多角色菜单权限。
-- 学习者画像、薄弱点与历史记录。
-- 药材、别名、性状、切面和相似药材结构化数据。
-- 资源生成与审核数据表。
-- 学习路径、答题与报告模块。
-- 后台模型、Agent、Prompt 与测试用例配置。
-- 证据链和指标接口完善。
-
-### V0.3：真实 AI 能力接入
-
-建议顺序：
-
-```text
-OpenAI 兼容模型客户端
-→ Qwen-VL 视觉识别
-→ 药材标准名与别名匹配
-→ RAGFlow 检索
-→ 真实资源生成
-→ 第二模型审核
-→ YOLO / ONNX Runtime
-→ 离线评测
-```
-
-### V1.0：比赛演示版本
-
-- Vue3 页面联调。
-- Agent 流程图和 SSE 实时状态。
-- 学习者画像雷达图。
-- 多模态识别页面。
-- 个性化讲义、指南和分阶测试题。
-- 内容审核纠偏。
-- 学习路径与报告。
-- 证据链与指标大屏。
-- 真实模式 / Mock 模式 / 回放模式。
+| 文档 | 路径 |
+|---|---|
+| 前端交接 | `docs/frontend-handoff/README.md` |
+| API Freeze | `docs/api-freeze-v0.4.md` |
+| 用户验收清单 | `docs/user-validation-checklist.md` |
+| 用户待执行命令 | `docs/pending-user-commands.md` |
+| RAGFlow 部署 | `docs/ragflow-deployment.md` |
+| Dataset 配置 | `docs/ragflow-dataset-setup.md` |
+| 文档规范 | `docs/ragflow-document-guidelines.md` |
+| 数据库结构 | `docs/database-schema.md` |
+| 工作流 | `docs/workflow.md` |
+| 枚举 | `docs/enums.md` |
+| 错误码 | `docs/error-codes.md` |
+| OpenAPI | `docs/openapi.json` |
 
 ---
 
-## 14. 当前技术债
+## 26. 免责声明
 
-- 当前后台任务执行器适合开发验证，不是生产级可靠队列。
-- Provider 仍为 Mock 实现。
-- LangGraph 状态结构和业务表还需随 V0.2 继续固化。
-- MySQL、Redis 当前端口暴露用于本地开发，生产部署需收紧网络。
-- SSE 需要继续验证断线、重连与历史事件补发。
-- 文件上传需要继续完成边界测试、权限和清理策略。
-- 指标与幻觉率必须使用明确测试口径，不能直接使用 Mock 数据作为真实结论。
+本项目当前定位为：
 
----
+- 中药学教学
+- 中药饮片识别训练
+- 药事质控实训
+- 课程设计
+- 比赛演示
+- AI 工程研究
 
-## 15. 项目状态
-
-```text
-当前版本：V0.1 Backend Skeleton
-运行模式：Mock
-主流程状态：已跑通
-数据库迁移：已启用
-Docker：FastAPI + MySQL + Redis 正常运行
-真实模型：未接入
-前端：待联调
-```
+本项目不用于替代执业医师、药师或质量检验人员的专业判断，不应直接用于临床诊断、处方、治疗决策或药品质量放行。
 
 ---
 
-## 16. 许可证
+## 27. License
 
-当前仓库用于比赛开发与团队协作，正式开源许可证尚未确定。后续公开发布前，应统一审查第三方依赖、模型权重、药典数据与训练数据的许可证和版权要求。
+请根据团队实际情况补充开源协议。
+
+若项目包含第三方模型、数据集、RAGFlow 或药典资料，请分别遵守其许可证、服务条款和版权要求。
