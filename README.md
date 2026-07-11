@@ -1,11 +1,10 @@
-[README(2).md](https://github.com/user-attachments/files/29927006/README.2.md)
 # 本草智策 HerbWise-AI
 
 > 面向中药智能鉴别、临床药事质控实训与个性化学习的 AI 教学平台
 
 本草智策（HerbWise-AI）是一套面向中药学教学、饮片识别、知识检索、学习路径生成与药事质控训练的智能化平台。项目通过本地视觉模型、Qwen-VL、多模型融合、RAGFlow 知识检索、LangGraph 工作流编排、结构化药材知识库与可追溯审核机制，将“识别—检索—生成—审核—学习路径—报告导出”连接为完整闭环。
 
-当前仓库已经完成后端 V0.4 交付版本，具备稳定的 Mock、Fake、Replay 演示能力，并已为真实 RAGFlow、真实大模型 API、本地视觉模型和前端联调预留完整接口。
+当前仓库以 `main` 和 tag `v0.4.0` 作为 V0.4 稳定基线，具备稳定的 Mock、Fake、Replay 演示能力，并已为真实 RAGFlow、真实大模型 API、本地视觉模型和 Soybean Admin 前端联调预留完整接口。当前仓库尚未包含正式 Soybean Admin 前端源码；Soybean Admin 前端待接入，后端 API 与交接资料已冻结。
 
 ---
 
@@ -46,12 +45,12 @@
 | Qwen-VL Provider | 已完成 | OpenAI 兼容异步调用 |
 | 双路识别融合 | 已完成 | 一致加分、冲突减分、人工复核 |
 | 资源生成与审核 | 已完成 | Mock/Real 两种模式 |
-| RAGFlow Provider | 已完成 | 支持真实接入、Mock、Hybrid、Replay |
+| RAGFlow Provider | 已完成 | 适配器与 Fake/Mock 已完成，真实版本兼容性待环境验证 |
 | Evidence 与 Citation | 已完成 | 支持来源、页码、章节、Chunk 和引用 |
 | LangGraph 工作流 | 已完成 | 完整 full_loop |
 | Trace 证据链 | 已完成 | 识别到报告的全过程追踪 |
 | Replay 离线演示 | 已完成 | 可捕获、验证和回放 |
-| Word 报告导出 | 已完成 | 学情报告、识别审核报告 |
+| Word 报告导出 | 已完成 | 已实现演示级 DOCX 导出，正式模板排版和完整专业内容待完善 |
 | OpenAPI 与前端交接 | 已完成 | API Freeze 与 Mock 数据 |
 | GitHub Actions CI | 已完成 | 自动运行测试、Ruff、mypy 等 |
 | Docker/PowerShell 运维脚本 | 已完成 | 启动、验证、备份、停止 |
@@ -59,7 +58,7 @@
 | 真实大模型验证 | 待配置 | 需要模型 API Key 和模型名 |
 | 本地模型真实权重验证 | 待配置 | 需要提供 `.pt` 或其他权重 |
 | 正式中药资料导入 | 待完善 | 需要授权文档与正式类别映射 |
-| Vue 前端 | 待完善 | 后端接口已冻结，可开始联调 |
+| Soybean Admin 前端 | 待接入 | 当前仓库未包含正式源码，后端 API 与交接资料已冻结 |
 | 摄像头实时视频识别 | 待开发 | 当前主要支持图片和任务式识别 |
 
 当前后端验证结果：
@@ -311,7 +310,7 @@ flowchart LR
 - Qwen-VL
 - Ultralytics
 - RAGFlow
-- docxtpl / python-docx
+- 依赖标准库 `zipfile`/XML 的轻量级演示 DOCX 导出
 - pytest
 - Ruff
 - mypy
@@ -410,10 +409,11 @@ git clone <你的仓库地址>
 cd HerbWise-AI
 ```
 
-当前稳定后端交付分支：
+当前稳定后端基线：
 
 ```powershell
-git switch feature/real-demo-delivery-v0.4
+git switch main
+git checkout v0.4.0
 ```
 
 ---
@@ -440,7 +440,7 @@ Copy-Item .env.demo.example .env.demo
 APP_ENV=development
 APP_TIMEZONE=Asia/Shanghai
 
-DATABASE_URL=mysql+aiomysql://herbwise:CHANGE_ME@db:3306/herbwise
+DATABASE_URL=mysql+asyncmy://herbwise:CHANGE_ME@db:3306/herbwise
 REDIS_URL=redis://redis:6379/0
 
 AI_MODE=mock
@@ -469,7 +469,7 @@ REAL_FULL_LOOP_TESTS_ENABLED=false
 ### 8.3 RAGFlow 配置
 
 ```env
-RAGFLOW_API_BASE_URL=http://localhost:9380
+RAGFLOW_BASE_URL=http://localhost:9380
 RAGFLOW_API_KEY=YOUR_RAGFLOW_API_KEY
 RAGFLOW_DATASET_ID=YOUR_DATASET_ID
 RAGFLOW_DATASET_NAME=HerbWise Knowledge

@@ -1,20 +1,13 @@
-# V0.2 database schema
+# V0.4.1 database schema
 
-迁移链：`5f85f9852819`（V0.1 初始表）→ `53e14d9e3d7c`（V0.2 业务表）→ `7a3e91b4c2f0`（V0.3A AI 记录）→ `9c2d7e5b104a`（识别结果药材外键）。禁止修改已经执行的初始迁移。
+Migration chain: `5f85f9852819` → `53e14d9e3d7c` → `7a3e91b4c2f0` → `9c2d7e5b104a` → `c4b8e2d1a650` → `d8f7a3c209b1` → `e4d1b8f0c692` → `b9f2c8d04a71` (head). Applied revisions are immutable; deploy with `alembic upgrade head` and inspect with `alembic current`.
 
-- 认证权限：`users`、`roles`、`permissions`、`menus`、`user_roles`、`role_permissions`、`role_menus`、`refresh_tokens`。
-- 画像题库：`learner_profiles`、`learner_dimensions`、`learner_weak_points`、`learner_history`、`initial_tests`、`test_questions`、`test_options`、`test_records`、`test_answers`。
-- 药材知识：`medicine_items`、`medicine_aliases`、`medicine_features`、`similar_medicines`、`knowledge_sources`、`knowledge_chunk_mappings`。
-- 资源审核：`resource_outputs`、`quiz_questions`、`prompt_templates`、`resource_reviews`。
-- 学习报告：`learning_answers`、`learning_tasks`、`learning_paths`、`path_reports`、`report_records`。
-- 后台指标：`model_configs`、`agent_configs`、`system_configs`、`test_cases`、`metric_records`。
-- 基础追踪：`task_records`、`task_events`、`agent_logs`、`trace_records`、`uploaded_files`。
-- V0.3A 模型追踪：`recognition_records`、`model_call_records`。二者只保存结构化摘要、token/耗时和错误代码，不保存密钥、完整 Prompt、Base64 或原始供应商响应。
+- Identity/RBAC: `users`, `roles`, `permissions`, `menus`, link tables and `refresh_tokens`.
+- Learner and assessment: `learner_profiles`, dimensions, weak points, history, initial tests/questions/options/records/answers.
+- Herbal knowledge: `medicine_items`, aliases, features, similar medicines, `knowledge_sources`, `knowledge_chunk_mappings`.
+- Task and trace: `uploaded_files`, `task_records`, `task_events`, `agent_logs`, `trace_records`, `recognition_records`, `model_call_records`.
+- RAG/document evidence: `knowledge_datasets`, `knowledge_documents`, `knowledge_sync_records`, `rag_retrieval_records`, `rag_evidence_records`, `rag_replay_records`. Evidence retains document/chunk/page/citation summaries; replay stores bounded cited snapshots.
+- Resource, review and learning: `resource_outputs`, `quiz_questions`, `prompt_templates`, `resource_reviews`, `learning_answers`, `learning_tasks`, `learning_paths`, `path_reports`, `report_records`.
+- Administration and metrics: `model_configs`, `agent_configs`, `system_configs`, `test_cases`, `metric_records`.
 
-联合唯一约束覆盖用户/角色关联、角色/权限关联、角色/菜单关联、学习者维度、题目选项、测试答案、相似药材和路径版本。JSON 字段在 MySQL 中使用原生 JSON；时间字段使用带时区的应用层 ISO 8601 表示。
-# V0.4 report persistence
-
-`report_records.output_path` stores only a safe relative DOCX path below `REPORT_OUTPUT_DIR`; the V0.4 Alembic head is `b9f2c8d04a71`.
-# V0.4 report persistence
-
-`report_records.output_path` stores only a safe relative DOCX path below `REPORT_OUTPUT_DIR`; the V0.4 Alembic head is `b9f2c8d04a71`.
+`report_records.output_path` is a safe relative DOCX path below `REPORT_OUTPUT_DIR`. JSON fields retain structured summaries, not credentials, raw prompts, image Base64, model weights or complete upstream responses.

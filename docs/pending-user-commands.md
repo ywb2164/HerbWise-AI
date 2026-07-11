@@ -21,7 +21,7 @@ uv run python scripts/smoke_degradation.py
 uv run python scripts/config_doctor.py --check all
 ```
 
-For real services, edit `backend/.env` with placeholders only: `RAGFLOW_API_BASE_URL=<URL>`, `RAGFLOW_API_KEY=<KEY>`, `RAGFLOW_DATASET_ID=<ID>`, `MODEL_API_BASE_URL=<URL>`, `MODEL_API_KEY=<KEY>`, and explicit test flags. Then run `..\infra\ragflow\start-ragflow.ps1`, `uv run python scripts/ragflow_doctor.py --all`, `uv run python scripts/ai_provider_doctor.py --all`, `uv run python scripts/local_model_doctor.py --info`, and `uv run python scripts/smoke_v03c_real.py`.
+For real services, edit `backend/.env` with placeholders only: `RAGFLOW_BASE_URL=<URL>`, `RAGFLOW_API_KEY=<KEY>`, `RAGFLOW_DATASET_ID=<ID>`, `MODEL_API_BASE_URL=<URL>`, `MODEL_API_KEY=<KEY>`, and explicit test flags. Then run `..\infra\ragflow\start-ragflow.ps1`, `uv run python scripts/ragflow_doctor.py --all`, `uv run python scripts/ai_provider_doctor.py --all`, `uv run python scripts/local_model_doctor.py --info`, and `uv run python scripts/smoke_v03c_real.py`.
 
 After an authorised upload: `uv run python scripts/register_knowledge_document.py <uploaded_file_id> <dataset_code>`, `uv run python scripts/sync_knowledge_document.py <document_code>`, `uv run python scripts/check_knowledge_document.py <document_code>`, `uv run python scripts/verify_rag_citations.py 黄芪 性状`.
 

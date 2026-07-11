@@ -90,10 +90,7 @@ class RAGFlowProvider(RAGProvider):
                     error = ProviderUnavailableError(
                         "RAGFlow network request failed", error_code="network_error"
                     )
-                if error is None or error.error_code in {
-                    "authentication_error",
-                    "rate_limit_error",
-                }:
+                if error is None or error.error_code == "authentication_error":
                     break
                 if attempt + 1 < attempts:
                     await asyncio.sleep(0.2)

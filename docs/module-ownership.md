@@ -1,4 +1,4 @@
-# Module ownership
+# V0.4.1 module ownership
 
 | Module | Owns | Main API prefix |
 | --- | --- | --- |
@@ -14,4 +14,4 @@
 Router 只负责 HTTP 校验和响应；Service 负责事务边界与业务规则；SQLAlchemy model 负责持久化；Provider 抽象负责外部 AI/RAG/视觉能力。跨模块调用通过 Service 和可序列化 ID，不在 WorkflowState 中保存 ORM 对象。
 # V0.4 ownership
 
-`learning_paths` owns report records and controlled DOCX export; `scripts` owns redacted diagnostics and smoke commands; `infra/ragflow` owns optional RAGFlow bootstrap wrappers; frontend consumes frozen API contracts only.
+`learning_paths` owns report records and controlled DOCX export; `scripts` owns redacted diagnostics and smoke commands; `infra/ragflow` owns optional RAGFlow bootstrap wrappers; Soybean Admin frontend consumes frozen API contracts only. Its official source is pending integration and is not present in this repository.

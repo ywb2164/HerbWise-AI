@@ -1,7 +1,7 @@
 from functools import lru_cache
 from pathlib import Path
 
-from pydantic import Field, SecretStr
+from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -9,7 +9,10 @@ class Settings(BaseSettings):
     """Runtime configuration loaded from environment variables and `.env`."""
 
     model_config = SettingsConfigDict(
-        env_file=".env", env_file_encoding="utf-8", extra="ignore"
+        env_file=".env",
+        env_file_encoding="utf-8",
+        extra="ignore",
+        populate_by_name=True,
     )
 
     app_name: str = "HerbWise AI API"
@@ -52,7 +55,10 @@ class Settings(BaseSettings):
     text_model: str = ""
     vision_model: str = ""
     review_model: str = ""
-    ragflow_base_url: str = ""
+    ragflow_base_url: str = Field(
+        default="",
+        validation_alias=AliasChoices("RAGFLOW_BASE_URL", "RAGFLOW_API_BASE_URL"),
+    )
     ragflow_api_key: SecretStr = SecretStr("")
     ragflow_dataset_id: str = ""
     ragflow_dataset_name: str = ""

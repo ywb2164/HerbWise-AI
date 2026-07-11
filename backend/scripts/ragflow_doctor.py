@@ -62,7 +62,7 @@ async def run(selected: set[str]) -> list[Check]:
             Check(
                 "ragflow",
                 "skipped",
-                "RAGFLOW_API_BASE_URL, RAGFLOW_API_KEY, or RAGFLOW_DATASET_ID is not configured",
+                "RAGFLOW_BASE_URL, RAGFLOW_API_KEY, or RAGFLOW_DATASET_ID is not configured",
             )
         ]
     provider = get_rag_provider()
