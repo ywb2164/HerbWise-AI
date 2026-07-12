@@ -1,10 +1,15 @@
+import json
 from datetime import UTC, datetime
+from pathlib import Path
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 
 import pytest
 from fastapi.testclient import TestClient
 
+from app.core.responses import success
 from app.main import create_app
+from app.integrations.runtime_model import runtime_model_registry
 from app.modules.auth.service import get_current_user
 from app.modules.resources.models import UploadedFile
 from app.modules.system import router as system_router
@@ -17,7 +22,10 @@ def client() -> TestClient:
 
     async def authenticated_user() -> object:
         return SimpleNamespace(
-            roles=[SimpleNamespace(code="teacher")], is_superuser=False, learner_id=None
+            id=99,
+            roles=[SimpleNamespace(code="teacher")],
+            is_superuser=False,
+            learner_id=None,
         )
 
     app.dependency_overrides[get_current_user] = authenticated_user
@@ -31,6 +39,78 @@ def test_business_endpoint_requires_authentication() -> None:
 
     assert response.status_code == 401
     assert response.json()["code"] == 1401
+
+
+def test_user_model_settings_enable_cloud_capabilities(client: TestClient) -> None:
+    try:
+        saved = client.put(
+            "/api/model-settings",
+            json={
+                "protocol": "openai",
+                "base_url": "https://vision.example.test/v1",
+                "model_id": "vision-test-model",
+                "api_key": "vision-test-key",
+            },
+        )
+        capabilities = client.get("/api/capabilities")
+
+        assert saved.status_code == 200
+        assert capabilities.status_code == 200
+        assert capabilities.json()["qwen_configured"] is True
+        assert capabilities.json()["generation_model_configured"] is True
+    finally:
+        runtime_model_registry.clear(99)
+
+
+def test_success_response_serializes_nested_datetimes() -> None:
+    now = datetime(2026, 7, 12, 8, 30, tzinfo=UTC)
+
+    response = success(
+        {
+            "created_at": now,
+            "items": [{"updated_at": now}],
+        }
+    )
+    payload = json.loads(response.body)
+
+    assert payload["code"] == 0
+    assert payload["data"]["created_at"] == "2026-07-12T08:30:00Z"
+    assert payload["data"]["items"][0]["updated_at"] == "2026-07-12T08:30:00Z"
+
+
+@pytest.mark.asyncio
+async def test_learning_word_export_refreshes_committed_report(
+    monkeypatch: pytest.MonkeyPatch, tmp_path: Path
+) -> None:
+    import app.modules.learning_paths.service as learning_service
+
+    report = SimpleNamespace(
+        report_id="report_test",
+        content_json={"profile": {}, "path": {}, "weak_points": []},
+        output_path=None,
+        title="Mock learning report",
+    )
+    session = SimpleNamespace(commit=AsyncMock(), refresh=AsyncMock())
+
+    async def fake_generate_learning_report(_session, _learner_id: str):
+        return report
+
+    monkeypatch.setattr(
+        learning_service, "generate_learning_report", fake_generate_learning_report
+    )
+    monkeypatch.setattr(
+        learning_service,
+        "_report_path",
+        lambda _report_id: (tmp_path / "report_test.docx", "report_test.docx"),
+    )
+    monkeypatch.setattr(learning_service, "write_docx", lambda *_args: None)
+
+    result = await learning_service.export_learning_word(session, "stu_001")
+
+    assert result.output_path == "report_test.docx"
+    assert result.title == "Learning report (Word)"
+    session.commit.assert_awaited_once()
+    session.refresh.assert_awaited_once_with(report)
 
 
 def test_ready_reports_dependencies(

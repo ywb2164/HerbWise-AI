@@ -4,7 +4,7 @@
 
 本草智策（HerbWise-AI）是一套面向中药学教学、饮片识别、知识检索、学习路径生成与药事质控训练的智能化平台。项目通过本地视觉模型、Qwen-VL、多模型融合、RAGFlow 知识检索、LangGraph 工作流编排、结构化药材知识库与可追溯审核机制，将“识别—检索—生成—审核—学习路径—报告导出”连接为完整闭环。
 
-当前仓库以 `main` 和 tag `v0.4.0` 作为 V0.4 稳定基线，具备稳定的 Mock、Fake、Replay 演示能力，并已为真实 RAGFlow、真实大模型 API、本地视觉模型和 Soybean Admin 前端联调预留完整接口。当前仓库尚未包含正式 Soybean Admin 前端源码；Soybean Admin 前端待接入，后端 API 与交接资料已冻结。
+当前版本在 V0.4 后端基线上加入了 Vue 学习者端、Soybean Admin 管理端、统一登录、本地 Ultralytics YOLO 识别和云端多模态视觉复核。后端仍保留 Mock、Fake、Replay 演示能力，真实模型凭据通过用户设置或本地环境变量配置，不进入 Git 仓库。
 
 ---
 
@@ -12,59 +12,50 @@
 
 本项目主要解决以下问题：
 
-1. **中药饮片识别训练**  
-   支持本地视觉模型、Qwen-VL 或双路并行识别，并对识别结果进行名称标准化和确定性融合。
-
-2. **药材知识检索与证据追溯**  
-   结合 MySQL 中的结构化药材知识与 RAGFlow 非结构化文档检索，保留文档、章节、页码、Chunk 和引用信息。
-
-3. **个性化学习路径**  
-   根据学习者画像、六维能力、历史任务和薄弱点，生成个性化学习资源与学习路径。
-
-4. **资源生成与质量审核**  
-   支持讲义、指南、题目、对比卡片、复习报告等资源生成，并通过独立审核模型和确定性规则进行复核。
-
-5. **任务全过程可解释**  
-   保存识别、融合、检索、证据、生成、审核、学习路径和模型调用信息，形成完整 Trace。
-
-6. **比赛与离线演示**  
+1. **中药饮片识别训练**支持本地视觉模型、Qwen-VL 或双路并行识别，并对识别结果进行名称标准化和确定性融合。
+2. **药材知识检索与证据追溯**结合 MySQL 中的结构化药材知识与 RAGFlow 非结构化文档检索，保留文档、章节、页码、Chunk 和引用信息。
+3. **个性化学习路径**根据学习者画像、六维能力、历史任务和薄弱点，生成个性化学习资源与学习路径。
+4. **资源生成与质量审核**支持讲义、指南、题目、对比卡片、复习报告等资源生成，并通过独立审核模型和确定性规则进行复核。
+5. **任务全过程可解释**保存识别、融合、检索、证据、生成、审核、学习路径和模型调用信息，形成完整 Trace。
+6. **比赛与离线演示**
    支持将真实成功任务保存为 Replay，在无网络、无模型 API、无 RAGFlow 的环境中离线回放完整任务流程。
 
 ---
 
 ## 2. 当前项目状态
 
-| 模块 | 状态 | 说明 |
-|---|---|---|
-| FastAPI 后端 | 已完成 | 单体分模块架构 |
-| JWT 认证与 RBAC | 已完成 | 支持管理员、教师、学生等角色 |
-| learner_id 数据隔离 | 已完成 | 学生跨用户访问返回 403 |
-| 学习者画像 | 已完成 | 支持六维能力与初始测试 |
-| 药材结构化知识 | 已完成 | 药材、别名、性状、相似药材等 |
-| 本地视觉模型 Provider | 已完成 | 支持 Ultralytics，惰性加载 |
-| Qwen-VL Provider | 已完成 | OpenAI 兼容异步调用 |
-| 双路识别融合 | 已完成 | 一致加分、冲突减分、人工复核 |
-| 资源生成与审核 | 已完成 | Mock/Real 两种模式 |
-| RAGFlow Provider | 已完成 | 适配器与 Fake/Mock 已完成，真实版本兼容性待环境验证 |
-| Evidence 与 Citation | 已完成 | 支持来源、页码、章节、Chunk 和引用 |
-| LangGraph 工作流 | 已完成 | 完整 full_loop |
-| Trace 证据链 | 已完成 | 识别到报告的全过程追踪 |
-| Replay 离线演示 | 已完成 | 可捕获、验证和回放 |
-| Word 报告导出 | 已完成 | 已实现演示级 DOCX 导出，正式模板排版和完整专业内容待完善 |
-| OpenAPI 与前端交接 | 已完成 | API Freeze 与 Mock 数据 |
-| GitHub Actions CI | 已完成 | 自动运行测试、Ruff、mypy 等 |
-| Docker/PowerShell 运维脚本 | 已完成 | 启动、验证、备份、停止 |
-| 真实 RAGFlow 验证 | 待配置 | 需要 API 地址、Key、Dataset ID |
-| 真实大模型验证 | 待配置 | 需要模型 API Key 和模型名 |
-| 本地模型真实权重验证 | 待配置 | 需要提供 `.pt` 或其他权重 |
-| 正式中药资料导入 | 待完善 | 需要授权文档与正式类别映射 |
-| Soybean Admin 前端 | 待接入 | 当前仓库未包含正式源码，后端 API 与交接资料已冻结 |
-| 摄像头实时视频识别 | 待开发 | 当前主要支持图片和任务式识别 |
+| 模块                       | 状态   | 说明                                                     |
+| -------------------------- | ------ | -------------------------------------------------------- |
+| FastAPI 后端               | 已完成 | 单体分模块架构                                           |
+| JWT 认证与 RBAC            | 已完成 | 支持管理员、教师、学生等角色                             |
+| learner_id 数据隔离        | 已完成 | 学生跨用户访问返回 403                                   |
+| 学习者画像                 | 已完成 | 支持六维能力与初始测试                                   |
+| 药材结构化知识             | 已完成 | 药材、别名、性状、相似药材等                             |
+| 本地视觉模型 Provider      | 已完成 | 支持 Ultralytics，惰性加载                               |
+| Qwen-VL Provider           | 已完成 | OpenAI 兼容异步调用                                      |
+| 双路识别融合               | 已完成 | 一致加分、冲突减分、人工复核                             |
+| 资源生成与审核             | 已完成 | Mock/Real 两种模式                                       |
+| RAGFlow Provider           | 已完成 | 适配器与 Fake/Mock 已完成，真实版本兼容性待环境验证      |
+| Evidence 与 Citation       | 已完成 | 支持来源、页码、章节、Chunk 和引用                       |
+| LangGraph 工作流           | 已完成 | 完整 full_loop                                           |
+| Trace 证据链               | 已完成 | 识别到报告的全过程追踪                                   |
+| Replay 离线演示            | 已完成 | 可捕获、验证和回放                                       |
+| Word 报告导出              | 已完成 | 已实现演示级 DOCX 导出，正式模板排版和完整专业内容待完善 |
+| OpenAPI 与前端交接         | 已完成 | API Freeze 与 Mock 数据                                  |
+| GitHub Actions CI          | 已完成 | 自动运行测试、Ruff、mypy 等                              |
+| Docker/PowerShell 运维脚本 | 已完成 | 启动、验证、备份、停止                                   |
+| Vue 学习者端               | 已完成 | 画像、诊断、药材辨识、学习资源与证据链                   |
+| Soybean Admin 管理端       | 已完成 | 统一登录后免二次认证进入管理端                           |
+| 真实 RAGFlow 验证          | 待配置 | 需要 API 地址、Key、Dataset ID                           |
+| 真实大模型验证             | 待配置 | 需要模型 API Key 和模型名                                |
+| 本地模型接入               | 已完成 | 权重需本地放入 `data/models/`，类别映射已包含            |
+| 正式中药资料导入           | 待完善 | 需要授权文档与正式类别映射                               |
+| 摄像头实时视频识别         | 待开发 | 当前主要支持图片和任务式识别                             |
 
 当前后端验证结果：
 
 ```text
-pytest：76 passed
+pytest：89 passed，1 skipped
 Ruff format：通过
 Ruff check：通过
 mypy：通过
@@ -103,12 +94,12 @@ Alembic：单一 head
 
 支持四种视觉模式：
 
-| 模式 | 说明 |
-|---|---|
-| `mock` | 使用固定 Mock 结果，适合开发与演示 |
-| `qwen` | 使用 Qwen-VL 进行图片识别 |
-| `local` | 使用本地 Ultralytics 模型 |
-| `hybrid` | 本地模型与 Qwen-VL 并行识别并融合 |
+| 模式       | 说明                               |
+| ---------- | ---------------------------------- |
+| `mock`   | 使用固定 Mock 结果，适合开发与演示 |
+| `qwen`   | 使用 Qwen-VL 进行图片识别          |
+| `local`  | 使用本地 Ultralytics 模型          |
+| `hybrid` | 本地模型与 Qwen-VL 并行识别并融合  |
 
 统一输出包括：
 
@@ -152,12 +143,12 @@ Alembic：单一 head
 
 支持四种 RAG 模式：
 
-| 模式 | 说明 |
-|---|---|
-| `mock` | 使用 Mock Evidence |
-| `ragflow` | 调用真实 RAGFlow |
-| `hybrid` | MySQL 结构化知识 + RAGFlow |
-| `replay` | 使用已保存的检索快照 |
+| 模式        | 说明                       |
+| ----------- | -------------------------- |
+| `mock`    | 使用 Mock Evidence         |
+| `ragflow` | 调用真实 RAGFlow           |
+| `hybrid`  | MySQL 结构化知识 + RAGFlow |
+| `replay`  | 使用已保存的检索快照       |
 
 检索流程：
 
@@ -323,6 +314,8 @@ flowchart LR
 
 ```text
 HerbWise-AI/
+├─ frontend/                         # Vue 3 学习者端
+├─ admin-frontend/                   # Soybean Admin 管理端
 ├─ backend/
 │  ├─ app/                         # FastAPI 后端
 │  │  ├─ core/                     # 配置、异常、响应、权限
@@ -336,6 +329,8 @@ HerbWise-AI/
 │  ├─ .env.example
 │  ├─ pyproject.toml
 │  └─ uv.lock
+├─ data/
+│  └─ models/                        # 类别映射与本地模型放置说明
 ├─ docs/
 │  ├─ frontend-handoff/            # 前端交接包
 │  ├─ mock/                        # 接口 Mock
@@ -343,7 +338,7 @@ HerbWise-AI/
 │  ├─ pending-user-commands.md
 │  └─ user-validation-checklist.md
 ├─ infra/ragflow/                  # RAGFlow 辅助脚本与说明
-├─ scripts/                        # 根目录 PowerShell 运维脚本
+├─ scripts/                          # 后端、双前端及运维脚本
 ├─ compose.yaml
 ├─ compose.dev.yaml
 ├─ compose.demo.yaml
@@ -364,6 +359,9 @@ HerbWise-AI/
 - Docker Compose v2
 - Git
 - PowerShell 5.1 或 PowerShell 7
+- Node.js 20.19 或更高版本
+- npm 11 或兼容版本
+- pnpm 10.5 或更高版本
 
 建议 Docker Desktop 至少分配：
 
@@ -485,13 +483,19 @@ REAL_RAG_TESTS_ENABLED=true
 ```env
 LOCAL_VISION_ENABLED=true
 LOCAL_MODEL_TYPE=ultralytics
-LOCAL_MODEL_PATH=D:/models/herbwise/best.pt
+LOCAL_MODEL_PATH=/data/models/herbwise-yolo26s.pt
 LOCAL_MODEL_DEVICE=auto
-LOCAL_MODEL_IMAGE_SIZE=640
-LOCAL_MODEL_CONFIDENCE_THRESHOLD=0.50
+LOCAL_MODEL_IMAGE_SIZE=960
+LOCAL_MODEL_CONFIDENCE_THRESHOLD=0.10
 ```
 
-模型权重不应提交 Git。
+模型权重不进入 Git。请将修正类别名称元数据后的 45 类模型放在 `data/models/herbwise-yolo26s.pt`，Docker Compose 会将其挂载为 `/data/models/herbwise-yolo26s.pt`。当前已验证权重的 SHA256：
+
+```text
+BCC439F4D43A38A7445265779F328697FE197A8627C6E861042A969786498EBA
+```
+
+用户提供的原始 `data/models/yolo26s.pt` 同样只保留在本地，避免在 Git 历史中保存大型二进制权重。
 
 ### 8.5 Replay 演示配置
 
@@ -506,62 +510,86 @@ DEMO_REPLAY_CODE=competition-demo-v1
 
 ## 9. 快速启动
 
-### 9.1 一键启动开发环境
+### 9.1 启动完整开发环境
+
+在仓库根目录依次启动后端和双前端：
 
 ```powershell
 Set-Location D:\HerbWise-AI
 .\scripts\start-dev.ps1
+.\scripts\start-frontend.ps1
 ```
 
-该脚本会执行：
+启动完成后的地址：
 
-1. 检查 Docker
-2. 启动 API、MySQL、Redis
-3. 执行 Alembic 迁移
-4. 执行 Seed
-5. 输出接口和 Swagger 地址
+```text
+学习者端: http://localhost:5173
+管理端:   http://localhost:9528
+Swagger:  http://localhost:8000/docs
+Health:   http://localhost:8000/health
+```
 
-### 9.2 一键启动演示环境
+### 9.2 单独启动后端
+
+```powershell
+.\scripts\start-dev.ps1
+```
+
+该脚本会检查 Docker，启动 FastAPI、MySQL 和 Redis，并执行 Alembic 迁移及 Seed。停止后端容器：
+
+```powershell
+.\scripts\stop-services.ps1
+```
+
+### 9.3 单独启动双前端
+
+```powershell
+.\scripts\start-frontend.ps1
+```
+
+脚本会执行以下操作：
+
+1. 检查 Node.js、npm 和 pnpm。
+2. 首次运行时安装缺失的前端依赖。
+3. 后台启动 Vue 学习者端和 Soybean Admin 管理端。
+4. 等待两个 HTTP 地址可访问后再返回成功。
+5. 将运行日志写入 `.runtime/frontend/`。
+
+可选参数：
+
+```powershell
+# 启动完成后打开学习者端
+.\scripts\start-frontend.ps1 -OpenBrowser
+
+# 依赖已安装时跳过安装检查，并使用自定义端口
+.\scripts\start-frontend.ps1 -SkipInstall -UserPort 5174 -AdminPort 9529
+```
+
+停止双前端：
+
+```powershell
+.\scripts\stop-frontend.ps1
+```
+
+### 9.4 一键启动演示环境
 
 ```powershell
 .\scripts\start-demo.ps1
 ```
 
-默认使用安全的 Mock/Replay 模式，不会调用真实 API。
-
-启用真实环境检查：
+默认使用安全的 Mock/Replay 模式，不会调用真实 API。启用真实环境检查：
 
 ```powershell
 .\scripts\start-demo.ps1 -Real
 ```
 
-### 9.3 手动启动
+### 9.5 手动启动后端
 
 ```powershell
 docker compose up -d --build
 docker compose ps
-```
-
-执行迁移：
-
-```powershell
 docker compose exec api uv run alembic upgrade head
-docker compose exec api uv run alembic current
-```
-
-初始化数据：
-
-```powershell
 docker compose exec api uv run python scripts/seed_data.py
-```
-
-启动完成后，以 `docker compose ps` 显示的端口为准。常见地址通常为：
-
-```text
-Swagger: http://localhost:8000/docs
-OpenAPI: http://localhost:8000/openapi.json
-Health:  http://localhost:8000/health
-Ready:   http://localhost:8000/ready
 ```
 
 ---
@@ -942,23 +970,18 @@ uv run python scripts/repository_guard.py
 
 ### 22.5 前端
 
-仍需完成：
+当前版本已提供：
 
-- 登录
-- 首页
-- 学情画像
-- 初始测试
-- 图片识别
-- Agent 工作流展示
-- Evidence 与 Citation 展示
-- 学习资源
-- 审核中心
-- 学习路径
-- Trace 时间线
-- Word 报告下载
-- Dataset 与文档管理
-- Replay 管理
-- 数据大屏
+- 用户/管理员统一登录与身份选择
+- 学习画像采集、初始诊断与学习目标管理
+- 图片上传、摄像头锁帧和虚拟实训入口
+- 本地 YOLO 候选、检测框和置信度展示
+- 云端多模态 Top-3 复核与双路结果展示
+- 药典依据、个性化资源、学习路径和证据链页面
+- Soybean Admin 数据大屏、任务、模型调用及系统管理页面
+- 管理端退出后返回统一登录页
+
+生产部署前仍需补充浏览器端端到端测试、正式域名配置和静态资源发布流程。
 
 ### 22.6 后续可选能力
 
@@ -1064,20 +1087,20 @@ docs/*
 
 ## 25. 文档索引
 
-| 文档 | 路径 |
-|---|---|
-| 前端交接 | `docs/frontend-handoff/README.md` |
-| API Freeze | `docs/api-freeze-v0.4.md` |
-| 用户验收清单 | `docs/user-validation-checklist.md` |
-| 用户待执行命令 | `docs/pending-user-commands.md` |
-| RAGFlow 部署 | `docs/ragflow-deployment.md` |
-| Dataset 配置 | `docs/ragflow-dataset-setup.md` |
-| 文档规范 | `docs/ragflow-document-guidelines.md` |
-| 数据库结构 | `docs/database-schema.md` |
-| 工作流 | `docs/workflow.md` |
-| 枚举 | `docs/enums.md` |
-| 错误码 | `docs/error-codes.md` |
-| OpenAPI | `docs/openapi.json` |
+| 文档           | 路径                                    |
+| -------------- | --------------------------------------- |
+| 前端交接       | `docs/frontend-handoff/README.md`     |
+| API Freeze     | `docs/api-freeze-v0.4.md`             |
+| 用户验收清单   | `docs/user-validation-checklist.md`   |
+| 用户待执行命令 | `docs/pending-user-commands.md`       |
+| RAGFlow 部署   | `docs/ragflow-deployment.md`          |
+| Dataset 配置   | `docs/ragflow-dataset-setup.md`       |
+| 文档规范       | `docs/ragflow-document-guidelines.md` |
+| 数据库结构     | `docs/database-schema.md`             |
+| 工作流         | `docs/workflow.md`                    |
+| 枚举           | `docs/enums.md`                       |
+| 错误码         | `docs/error-codes.md`                 |
+| OpenAPI        | `docs/openapi.json`                   |
 
 ---
 

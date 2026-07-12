@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import shutil
 import subprocess
 import sys
 from pathlib import Path
@@ -29,7 +30,7 @@ def test_config_doctor_does_not_render_secret(monkeypatch: pytest.MonkeyPatch) -
     monkeypatch.setattr(
         config_doctor,
         "get_settings",
-        lambda: Settings(model_api_key="private-token-value"),
+        lambda: Settings(model_api_key="example-private-token"),
     )
     monkeypatch.setattr(config_doctor, "writable", lambda _path: (True, "writable"))
     result = config_doctor.checks("ai")
@@ -141,6 +142,8 @@ def test_v04_smoke_scripts_are_safe(script: str) -> None:
 
 
 def test_repository_guard_passes_for_current_tree() -> None:
+    if shutil.which("git") is None:
+        pytest.skip("repository guard requires the Git executable")
     completed = subprocess.run(
         [sys.executable, "scripts/repository_guard.py"],
         cwd=Path(__file__).parents[1],

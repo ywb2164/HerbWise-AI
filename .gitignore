@@ -10,14 +10,22 @@ __pycache__/
 # Secrets and local runtime data
 backend/.env
 .env
+!admin-frontend/.env
 data/uploads/
 data/reports/
-data/models/
+data/models/*
+!data/models/README.md
+!data/models/*.csv
 data/backups/
+backend/data/uploads/
+backend/data/reports/
+backend/data/models/
+backend/data/backups/
 infra/ragflow/runtime/
 .env.demo
 
 # Editor and OS files
+.runtime/
 .vscode/
 .idea/
 .DS_Store
