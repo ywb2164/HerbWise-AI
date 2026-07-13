@@ -8,10 +8,10 @@ from app.core.config import Settings
 from app.core.exceptions import AppException, NotFoundException
 from app.core.responses import ApiResponse, success
 from app.modules.auth.models import Menu, Role, User
-from app.modules.auth.service import hash_password, require_role
+from app.modules.auth.service import get_current_user, hash_password, require_role
 from app.modules.resources.business_models import PromptTemplate
 from app.modules.system.models import AgentConfig, ModelConfig, SystemConfig, TestCase
-from app.modules.tasks.models import AgentLog
+from app.modules.tasks.models import AgentLog, TaskRecord
 from app.integrations.contracts import ModelCallContext
 from app.integrations.openai_compatible import OpenAICompatibleLLMProvider
 
@@ -76,13 +76,14 @@ async def _page(
     page: int,
     page_size: int,
     hidden: set[str] | None = None,
+    descending: bool = False,
 ) -> dict:
     total = await session.scalar(select(func.count()).select_from(model)) or 0
     records = list(
         (
             await session.scalars(
                 select(model)
-                .order_by(model.id)
+                .order_by(model.id.desc() if descending else model.id)
                 .offset((page - 1) * page_size)
                 .limit(page_size)
             )
@@ -116,7 +117,26 @@ async def users(
     page_size: int = Query(20, ge=1, le=100),
     session: AsyncSession = Depends(get_session),
 ):
-    return success(await _page(session, User, page, page_size, {"password_hash"}))
+    total = await session.scalar(select(func.count()).select_from(User)) or 0
+    records = list(
+        (
+            await session.scalars(
+                select(User)
+                .order_by(User.id)
+                .offset((page - 1) * page_size)
+                .limit(page_size)
+            )
+        ).all()
+    )
+    return success(
+        {
+            "items": [_user_data(user) for user in records],
+            "page": page,
+            "page_size": page_size,
+            "total": total,
+            "pages": (total + page_size - 1) // page_size,
+        }
+    )
 
 
 def _user_data(user: User) -> dict:
@@ -207,7 +227,13 @@ async def update_user(
     summary="Delete user",
     description="Delete a user and cascading role/token associations.",
 )
-async def delete_user(user_id: int, session: AsyncSession = Depends(get_session)):
+async def delete_user(
+    user_id: int,
+    session: AsyncSession = Depends(get_session),
+    current_user: User = Depends(get_current_user),
+):
+    if user_id == current_user.id:
+        raise AdminConflictException("The current administrator cannot be deleted")
     user = await session.get(User, user_id)
     if user is None:
         raise NotFoundException("User not found")
@@ -279,7 +305,10 @@ async def test_model_config(
         model_max_retries=config.max_retries,
     )
     provider = OpenAICompatibleLLMProvider(
-        config.model_name, settings, config.credential_reference
+        config.model_name,
+        settings,
+        config.credential_reference,
+        protocol="anthropic" if config.provider.startswith("anthropic") else "openai",
     )
     started = __import__("time").perf_counter()
     result = await provider.complete_structured(
@@ -356,6 +385,34 @@ async def test_cases(
     session: AsyncSession = Depends(get_session),
 ):
     return success(await _page(session, TestCase, page, page_size))
+
+
+@router.get(
+    "/task-records",
+    response_model=ApiResponse,
+    summary="List agent tasks",
+    description="List persisted agent task execution records.",
+)
+async def task_records(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    session: AsyncSession = Depends(get_session),
+):
+    return success(await _page(session, TaskRecord, page, page_size, descending=True))
+
+
+@router.get(
+    "/agent-logs",
+    response_model=ApiResponse,
+    summary="List agent logs",
+    description="List redacted per-node model and agent execution logs.",
+)
+async def agent_logs(
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    session: AsyncSession = Depends(get_session),
+):
+    return success(await _page(session, AgentLog, page, page_size, descending=True))
 
 
 @router.post(

@@ -7,7 +7,7 @@ from typing import Any
 
 from pydantic import BaseModel, Field
 
-from app.core.config import get_settings
+from app.core.config import Settings, get_settings
 from app.integrations.contracts import (
     ModelCallContext,
     RecognitionCandidate,
@@ -19,6 +19,7 @@ from app.integrations.openai_compatible import (
     OpenAICompatibleLLMProvider,
     ProviderUnavailableError,
 )
+from app.integrations.runtime_model import runtime_model_registry
 
 
 class QwenVisionPayload(BaseModel):
@@ -28,6 +29,40 @@ class QwenVisionPayload(BaseModel):
     quality_control_evidence: list[RecognitionEvidence] = Field(default_factory=list)
     traceability_advice: list[str] = Field(default_factory=list)
     uncertainty: str | None = None
+
+
+def _resolve_vision_llm(
+    context: ModelCallContext | None,
+) -> tuple[str, str, OpenAICompatibleLLMProvider]:
+    settings = get_settings()
+    runtime = runtime_model_registry.get_for_learner(
+        context.learner_id if context else None
+    )
+    if runtime is not None:
+        runtime_settings = Settings(
+            model_api_base_url=runtime.base_url,
+            model_connect_timeout_seconds=settings.model_connect_timeout_seconds,
+            model_read_timeout_seconds=max(settings.model_read_timeout_seconds, 120.0),
+            model_max_retries=settings.model_max_retries,
+        )
+        return (
+            runtime.model_name,
+            "cloud_vision",
+            OpenAICompatibleLLMProvider(
+                runtime.model_name,
+                runtime_settings,
+                api_key=runtime.api_key,
+                protocol=runtime.protocol,
+            ),
+        )
+
+    model = settings.qwen_vl_model or settings.vision_model
+    if not model:
+        raise ProviderUnavailableError(
+            "Cloud vision model is not configured",
+            error_code="configuration_error",
+        )
+    return model, "qwen", OpenAICompatibleLLMProvider(model)
 
 
 class QwenVisionProvider(VisionProvider):
@@ -63,12 +98,7 @@ class QwenVisionProvider(VisionProvider):
             "返回最可能候选和 Top-3、性状证据、质控证据、溯源建议、不确定性。\n目录："
             + str(catalog)
         )
-        model = settings.qwen_vl_model or settings.vision_model
-        if not model:
-            raise ProviderUnavailableError(
-                "Qwen vision model is not configured", error_code="configuration_error"
-            )
-        llm = OpenAICompatibleLLMProvider(model)
+        model, provider_name, llm = _resolve_vision_llm(context)
         messages: list[dict[str, Any]] = [
             {"role": "system", "content": "Return only valid JSON."},
             {
@@ -88,7 +118,7 @@ class QwenVisionProvider(VisionProvider):
             context or ModelCallContext(agent_code="vision_qwen"),
         )
         return VisionRecognitionResult(
-            provider=self.provider_name,
+            provider=provider_name,
             model_name=model,
             file_id=context.file_id if context else None,
             **parsed.model_dump(),

@@ -5,7 +5,7 @@ import json
 from typing import Any
 
 import httpx
-from pydantic import BaseModel, ValidationError
+from pydantic import BaseModel, SecretStr, ValidationError
 
 from app.core.config import Settings, get_settings
 from app.core.exceptions import AppException
@@ -58,10 +58,17 @@ class OpenAICompatibleLLMProvider(LLMProvider):
         model_name: str,
         settings: Settings | None = None,
         credential_reference: str | None = None,
+        *,
+        api_key: SecretStr | None = None,
+        protocol: str = "openai",
     ) -> None:
+        if protocol not in {"openai", "anthropic"}:
+            raise ValueError("Unsupported model protocol")
         self.settings = settings or get_settings()
         self.model_name = model_name
         self.credential_reference = credential_reference
+        self.api_key = api_key
+        self.protocol = protocol
 
     def _credentials(self) -> tuple[str, str]:
         base_url = self.settings.model_api_base_url or self.settings.llm_base_url
@@ -69,6 +76,8 @@ class OpenAICompatibleLLMProvider(LLMProvider):
             raise ProviderUnavailableError(
                 "Model API base URL is not configured", error_code="configuration_error"
             )
+        if self.api_key is not None and self.api_key.get_secret_value():
+            return base_url.rstrip("/"), self.api_key.get_secret_value()
         reference = self.credential_reference or (
             "env:MODEL_API_KEY"
             if self.settings.model_api_key.get_secret_value()
@@ -76,16 +85,109 @@ class OpenAICompatibleLLMProvider(LLMProvider):
         )
         return base_url.rstrip("/"), SecretResolver.resolve(reference)
 
+    @staticmethod
+    def _anthropic_content(content: object) -> object:
+        if not isinstance(content, list):
+            return str(content)
+        blocks: list[dict[str, Any]] = []
+        for item in content:
+            if not isinstance(item, dict):
+                continue
+            if item.get("type") == "text":
+                blocks.append({"type": "text", "text": str(item.get("text", ""))})
+                continue
+            if item.get("type") != "image_url":
+                continue
+            image_url = item.get("image_url")
+            url = image_url.get("url") if isinstance(image_url, dict) else None
+            if not isinstance(url, str) or not url.startswith("data:"):
+                continue
+            header, separator, encoded = url.partition(",")
+            if not separator or ";base64" not in header:
+                continue
+            media_type = header[5:].split(";", 1)[0]
+            blocks.append(
+                {
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": media_type,
+                        "data": encoded,
+                    },
+                }
+            )
+        return blocks or str(content)
+
+    @staticmethod
+    def _anthropic_payload(messages: list[dict[str, Any]]) -> dict[str, Any]:
+        system = "\n\n".join(
+            str(message.get("content", ""))
+            for message in messages
+            if message.get("role") == "system"
+        )
+        conversation = [
+            {
+                "role": "assistant" if message.get("role") == "assistant" else "user",
+                "content": OpenAICompatibleLLMProvider._anthropic_content(
+                    message.get("content", "")
+                ),
+            }
+            for message in messages
+            if message.get("role") != "system"
+        ]
+        payload: dict[str, Any] = {
+            "messages": conversation,
+            "max_tokens": 4096,
+        }
+        if system:
+            payload["system"] = system
+        return payload
+
+    @staticmethod
+    def _normalize_anthropic_response(body: dict[str, Any]) -> dict[str, Any]:
+        blocks = body.get("content")
+        if not isinstance(blocks, list):
+            raise ProviderUnavailableError(
+                "Invalid model response", error_code="invalid_response"
+            )
+        content = "".join(
+            str(block.get("text", ""))
+            for block in blocks
+            if isinstance(block, dict) and block.get("type") == "text"
+        )
+        if not content:
+            raise ProviderUnavailableError(
+                "Model response did not contain text",
+                error_code="invalid_response",
+            )
+        return {
+            "choices": [{"message": {"role": "assistant", "content": content}}],
+            "usage": body.get("usage", {}),
+        }
+
     async def _chat(
         self,
-        messages: list[dict[str, Any],],
+        messages: list[dict[str, Any]],
         *,
         json_mode: bool,
         retries: int | None = None,
     ) -> dict[str, Any]:
         base_url, api_key = self._credentials()
-        payload: dict[str, Any] = {"model": self.model_name, "messages": messages}
-        if json_mode:
+        if self.protocol == "anthropic":
+            payload = {
+                "model": self.model_name,
+                **self._anthropic_payload(messages),
+            }
+            url = f"{base_url}/v1/messages"
+            headers = {
+                "x-api-key": api_key,
+                "anthropic-version": "2023-06-01",
+            }
+        else:
+            payload = {"model": self.model_name, "messages": messages}
+            url = f"{base_url}/chat/completions"
+            headers = {"Authorization": f"Bearer {api_key}"}
+        if json_mode and self.protocol == "openai":
             payload["response_format"] = {"type": "json_object"}
         timeout = httpx.Timeout(
             self.settings.model_read_timeout_seconds,
@@ -99,8 +201,8 @@ class OpenAICompatibleLLMProvider(LLMProvider):
             for attempt in range(attempts):
                 try:
                     response = await client.post(
-                        f"{base_url}/chat/completions",
-                        headers={"Authorization": f"Bearer {api_key}"},
+                        url,
+                        headers=headers,
                         json=payload,
                     )
                     if response.status_code in {401, 403}:
@@ -124,7 +226,11 @@ class OpenAICompatibleLLMProvider(LLMProvider):
                             raise ProviderUnavailableError(
                                 "Invalid model response", error_code="invalid_response"
                             )
-                        return body
+                        return (
+                            self._normalize_anthropic_response(body)
+                            if self.protocol == "anthropic"
+                            else body
+                        )
                 except httpx.TimeoutException:
                     last_error = ProviderUnavailableError(
                         "Model request timed out", error_code="timeout_error"
@@ -132,6 +238,11 @@ class OpenAICompatibleLLMProvider(LLMProvider):
                 except httpx.NetworkError:
                     last_error = ProviderUnavailableError(
                         "Model network request failed", error_code="network_error"
+                    )
+                except (httpx.HTTPStatusError, ValueError):
+                    last_error = ProviderUnavailableError(
+                        "Model returned an invalid response",
+                        error_code="invalid_response",
                     )
                 if last_error is None or last_error.error_code in {
                     "authentication_error",

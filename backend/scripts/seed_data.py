@@ -38,10 +38,15 @@ async def seed() -> None:
             session.add(
                 LearnerProfile(
                     learner_id="stu_001",
-                    display_name="示例学习者",
+                    display_name="中药学学习者",
                     profile_json={"level": "beginner"},
                 )
             )
+        else:
+            if profile.display_name in {None, "示例学习者", "Demo learner"}:
+                profile.display_name = "中药学学习者"
+            if profile.name in {"示例学习者", "Demo learner"}:
+                profile.name = "中药学学习者"
         task = await session.scalar(
             select(TaskRecord).where(TaskRecord.task_id == "task_seed_demo")
         )
@@ -91,8 +96,8 @@ async def seed() -> None:
                 await session.flush()
             roles[code] = role
         for username, display_name, role_code, learner_id, is_superuser in (
-            ("admin", "System administrator", "admin", None, True),
-            ("student", "Demo student", "student", "stu_001", False),
+            ("admin", "系统管理员", "admin", None, True),
+            ("student", "学生用户", "student", "stu_001", False),
         ):
             user = await session.scalar(select(User).where(User.username == username))
             if user is None:
@@ -105,6 +110,8 @@ async def seed() -> None:
                 )
                 user.roles.append(roles[role_code])
                 session.add(user)
+            elif user.display_name in {"System administrator", "Demo student"}:
+                user.display_name = display_name
         permissions: dict[str, Permission] = {}
         for code, name in (
             ("profile.read", "Read learner profiles"),
@@ -167,7 +174,7 @@ async def seed() -> None:
             select(LearnerProfile).where(LearnerProfile.learner_id == "stu_001")
         )
         if profile is not None:
-            profile.name = profile.name or profile.display_name or "Demo learner"
+            profile.name = profile.name or profile.display_name or "中药学学习者"
             profile.identity_type = profile.identity_type or "student"
             profile.overall_level = profile.overall_level or "weak"
         legacy_dimension_keys = {

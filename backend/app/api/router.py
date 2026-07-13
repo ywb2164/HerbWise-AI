@@ -19,6 +19,7 @@ from app.modules.resources.router import router as resource_router
 from app.modules.tasks.router import router as task_router
 from app.modules.recognition.router import router as recognition_router
 from app.modules.system.capabilities_router import router as capabilities_router
+from app.modules.system.model_settings_router import router as model_settings_router
 
 api_router = APIRouter(prefix=get_settings().api_prefix)
 api_router.include_router(auth_router)
@@ -38,4 +39,5 @@ api_router.include_router(traces_router)
 api_router.include_router(task_router)
 api_router.include_router(recognition_router)
 api_router.include_router(capabilities_router)
+api_router.include_router(model_settings_router)
 api_router.include_router(resource_router)

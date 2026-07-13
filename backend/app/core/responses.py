@@ -16,4 +16,6 @@ class ApiResponse(BaseModel):
 def success(
     data: object | None = None, request_id: str | None = None
 ) -> UTF8JSONResponse:
-    return UTF8JSONResponse(ApiResponse(data=data, request_id=request_id).model_dump())
+    return UTF8JSONResponse(
+        ApiResponse(data=data, request_id=request_id).model_dump(mode="json")
+    )

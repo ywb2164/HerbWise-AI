@@ -237,6 +237,7 @@ async def export_learning_word(session: AsyncSession, learner_id: str) -> Report
     report.output_path = relative
     report.title = "Learning report (Word)"
     await session.commit()
+    await session.refresh(report)
     return report
 
 

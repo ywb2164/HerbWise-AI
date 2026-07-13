@@ -15,6 +15,7 @@ from app.integrations.contracts import (
     ModelCallContext,
 )
 from app.integrations.factory import get_llm_provider, get_rag_provider
+from app.integrations.runtime_model import runtime_model_registry
 from app.modules.knowledge.service import find_medicine_by_name, require_medicine
 from app.modules.profiles.service import profile_data, require_profile
 from app.modules.resources.business_models import (
@@ -86,7 +87,8 @@ async def generate_resource(
         prompt_template_code="resource_generation",
     )
     model_config = None
-    if settings.llm_mode == "real":
+    runtime_config = runtime_model_registry.get_for_learner(payload.learner_id)
+    if runtime_config is None and settings.llm_mode == "real":
         model_config = await session.scalar(
             select(ModelConfig)
             .where(
@@ -96,7 +98,9 @@ async def generate_resource(
             )
             .order_by(ModelConfig.id)
         )
-    generated = await get_llm_provider(model_config).generate_resource(
+    generated = await get_llm_provider(
+        model_config, payload.learner_id
+    ).generate_resource(
         [KnowledgeEvidence.model_validate(item) for item in evidence], context
     )
     template = await session.scalar(
@@ -109,7 +113,9 @@ async def generate_resource(
     )
     first = generated[0]
     resource_id = new_id("res")
-    mode = "real" if settings.llm_mode == "real" else "mock"
+    mode = (
+        "real" if runtime_config is not None or settings.llm_mode == "real" else "mock"
+    )
     content = (
         f"# {first.title}\n\n{first.content}\n\nMedicine: {medicine.standard_name_zh}"
     )
@@ -128,11 +134,21 @@ async def generate_resource(
         },
         difficulty=payload.difficulty,
         status="generated",
-        provider=(model_config.provider if model_config else "openai_compatible")
+        provider=(
+            f"{runtime_config.protocol}_compatible"
+            if runtime_config
+            else model_config.provider
+            if model_config
+            else "openai_compatible"
+        )
         if mode == "real"
         else "mock",
         model_name=(
-            model_config.model_name if model_config else settings.generation_model
+            runtime_config.model_name
+            if runtime_config
+            else model_config.model_name
+            if model_config
+            else settings.generation_model
         )
         if mode == "real"
         else "mock-llm",
@@ -276,7 +292,8 @@ async def review_resource(
     settings = get_settings()
     model_review = None
     review_config = None
-    if manual_status is None and settings.llm_mode == "real":
+    runtime_config = runtime_model_registry.get_for_learner(resource.learner_id)
+    if manual_status is None and runtime_config is None and settings.llm_mode == "real":
         review_config = await session.scalar(
             select(ModelConfig)
             .where(
@@ -286,7 +303,12 @@ async def review_resource(
             )
             .order_by(ModelConfig.id)
         )
-        model_review = await get_llm_provider(review_config).review_resource(
+    if manual_status is None and (
+        runtime_config is not None or settings.llm_mode == "real"
+    ):
+        model_review = await get_llm_provider(
+            review_config, resource.learner_id
+        ).review_resource(
             [
                 GeneratedResource(
                     title=resource.title,
@@ -361,11 +383,21 @@ async def review_resource(
         citation_check_json=citation_check,
         evidence_ids_json=resource.evidence_ids_json,
         data_source=resource.data_source,
-        provider=(review_config.provider if review_config else "openai_compatible")
+        provider=(
+            f"{runtime_config.protocol}_compatible"
+            if runtime_config
+            else review_config.provider
+            if review_config
+            else "openai_compatible"
+        )
         if model_review
         else "mock",
         model_name=(
-            review_config.model_name if review_config else settings.review_model
+            runtime_config.model_name
+            if runtime_config
+            else review_config.model_name
+            if review_config
+            else settings.review_model
         )
         if model_review
         else "mock-review",
