@@ -15,6 +15,8 @@ from app.modules.learning_paths.task_service import (
     _duration_seconds,
     _normalise_answer,
     _public_question,
+    _task_title,
+    attempt_result,
     submit_task,
 )
 
@@ -81,6 +83,30 @@ def test_duration_never_returns_a_negative_value() -> None:
     future_started_at = datetime(2026, 7, 13, 8, 1, 0)
 
     assert _duration_seconds(future_started_at, now) == 0
+
+
+def test_new_task_titles_are_student_facing_chinese() -> None:
+    assert _task_title("basic_knowledge") == "基础知识巩固练习"
+    assert _task_title("character_identification") == "性状辨识练习"
+
+
+@pytest.mark.asyncio
+async def test_attempt_result_is_scoped_to_the_requested_learner() -> None:
+    attempt = LearningTaskAttempt(
+        attempt_id="attempt_1",
+        task_id="learn_1",
+        learner_id="stu_001",
+        status="completed",
+        result_json={"attempt_id": "attempt_1", "status": "completed"},
+    )
+
+    class Session:
+        async def scalar(self, *_args: object) -> LearningTaskAttempt:
+            return attempt
+
+    assert (
+        await attempt_result(Session(), "attempt_1", "stu_001") == attempt.result_json
+    )
 
 
 @pytest.mark.asyncio

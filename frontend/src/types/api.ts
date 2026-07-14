@@ -4,6 +4,7 @@ export interface ApiEnvelope<T> {
   code: number
   message: string
   data: T
+  error_code?: string | null
   request_id?: string | null
 }
 
@@ -33,8 +34,10 @@ export interface TokenPair {
 }
 
 export type ModelProtocol = 'openai' | 'anthropic'
+export type ModelPurpose = 'vision' | 'text'
 
 export interface ModelSettingsStatus {
+  purpose: ModelPurpose
   configured: boolean
   protocol: ModelProtocol
   base_url: string
@@ -53,7 +56,7 @@ export interface ModelSettingsPayload {
 
 export interface ModelConnectionResult {
   connected: boolean
-  protocol: ModelProtocol
+  purpose: ModelPurpose
   model_id: string
   elapsed_ms: number
   reply: string
@@ -172,6 +175,12 @@ export interface LearningAnswer extends LearningAnswerPayload {
   submitted_at?: string
 }
 
+export interface InitialTestStatus {
+  completed: boolean
+  record_id: string | null
+  submitted_at: string | null
+}
+
 export interface LearningTaskQuestion {
   question_id: number
   question_type: 'single_choice' | 'multiple_choice' | 'true_false'
@@ -201,6 +210,13 @@ export interface LearningTask {
   started_at?: string | null
   completed_at?: string | null
   question_count?: number
+  latest_attempt?: {
+    attempt_id: string
+    submitted_at?: string | null
+    raw_score?: number | null
+    accuracy?: number | null
+    wrong_count?: number
+  } | null
 }
 
 export interface LearningTaskDetail extends LearningTask {
@@ -462,19 +478,55 @@ export interface KnowledgeEvidence {
 export interface ResourceItem {
   resource_id: string
   learner_id: string
+  plan_id?: string | null
+  learning_plan_item_id?: string | null
   task_id?: string | null
   medicine_id?: number | null
   resource_type: string
   title: string
   content_markdown: string
   content_json?: JsonRecord
+  learning_objectives?: string[]
+  target_dimensions?: string[]
+  target_knowledge_points?: string[]
   difficulty: string
+  estimated_minutes?: number | null
+  personalization_reason?: string | null
   status: string
   provider: string
   model_name?: string | null
   prompt_version?: string | null
+  requires_rag?: boolean
+  retrieval_id?: string | null
+  citation_count?: number
+  citations?: Array<{ evidence_id: string; citation: string }>
+  review_status?: string | null
+  review_score?: number | null
+  rewrite_count?: number
+  version?: number
+  parent_resource_id?: string | null
+  data_source?: string
+  fallback_used?: boolean
   created_at?: string
   updated_at?: string
+}
+
+export interface ResourceGenerationJob {
+  job_id: string
+  learner_id: string
+  plan_id?: string | null
+  learning_plan_item_id?: string | null
+  task_id?: string | null
+  resource_type: string
+  difficulty: string
+  status: string
+  requires_rag: boolean
+  rag_reason_codes: string[]
+  retrieval_id?: string | null
+  resource_id?: string | null
+  error_code?: string | null
+  error_message?: string | null
+  created_at?: string
 }
 
 export interface ReviewResult {

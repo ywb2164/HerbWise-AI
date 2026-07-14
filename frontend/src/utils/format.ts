@@ -127,7 +127,25 @@ export function formatDuration(value?: number | null): string {
   return value < 1000 ? `${Math.round(value)} ms` : `${(value / 1000).toFixed(2)} s`
 }
 
+const resourceReferenceErrorLabels: Record<string, string> = {
+  PLAN_NOT_FOUND: '学习计划已更新，请刷新后查看最新安排。',
+  PLAN_ITEM_NOT_FOUND: '原学习任务已更新，请刷新最新学习计划。',
+  PLAN_ITEM_FORBIDDEN: '该学习任务不属于当前学习档案，请刷新后重试。',
+  TASK_NOT_FOUND: '学习任务已更新，请刷新今日学习。',
+  PLAN_ITEM_TASK_MISMATCH: '学习任务关联已更新，请刷新后重新开始。',
+}
+
+export function getApiErrorCode(error: unknown): string | undefined {
+  if (axios.isAxiosError(error)) {
+    return (error.response?.data as { error_code?: string } | undefined)?.error_code
+  }
+  if (error instanceof Error && 'errorCode' in error) return (error as Error & { errorCode?: string }).errorCode
+  return undefined
+}
+
 export function getErrorMessage(error: unknown, fallback = '请求失败'): string {
+  const errorCode = getApiErrorCode(error)
+  if (errorCode && resourceReferenceErrorLabels[errorCode]) return resourceReferenceErrorLabels[errorCode]
   if (axios.isAxiosError(error)) {
     const payload = error.response?.data as { message?: string; detail?: string } | undefined
     return payload?.message || payload?.detail || error.message || fallback

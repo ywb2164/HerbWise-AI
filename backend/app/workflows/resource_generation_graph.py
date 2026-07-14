@@ -444,12 +444,19 @@ async def save_trace(state: ResourceState) -> dict[str, Any]:
     if state.get("terminal_status") == "degraded":
         job.status = "degraded"
         job.error_code = state.get("fallback_reason") or "resource_degraded"
+        job.error_message = (
+            "Required professional evidence or text review is unavailable."
+        )
     elif state.get("terminal_status") == "rejected":
         job.status = "rejected"
         job.error_code = "resource_review_failed"
+        job.error_message = (
+            "Resource did not pass deterministic or professional review."
+        )
     elif not job.resource_id:
         job.status = "rejected"
         job.error_code = "resource_review_failed"
+        job.error_message = "Resource was not persisted after review."
     else:
         job.status = "completed"
     job.completed_at = datetime.now(UTC)

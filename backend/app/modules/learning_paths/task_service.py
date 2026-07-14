@@ -47,6 +47,37 @@ VALID_STATUSES = {
 VALID_QUESTION_TYPES = {"single_choice", "multiple_choice", "true_false"}
 
 
+def _task_title(dimension: str) -> str:
+    labels = {
+        "basic_knowledge": "基础知识巩固练习",
+        "character_identification": "性状辨识练习",
+        "similar_medicine": "相似药材辨析练习",
+        "pharmacopoeia_rules": "药典规范练习",
+        "clinical_quality_control": "质量控制练习",
+        "practical_review": "实践复核练习",
+    }
+    return labels.get(dimension, "个性化巩固练习")
+
+
+async def _recent_question_ids(
+    session: AsyncSession, learner_id: str, dimension: str
+) -> set[int]:
+    """Return questions already completed by this learner for one dimension."""
+    rows = await session.scalars(
+        select(LearningTaskQuestion.question_id)
+        .join(
+            LearningTask, LearningTask.learning_task_id == LearningTaskQuestion.task_id
+        )
+        .join(LearningQuestion, LearningQuestion.id == LearningTaskQuestion.question_id)
+        .where(
+            LearningTask.learner_id == learner_id,
+            LearningTask.status == "completed",
+            LearningQuestion.dimension_code == dimension,
+        )
+    )
+    return set(rows.all())
+
+
 def _as_utc_aware(value: datetime) -> datetime:
     """Treat legacy database DATETIME values as UTC before Python arithmetic."""
     if value.tzinfo is None:
@@ -59,8 +90,12 @@ def _duration_seconds(started_at: datetime, now: datetime | None = None) -> int:
     return max(0, int((completed_at - _as_utc_aware(started_at)).total_seconds()))
 
 
-def _task_data(task: LearningTask, question_count: int = 0) -> dict:
-    return {
+def _task_data(
+    task: LearningTask,
+    question_count: int = 0,
+    latest_attempt: LearningTaskAttempt | None = None,
+) -> dict:
+    data: dict[str, Any] = {
         "task_id": task.learning_task_id,
         "title": task.title,
         "task_type": task.task_type,
@@ -78,6 +113,22 @@ def _task_data(task: LearningTask, question_count: int = 0) -> dict:
         "completed_at": task.completed_at,
         "question_count": question_count,
     }
+    if latest_attempt is not None:
+        question_results = (latest_attempt.result_json or {}).get(
+            "question_results", []
+        )
+        data["latest_attempt"] = {
+            "attempt_id": latest_attempt.attempt_id,
+            "submitted_at": latest_attempt.submitted_at,
+            "raw_score": latest_attempt.raw_score,
+            "accuracy": latest_attempt.accuracy,
+            "wrong_count": sum(
+                1
+                for item in question_results
+                if isinstance(item, dict) and item.get("is_correct") is False
+            ),
+        }
+    return data
 
 
 def _public_question(question: LearningQuestion, link: LearningTaskQuestion) -> dict:
@@ -205,12 +256,12 @@ async def _create_task(
     ]
     if knowledge_point is not None:
         filters.append(LearningQuestion.knowledge_point == knowledge_point)
+    recent_question_ids = await _recent_question_ids(session, learner_id, dimension)
     questions = list(
         (
             await session.scalars(
                 select(LearningQuestion)
-                .where(*filters)
-                .order_by(LearningQuestion.id)
+                .where(*filters, LearningQuestion.id.not_in(recent_question_ids))
                 .limit(3)
             )
         ).all()
@@ -223,8 +274,8 @@ async def _create_task(
                     .where(
                         LearningQuestion.dimension_code == dimension,
                         LearningQuestion.review_status == "draft",
+                        LearningQuestion.id.not_in(recent_question_ids),
                     )
-                    .order_by(LearningQuestion.id)
                     .limit(3)
                 )
             ).all()
@@ -235,7 +286,7 @@ async def _create_task(
         learning_task_id=new_id("learn"),
         learner_id=learner_id,
         task_type=task_type,
-        title=f"{dimension.replace('_', ' ').title()} practice",
+        title=_task_title(dimension),
         description=reason,
         difficulty=difficulty,
         status="pending",
@@ -328,7 +379,7 @@ async def ensure_initial_task(
         dimension=dimension,
         difficulty="basic",
         source="initial_plan",
-        reason="lowest profile dimension",
+        reason="当前相对薄弱的能力维度，建议优先巩固。",
     )
 
 
@@ -373,9 +424,28 @@ async def list_tasks(
     counts: dict[str, int] = {
         str(task_id): int(count) for task_id, count in count_result.tuples().all()
     }
+    completed_attempts = list(
+        (
+            await session.scalars(
+                select(LearningTaskAttempt)
+                .where(
+                    LearningTaskAttempt.learner_id == learner_id,
+                    LearningTaskAttempt.status == "completed",
+                )
+                .order_by(LearningTaskAttempt.id.desc())
+            )
+        ).all()
+    )
+    latest_attempts: dict[str, LearningTaskAttempt] = {}
+    for item in completed_attempts:
+        latest_attempts.setdefault(item.task_id, item)
     return {
         "items": [
-            _task_data(item, int(counts.get(item.learning_task_id, 0)))
+            _task_data(
+                item,
+                int(counts.get(item.learning_task_id, 0)),
+                latest_attempts.get(item.learning_task_id),
+            )
             for item in records
         ],
         "page": page,
@@ -649,7 +719,7 @@ async def _next_task(
         dimension=target,
         difficulty=difficulty,
         source="adaptive_plan",
-        reason=f"adaptive follow-up after {accuracy:.0%} task accuracy",
+        reason=f"根据本次练习 {accuracy:.0%} 的正确率安排后续巩固。",
     )
 
 
@@ -820,4 +890,21 @@ async def task_result(session: AsyncSession, task_id: str, learner_id: str) -> d
     )
     if attempt is None or not attempt.result_json:
         raise LearningTaskConflict("Task has not been completed")
+    return attempt.result_json
+
+
+async def attempt_result(
+    session: AsyncSession, attempt_id: str, learner_id: str
+) -> dict:
+    """Return exactly one learner-owned completed attempt without starting a task."""
+    attempt = await session.scalar(
+        select(LearningTaskAttempt).where(
+            LearningTaskAttempt.attempt_id == attempt_id,
+            LearningTaskAttempt.learner_id == learner_id,
+        )
+    )
+    if attempt is None:
+        raise NotFoundException("Learning task attempt not found")
+    if attempt.status != "completed" or not attempt.result_json:
+        raise LearningTaskConflict("Task attempt has not been completed")
     return attempt.result_json

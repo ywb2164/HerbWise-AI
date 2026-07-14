@@ -7,6 +7,7 @@ from app.core.responses import ApiResponse, success
 from app.modules.auth.models import User
 from app.modules.auth.service import ensure_learner_access, get_current_user
 from app.modules.learning_paths.task_service import (
+    attempt_result,
     list_tasks,
     start_task,
     submit_task,
@@ -48,6 +49,21 @@ async def list_route(
 ):
     ensure_learner_access(user, learner_id)
     return success(await list_tasks(session, learner_id, status, page, page_size))
+
+
+@router.get(
+    "/attempts/{attempt_id}/result",
+    response_model=ApiResponse,
+    summary="Get one completed learner task attempt",
+)
+async def attempt_result_route(
+    attempt_id: str,
+    learner_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    ensure_learner_access(user, learner_id)
+    return success(await attempt_result(session, attempt_id, learner_id))
 
 
 @router.get(

@@ -238,6 +238,11 @@ async def list_resources(
     session: AsyncSession, page: int, page_size: int, learner_id: str | None
 ) -> dict:
     filters = [ResourceOutput.learner_id == learner_id] if learner_id else []
+    # A learner's resource library is intentionally not a generation-job log.
+    # Keep unfinished, rejected, and historical revisions out of the student
+    # list while leaving the unscoped/admin query unchanged.
+    if learner_id is not None:
+        filters.append(ResourceOutput.status.in_(("approved", "degraded")))
     total = (
         await session.scalar(
             select(func.count()).select_from(ResourceOutput).where(*filters)
@@ -255,12 +260,19 @@ async def list_resources(
             )
         ).all()
     )
+    latest: dict[tuple[str | None, str | None, str], ResourceOutput] = {}
+    for item in records:
+        key = (item.task_id, item.plan_item_id, item.resource_type)
+        latest.setdefault(key, item)
+    visible = list(latest.values())
     return {
-        "items": [resource_data(item) for item in records],
+        "items": [resource_data(item) for item in visible],
         "page": page,
         "page_size": page_size,
-        "total": total,
-        "pages": (total + page_size - 1) // page_size,
+        "total": len(visible) if learner_id is not None else total,
+        "pages": (len(visible) + page_size - 1) // page_size
+        if learner_id is not None
+        else (total + page_size - 1) // page_size,
     }
 
 

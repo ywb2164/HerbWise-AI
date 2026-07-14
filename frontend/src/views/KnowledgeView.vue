@@ -29,6 +29,7 @@ const message = useMessage()
 const loadingList = ref(false)
 const loadingDetail = ref(false)
 const retrieving = ref(false)
+const generatingResource = ref(false)
 const errorText = ref('')
 const keyword = ref('')
 const medicines = ref<MedicineItem[]>([])
@@ -122,6 +123,26 @@ async function retrieveEvidence(): Promise<void> {
   }
 }
 
+async function generateKnowledgeResource(resourceType: string): Promise<void> {
+  if (!selected.value) return
+  generatingResource.value = true
+  try {
+    const job = await api.createResourceGenerationJob({
+      learner_id: auth.learnerId,
+      topic: selected.value.standard_name_zh,
+      resource_type: resourceType,
+      difficulty: 'basic',
+      requires_citation: resourceType === 'detailed_comparison',
+      additional_instruction: `请围绕${selected.value.standard_name_zh}生成学习材料。`,
+    })
+    message[job.resource_id ? 'success' : 'warning'](job.resource_id ? '学习资源已生成，可在资源库查看' : `资源作业状态：${job.status}`)
+  } catch (error) {
+    message.error(getErrorMessage(error, '学习资源生成失败'))
+  } finally {
+    generatingResource.value = false
+  }
+}
+
 onMounted(() => loadMedicines(true))
 </script>
 
@@ -178,7 +199,7 @@ onMounted(() => loadMedicines(true))
                 <h2>{{ selected.standard_name_zh }}</h2>
                 <p>{{ selected.standard_name_en || '--' }} <span v-if="selected.latin_name">· {{ selected.latin_name }}</span></p>
               </div>
-              <SourceBadge source="mysql" :official="true" />
+              <div class="knowledge-actions"><n-button size="small" secondary :loading="generatingResource" @click="generateKnowledgeResource('knowledge_card')">为我讲解</n-button><n-button size="small" secondary :loading="generatingResource" @click="generateKnowledgeResource('comparison_card')">生成对比卡</n-button><SourceBadge source="mysql" :official="true" /></div>
             </div>
 
             <div class="medicine-facts">
@@ -373,6 +394,14 @@ onMounted(() => loadMedicines(true))
   padding: 24px;
   background: #f2f7f4;
   border-bottom: 1px solid var(--line);
+}
+
+.knowledge-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .medicine-heading h2 {

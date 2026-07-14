@@ -27,12 +27,13 @@ class ResourceGenerationRequest(BaseModel):
     resource_type: str = Field(min_length=1, max_length=64)
     difficulty: str = Field(default="basic", max_length=32)
     requires_citation: bool = False
+    topic: str | None = Field(default=None, min_length=1, max_length=255)
     additional_instruction: str | None = Field(default=None, max_length=1000)
 
     @model_validator(mode="after")
     def validate_request(self) -> "ResourceGenerationRequest":
-        if not self.learning_plan_item_id and not self.task_id:
-            raise ValueError("learning_plan_item_id or task_id is required")
+        if not self.learning_plan_item_id and not self.task_id and not self.topic:
+            raise ValueError("A learning topic is required for free generation")
         if self.resource_type not in RESOURCE_TYPES:
             raise ValueError("resource_type is not supported")
         if self.difficulty not in RESOURCE_DIFFICULTIES:

@@ -281,21 +281,27 @@ def deterministic_fallback_plan(context: dict[str, Any]) -> LearningPlanProposal
         (item for item in context["weak_points"] if item["dimension_code"] == target),
         None,
     )
+    dimension_label = {
+        "basic_knowledge": "基础知识",
+        "character_identification": "性状辨识",
+        "similar_medicine": "相似药材辨析",
+        "pharmacopoeia_rules": "药典规范",
+        "clinical_quality_control": "质量控制",
+        "practical_review": "实践复核",
+    }.get(target, "当前学习重点")
     knowledge_point = (
-        weak_point["knowledge_point"]
-        if weak_point
-        else f"{target.replace('_', ' ')} foundation"
+        weak_point["knowledge_point"] if weak_point else f"{dimension_label}基础"
     )
     minutes = min(max(5, context["daily_minutes"]), 30)
     return LearningPlanProposal(
         stage="consolidation",
-        summary=f"Focus on the weakest dimension: {target}.",
-        goal=f"Strengthen {target.replace('_', ' ')} through targeted practice.",
+        summary=f"当前{dimension_label}维度相对薄弱，建议优先完成本次练习。",
+        goal=f"通过针对性练习巩固{dimension_label}。",
         daily_minutes=context["daily_minutes"],
         items=[
             LearningPlanItemProposal(
-                title=f"{target.replace('_', ' ').title()} practice",
-                reason="This is the lowest current dimension and should be consolidated first.",
+                title=f"{dimension_label}巩固练习",
+                reason=f"当前{dimension_label}维度相对薄弱，建议优先巩固。",
                 target_dimensions=[target],
                 target_knowledge_points=[knowledge_point],
                 task_type="quiz",

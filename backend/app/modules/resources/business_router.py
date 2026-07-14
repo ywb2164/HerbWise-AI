@@ -85,6 +85,33 @@ async def create_generation_job(
 
 
 @resource_jobs_router.get(
+    "",
+    response_model=ApiResponse,
+    summary="List current learner resource-generation jobs",
+)
+async def list_generation_jobs(
+    learner_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    ensure_learner_access(user, learner_id)
+    from sqlalchemy import select
+    from app.modules.resources.business_models import ResourceGenerationJob
+
+    jobs = list(
+        (
+            await session.scalars(
+                select(ResourceGenerationJob)
+                .where(ResourceGenerationJob.learner_id == learner_id)
+                .order_by(ResourceGenerationJob.id.desc())
+                .limit(20)
+            )
+        ).all()
+    )
+    return success({"items": [job_data(item) for item in jobs]})
+
+
+@resource_jobs_router.get(
     "/{job_id}",
     response_model=ApiResponse,
     summary="Get a resource-generation job",

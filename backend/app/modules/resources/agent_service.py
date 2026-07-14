@@ -34,6 +34,13 @@ from app.modules.resources.business_models import (
     ResourceReview,
 )
 
+
+class ResourceReferenceError(AppException):
+    def __init__(self, message: str, *, error_code: str, status_code: int = 404) -> None:
+        super().__init__(message)
+        self.error_code = error_code
+        self.status_code = status_code
+
 PROMPT_VERSION = "learning-resource-agent-v1"
 SEVERE_REVIEW_ISSUES = frozenset(
     {
@@ -92,7 +99,7 @@ async def create_job(
         task_id=payload.task_id,
         resource_type=payload.resource_type,
         difficulty=payload.difficulty,
-        additional_instruction=payload.additional_instruction,
+        additional_instruction=payload.additional_instruction or payload.topic,
         status="pending",
     )
     session.add(job)
@@ -111,7 +118,9 @@ async def _load_context(
             select(LearningPlanItem).where(LearningPlanItem.item_id == job.plan_item_id)
         )
         if plan_item is None:
-            raise NotFoundException("Learning plan item not found")
+            raise ResourceReferenceError(
+                "Learning plan item not found", error_code="PLAN_ITEM_NOT_FOUND"
+            )
         plan = await session.scalar(
             select(LearningPlan).where(
                 LearningPlan.plan_id == plan_item.plan_id,
@@ -119,7 +128,16 @@ async def _load_context(
             )
         )
         if plan is None:
-            raise NotFoundException("Learning plan item not found")
+            owner = await session.scalar(
+                select(LearningPlan).where(LearningPlan.plan_id == plan_item.plan_id)
+            )
+            if owner is not None:
+                raise ResourceReferenceError(
+                    "Learning plan item is not available to this learner",
+                    error_code="PLAN_ITEM_FORBIDDEN",
+                    status_code=403,
+                )
+            raise ResourceReferenceError("Learning plan not found", error_code="PLAN_NOT_FOUND")
         job.plan_id = plan.plan_id
     task = None
     if job.task_id:
@@ -130,9 +148,11 @@ async def _load_context(
             )
         )
         if task is None:
-            raise NotFoundException("Learning task not found")
+            raise ResourceReferenceError("Learning task not found", error_code="TASK_NOT_FOUND")
     if plan_item and task and plan_item.linked_task_id != task.learning_task_id:
-        raise AppException("Learning plan item and task are not linked")
+        raise ResourceReferenceError(
+            "Learning plan item and task are not linked", error_code="PLAN_ITEM_TASK_MISMATCH"
+        )
     if plan_item and not job.task_id:
         job.task_id = plan_item.linked_task_id
         if job.task_id:
@@ -143,19 +163,20 @@ async def _load_context(
                 )
             )
     learning = await load_learning_context(session, job.learner_id, 30)
+    free_topic = job.additional_instruction.strip() if job.additional_instruction else None
     targets = (
         list(plan_item.target_knowledge_points_json or [])
         if plan_item
         else list(task.target_knowledge_points_json or [])
         if task
-        else []
+        else [free_topic] if free_topic else []
     )
     dimensions = (
         list(plan_item.target_dimensions_json or [])
         if plan_item
         else list(task.target_dimension_codes_json or [])
         if task
-        else []
+        else ["basic_knowledge"]
     )
     return {
         "learner": {
@@ -431,6 +452,9 @@ async def _persist_resource(
         plan_id=job.plan_id,
         plan_item_id=job.plan_item_id,
         task_id=job.task_id,
+        medicine_id=(context.get("knowledge", {}).get("medicines") or [{}])[0].get(
+            "id"
+        ),
         resource_type=output.resource_type,
         title=output.title,
         content_markdown=output.content_markdown,

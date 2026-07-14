@@ -9,6 +9,7 @@ import type {
   DiagnosisResult,
   InitialQuestion,
   InitialTestResult,
+  InitialTestStatus,
   JsonRecord,
   LearnerDimension,
   LearnerProfile,
@@ -23,6 +24,7 @@ import type {
   MedicineFeature,
   MedicineItem,
   ModelConnectionResult,
+  ModelPurpose,
   ModelSettingsPayload,
   ModelSettingsStatus,
   MetricsOverview,
@@ -34,6 +36,7 @@ import type {
   RecognitionRecord,
   ReportRecord,
   ResourceItem,
+  ResourceGenerationJob,
   RetrievalResult,
   ReviewResult,
   SimilarMedicine,
@@ -49,18 +52,20 @@ import http from './http'
 
 class ApiError extends Error {
   readonly code: number
+  readonly errorCode?: string | null
 
-  constructor(code: number, message: string) {
+  constructor(code: number, message: string, errorCode?: string | null) {
     super(message)
     this.name = 'ApiError'
     this.code = code
+    this.errorCode = errorCode
   }
 }
 
 function unwrap<T>(payload: ApiEnvelope<T> | T): T {
   if (payload && typeof payload === 'object' && 'code' in payload && 'data' in payload) {
     const envelope = payload as ApiEnvelope<T>
-    if (envelope.code !== 0) throw new ApiError(envelope.code, envelope.message)
+    if (envelope.code !== 0) throw new ApiError(envelope.code, envelope.message, envelope.error_code)
     return envelope.data
   }
   return payload as T
@@ -82,13 +87,23 @@ export const api = {
       data: { refresh_token: refreshToken },
     }),
 
-  getModelSettings: () => request<ModelSettingsStatus>({ url: '/model-settings' }),
-  saveModelSettings: (payload: ModelSettingsPayload) =>
-    request<ModelSettingsStatus>({ method: 'PUT', url: '/model-settings', data: payload }),
-  testModelSettings: (payload: ModelSettingsPayload) =>
-    request<ModelConnectionResult>({ method: 'POST', url: '/model-settings/test', data: payload }),
-  clearModelSettings: () =>
-    request<{ cleared: boolean }>({ method: 'DELETE', url: '/model-settings' }),
+  getModelSettings: (purpose: ModelPurpose) =>
+    request<ModelSettingsStatus>({ url: `/model-settings/${purpose}` }),
+  saveModelSettings: (purpose: ModelPurpose, payload: ModelSettingsPayload) =>
+    request<ModelSettingsStatus>({ method: 'PUT', url: `/model-settings/${purpose}`, data: payload }),
+  testTextModelSettings: (payload: ModelSettingsPayload) =>
+    request<ModelConnectionResult>({ method: 'POST', url: '/model-settings/text/test', data: payload }),
+  testVisionModelSettings: (payload: ModelSettingsPayload, file: File) => {
+    const form = new FormData()
+    form.append('protocol', payload.protocol)
+    form.append('base_url', payload.base_url)
+    form.append('model_id', payload.model_id)
+    if (payload.api_key) form.append('api_key', payload.api_key)
+    form.append('file', file)
+    return request<ModelConnectionResult>({ method: 'POST', url: '/model-settings/vision/test', data: form })
+  },
+  clearModelSettings: (purpose: ModelPurpose) =>
+    request<{ cleared: boolean }>({ method: 'DELETE', url: `/model-settings/${purpose}` }),
 
   getProfile: (learnerId: string) => request<LearnerProfile>({ url: `/profiles/${learnerId}` }),
   createProfile: (payload: ProfilePayload) =>
@@ -100,6 +115,7 @@ export const api = {
   getProfileHistory: (learnerId: string) =>
     request<ProfileHistoryItem[]>({ url: `/profiles/${learnerId}/history` }),
   getInitialQuestions: () => request<InitialQuestion[]>({ url: '/tests/initial/questions' }),
+  getInitialTestStatus: (learnerId: string) => request<InitialTestStatus>({ url: '/tests/initial/status', params: { learner_id: learnerId } }),
   submitInitialTest: (learnerId: string, answers: Array<{ question_id: number; answer: string }>) =>
     request<InitialTestResult>({
       method: 'POST',
@@ -131,6 +147,8 @@ export const api = {
     request<LearningTaskResult>({ method: 'POST', url: `/learning-tasks/${taskId}/submit`, params: { learner_id: learnerId }, data: { attempt_id: attemptId, answers } }),
   getLearningTaskResult: (taskId: string, learnerId: string) =>
     request<LearningTaskResult>({ url: `/learning-tasks/${taskId}/result`, params: { learner_id: learnerId } }),
+  getLearningAttemptResult: (attemptId: string, learnerId: string) =>
+    request<LearningTaskResult>({ url: `/learning-tasks/attempts/${attemptId}/result`, params: { learner_id: learnerId } }),
   getCurrentLearningPlan: (learnerId: string) =>
     request<LearningPlan | null>({ url: '/learning-plans/current', params: { learner_id: learnerId } }),
   generateLearningPlan: (learnerId: string, dailyMinutes = 30) =>
@@ -201,6 +219,19 @@ export const api = {
     retrieval_id?: string
     evidence_ids?: string[]
   }) => request<ResourceItem>({ method: 'POST', url: '/resources/generate', data: payload }),
+  createResourceGenerationJob: (payload: {
+    learner_id: string
+    learning_plan_item_id?: string
+    task_id?: string
+    resource_type: string
+    difficulty: string
+    requires_citation?: boolean
+    topic?: string
+    additional_instruction?: string | null
+  }) => request<ResourceGenerationJob>({ method: 'POST', url: '/resource-generation-jobs', data: payload }),
+  getResourceGenerationJob: (jobId: string) => request<ResourceGenerationJob>({ url: `/resource-generation-jobs/${jobId}` }),
+  listResourceGenerationJobs: (learnerId: string) => request<{ items: ResourceGenerationJob[] }>({ url: '/resource-generation-jobs', params: { learner_id: learnerId } }),
+  retryResource: (resourceId: string) => request<ResourceGenerationJob>({ method: 'POST', url: `/resources/${resourceId}/retry` }),
   reviewResource: (resourceId: string) =>
     request<ReviewResult>({ method: 'POST', url: '/reviews/check', params: { resource_id: resourceId } }),
   getResourceReview: (resourceId: string) => request<ReviewResult>({ url: `/reviews/${resourceId}` }),

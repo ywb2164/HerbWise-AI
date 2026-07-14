@@ -476,7 +476,7 @@ watch(captureMode, async mode => {
 })
 
 onMounted(async () => {
-  await modelSettings.load().catch(() => undefined)
+  await modelSettings.load('vision').catch(() => undefined)
   capabilitiesLoading.value = true
   try {
     const status = await api.getCapabilities()
