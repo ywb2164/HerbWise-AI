@@ -73,6 +73,12 @@ class VisionRecognitionResult(BaseModel):
     data_source: str = "mock"
     fallback_used: bool = False
     errors: list[str] = Field(default_factory=list)
+    recognized: bool = True
+    material_type: str = "unknown"
+    visible_evidence: list[str] = Field(default_factory=list)
+    uncertain_features: list[str] = Field(default_factory=list)
+    alternative_candidates: list[dict[str, Any]] = Field(default_factory=list)
+    needs_review: bool = False
 
     @property
     def evidence(self) -> list[str]:
@@ -83,6 +89,7 @@ VisionResult = VisionRecognitionResult
 
 
 class FusionResult(BaseModel):
+    status: str = "success"
     final_candidate: RecognitionCandidate | None = None
     local_result: VisionRecognitionResult | None = None
     qwen_result: VisionRecognitionResult | None = None
@@ -95,6 +102,10 @@ class FusionResult(BaseModel):
     in_supported_catalog: bool = False
     rule_version: str = "v0.3a-fusion-v1"
     fallback_used: bool = False
+    final_identification: dict[str, Any] = Field(default_factory=dict)
+    yolo_reference: dict[str, Any] = Field(default_factory=dict)
+    knowledge_match: dict[str, Any] = Field(default_factory=dict)
+    knowledge_verification: dict[str, Any] = Field(default_factory=dict)
 
 
 class KnowledgeEvidence(BaseModel):

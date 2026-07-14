@@ -42,6 +42,10 @@ class ResourceOutput(Base):
     id: Mapped[int] = mapped_column(primary_key=True)
     resource_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
     learner_id: Mapped[str] = mapped_column(String(64), index=True)
+    plan_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    plan_item_id: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
     task_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
     medicine_id: Mapped[int | None] = mapped_column(
         ForeignKey("medicine_items.id"), nullable=True, index=True
@@ -50,7 +54,14 @@ class ResourceOutput(Base):
     title: Mapped[str] = mapped_column(String(255))
     content_markdown: Mapped[str] = mapped_column(Text)
     content_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    learning_objectives_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    target_dimensions_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    target_knowledge_points_json: Mapped[list | None] = mapped_column(
+        JSON, nullable=True
+    )
     difficulty: Mapped[str] = mapped_column(String(32))
+    estimated_minutes: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    personalization_reason: Mapped[str | None] = mapped_column(Text, nullable=True)
     status: Mapped[str] = mapped_column(String(32), index=True)
     provider: Mapped[str] = mapped_column(String(64), default="mock")
     model_name: Mapped[str | None] = mapped_column(String(128), nullable=True)
@@ -59,6 +70,8 @@ class ResourceOutput(Base):
     )
     prompt_version: Mapped[str | None] = mapped_column(String(32), nullable=True)
     profile_snapshot_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    task_snapshot_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
+    knowledge_snapshot_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     evidence_snapshot_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     generation_metadata_json: Mapped[dict | None] = mapped_column(JSON, nullable=True)
     retrieval_id: Mapped[str | None] = mapped_column(
@@ -66,7 +79,55 @@ class ResourceOutput(Base):
     )
     evidence_ids_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
     citations_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    citation_count: Mapped[int] = mapped_column(Integer, default=0)
+    review_status: Mapped[str | None] = mapped_column(String(32), nullable=True)
+    review_score: Mapped[float | None] = mapped_column(nullable=True)
+    rewrite_count: Mapped[int] = mapped_column(Integer, default=0)
+    version: Mapped[int] = mapped_column(Integer, default=1)
+    parent_resource_id: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
     data_source: Mapped[str] = mapped_column(String(32), default="mock")
+    fallback_used: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    updated_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now(), onupdate=func.now()
+    )
+
+
+class ResourceGenerationJob(Base):
+    __tablename__ = "resource_generation_jobs"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    job_id: Mapped[str] = mapped_column(String(64), unique=True, index=True)
+    learner_id: Mapped[str] = mapped_column(String(64), index=True)
+    plan_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    plan_item_id: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    task_id: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    resource_type: Mapped[str] = mapped_column(String(64), index=True)
+    difficulty: Mapped[str] = mapped_column(String(32))
+    additional_instruction: Mapped[str | None] = mapped_column(Text, nullable=True)
+    status: Mapped[str] = mapped_column(String(32), default="pending", index=True)
+    requires_rag: Mapped[bool] = mapped_column(default=False)
+    rag_reason_json: Mapped[list | None] = mapped_column(JSON, nullable=True)
+    retrieval_id: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    resource_id: Mapped[str | None] = mapped_column(
+        String(64), nullable=True, index=True
+    )
+    error_code: Mapped[str | None] = mapped_column(String(64), nullable=True)
+    error_message: Mapped[str | None] = mapped_column(String(512), nullable=True)
+    started_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
+    completed_at: Mapped[datetime | None] = mapped_column(
+        DateTime(timezone=True), nullable=True
+    )
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )

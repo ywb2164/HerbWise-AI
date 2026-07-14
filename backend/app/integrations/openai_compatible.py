@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import json
+import logging
 from typing import Any
 
 import httpx
@@ -17,7 +18,9 @@ from app.integrations.contracts import (
     PathUpdateResult,
     ReviewResult,
 )
-from app.integrations.secrets import SecretResolver
+from app.integrations.secrets import SecretConfigurationError, SecretResolver
+
+logger = logging.getLogger(__name__)
 
 
 class ProviderUnavailableError(AppException):
@@ -83,7 +86,14 @@ class OpenAICompatibleLLMProvider(LLMProvider):
             if self.settings.model_api_key.get_secret_value()
             else "env:LLM_API_KEY"
         )
-        return base_url.rstrip("/"), SecretResolver.resolve(reference)
+        try:
+            api_key = SecretResolver.resolve(reference)
+        except SecretConfigurationError as exc:
+            raise ProviderUnavailableError(
+                "Model API credential is not configured",
+                error_code="configuration_error",
+            ) from exc
+        return base_url.rstrip("/"), api_key
 
     @staticmethod
     def _anthropic_content(content: object) -> object:
@@ -171,6 +181,8 @@ class OpenAICompatibleLLMProvider(LLMProvider):
         *,
         json_mode: bool,
         retries: int | None = None,
+        temperature: float | None = None,
+        max_tokens: int | None = None,
     ) -> dict[str, Any]:
         base_url, api_key = self._credentials()
         if self.protocol == "anthropic":
@@ -189,6 +201,10 @@ class OpenAICompatibleLLMProvider(LLMProvider):
             headers = {"Authorization": f"Bearer {api_key}"}
         if json_mode and self.protocol == "openai":
             payload["response_format"] = {"type": "json_object"}
+        if temperature is not None:
+            payload["temperature"] = temperature
+        if max_tokens is not None:
+            payload["max_tokens"] = max_tokens
         timeout = httpx.Timeout(
             self.settings.model_read_timeout_seconds,
             connect=self.settings.model_connect_timeout_seconds,
@@ -209,6 +225,10 @@ class OpenAICompatibleLLMProvider(LLMProvider):
                         raise ProviderUnavailableError(
                             "Model authentication failed",
                             error_code="authentication_error",
+                        )
+                    if response.status_code == 404:
+                        raise ProviderUnavailableError(
+                            "Model was not found", error_code="model_not_found"
                         )
                     if response.status_code == 429:
                         last_error = ProviderUnavailableError(
@@ -253,13 +273,40 @@ class OpenAICompatibleLLMProvider(LLMProvider):
                     await asyncio.sleep(0.2)
         raise last_error or ProviderUnavailableError("Model request failed")
 
+    async def complete_text(
+        self,
+        messages: list[dict[str, Any]],
+        *,
+        temperature: float = 0,
+        max_tokens: int = 16,
+    ) -> str:
+        """Return a plain model message without applying JSON/schema handling."""
+
+        body = await self._chat(
+            messages,
+            json_mode=False,
+            retries=0,
+            temperature=temperature,
+            max_tokens=max_tokens,
+        )
+        try:
+            content = body["choices"][0]["message"]["content"]
+        except (KeyError, IndexError, TypeError) as exc:
+            raise ProviderUnavailableError(
+                "Model response did not contain text", error_code="invalid_response"
+            ) from exc
+        if not isinstance(content, str):
+            raise ProviderUnavailableError(
+                "Model response did not contain text", error_code="invalid_response"
+            )
+        return content
+
     async def complete_structured(
         self,
         messages: list[dict[str, Any]],
         schema: type[BaseModel],
         context: ModelCallContext,
     ) -> BaseModel:
-        del context
         schema_hint = json.dumps(schema.model_json_schema(), ensure_ascii=False)
         formatted = [
             *messages,
@@ -272,6 +319,12 @@ class OpenAICompatibleLLMProvider(LLMProvider):
             body = await self._chat(formatted, json_mode=True, retries=0)
             try:
                 content = body["choices"][0]["message"]["content"]
+                if (
+                    self.settings.vision_debug
+                    and context.agent_code == "vision_qwen"
+                    and isinstance(content, str)
+                ):
+                    logger.info("[QWEN_RAW_RESPONSE] %s", content[:4096])
                 return schema.model_validate(extract_json(content))
             except (KeyError, TypeError, ValueError, ValidationError):
                 if correction:

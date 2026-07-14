@@ -1,0 +1,2154 @@
+{
+  "dataset_name": "HerbWise-AI 45类中药材结构化知识卡",
+  "version": "1.0-draft",
+  "generated_date": "2026-07-13",
+  "scope": "用于图像识别结果标准化、教学展示、RAG查询构造、相似饮片辨析和质控风险提示，不用于临床诊断或替代法定检验。",
+  "source_class_file": "data.yaml",
+  "record_count": 45,
+  "review_status": "curated_draft_needs_professional_review",
+  "important_notice": [
+    "本数据是结构化整理和压缩改写，不是《中国药典》原文复制。",
+    "2025年版《中国药典》已经实施，正式上线前应由中药师或中药鉴定学教师逐条对照授权文本终审。",
+    "木通、川贝母、冬虫夏草、何首乌、苦杏仁、桃仁等高风险或多基原品种必须保留人工复核提示。",
+    "产地字段为常见产区，不等于法定基原或道地产区的唯一范围。"
+  ],
+  "reference_catalog": [
+    {
+      "name": "香港浸会大学中药材图像数据库",
+      "url": "https://sys01.lib.hkbu.edu.hk/cmed/mmid/index.php",
+      "use": "药材名称、拉丁药名、类别、产地和图像形态交叉核对"
+    },
+    {
+      "name": "香港浸会大学中药标本数据库",
+      "url": "https://sys01.lib.hkbu.edu.hk/cmed/cmsd/index.php",
+      "use": "常用中药、易混淆中药、标本形态和名称交叉核对"
+    },
+    {
+      "name": "《中华人民共和国药典》2025年版一部",
+      "url": null,
+      "use": "法定来源、性状、鉴别、检查和含量测定的最终核对依据；需使用授权正式文本"
+    },
+    {
+      "name": "《中华人民共和国药典》2020年版一部",
+      "url": null,
+      "use": "与项目原有资料及既有教材交叉核对"
+    },
+    {
+      "name": "高等中医药院校《中药鉴定学》《中药炮制学》教材",
+      "url": null,
+      "use": "性状鉴别、炮制差异和易混淆品辨析"
+    }
+  ],
+  "records": [
+    {
+      "class_id": 0,
+      "training_class_name": "Poria",
+      "standard_name_zh": "茯苓",
+      "standard_name_en": "Poria",
+      "pharmacopoeial_latin_name": "Poria",
+      "aliases": [
+        "云苓",
+        "白茯苓",
+        "茯苓块",
+        "茯苓片"
+      ],
+      "botanical_or_zoological_source": "多孔菌科真菌茯苓 Wolfiporia cocos（同物异名常见为 Poria cocos）的干燥菌核。",
+      "common_origin_regions": [
+        "安徽",
+        "云南",
+        "湖北",
+        "河南",
+        "四川等栽培或野生地区"
+      ],
+      "medicinal_part": "干燥菌核，常切制为块、片或丁。",
+      "macroscopic_surface": "完整菌核多呈不规则团块，外皮棕褐至黑褐，皱缩粗糙；饮片多为白色至淡粉白色块片，偶带棕褐色外皮。",
+      "cross_section_or_internal_features": "断面细腻，白色或淡粉红色，少见明显纤维和导管结构。",
+      "odor_and_taste": "气微，味淡，嚼之略黏牙。",
+      "texture": "体重，质坚实而略有弹性；饮片较易折断，断面颗粒性不强。",
+      "processing_and_product_differences": "茯苓块、茯苓片、茯苓丁主要为规格差异；赤茯苓带较多淡红褐色部分，茯神含松根。炮制时重点防潮、除杂。",
+      "similar_materials": [
+        "猪苓",
+        "茯神",
+        "淀粉或石膏压制伪品"
+      ],
+      "key_identification_points": "菌核来源；外皮褐黑而内部白净细腻；无植物根茎的维管束纹理；水浸后不应迅速崩解成粉浆。",
+      "quality_control_risks": [
+        "易吸潮霉变",
+        "硫熏导致异常白亮或刺激性气味",
+        "淀粉、石膏或其他粉料压制增重",
+        "水分和灰分异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "名称映射明确；系统中应把 Poria 统一归一化为茯苓。",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 1,
+      "training_class_name": "White Peony Root",
+      "standard_name_zh": "白芍",
+      "standard_name_en": "White Peony Root",
+      "pharmacopoeial_latin_name": "Paeoniae Radix Alba",
+      "aliases": [
+        "白芍药",
+        "杭白芍",
+        "亳白芍",
+        "川白芍"
+      ],
+      "botanical_or_zoological_source": "毛茛科植物芍药 Paeonia lactiflora 的干燥根，通常经去头尾、除外皮或煮后干燥等产地加工。",
+      "common_origin_regions": [
+        "浙江",
+        "安徽",
+        "四川",
+        "山东及其他栽培区"
+      ],
+      "medicinal_part": "干燥根。",
+      "macroscopic_surface": "圆柱形，较平直或略弯；表面类白至淡红棕色，较光滑，可见纵皱纹及细根痕。",
+      "cross_section_or_internal_features": "断面较平坦，类白或微带棕红，形成层环较明显，木部放射状纹理不甚突出。",
+      "odor_and_taste": "气微，味微苦而酸。",
+      "texture": "质坚实，不易折断，切片断面粉性较明显。",
+      "processing_and_product_differences": "常见生白芍、炒白芍、酒白芍；炒后表面微黄并有焦斑，酒制后略带酒香。不同炮制品应在名称中显式区分。",
+      "similar_materials": [
+        "赤芍",
+        "牡丹根",
+        "加工过度或漂白的白芍"
+      ],
+      "key_identification_points": "白芍多去皮、色浅、断面粉性；赤芍通常带皮、色棕褐且断面木部放射纹更明显。",
+      "quality_control_risks": [
+        "硫熏漂白",
+        "过度去皮导致有效部位损失",
+        "混入赤芍或牡丹根",
+        "霉变和虫蛀",
+        "水分、二氧化硫残留及芍药苷相关指标异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 2,
+      "training_class_name": "Atractylodes",
+      "standard_name_zh": "白术",
+      "standard_name_en": "Atractylodes",
+      "pharmacopoeial_latin_name": "Atractylodis Macrocephalae Rhizoma",
+      "aliases": [
+        "于术",
+        "冬术",
+        "浙术",
+        "白术片"
+      ],
+      "botanical_or_zoological_source": "菊科植物白术 Atractylodes macrocephala 的干燥根茎。",
+      "common_origin_regions": [
+        "浙江",
+        "安徽",
+        "湖南",
+        "湖北",
+        "江西等栽培区"
+      ],
+      "medicinal_part": "干燥根茎。",
+      "macroscopic_surface": "不规则肥厚团块或结节状，表面灰黄至灰棕，有纵皱纹、须根痕及瘤状突起，顶端可见茎基残痕。",
+      "cross_section_or_internal_features": "断面黄白至淡棕色，散有棕黄色油点或油室，木部纹理不如苍术明显。",
+      "odor_and_taste": "气清香，味甘、微辛，嚼之略黏。",
+      "texture": "质坚硬，不易折断，断面略呈角质或颗粒性。",
+      "processing_and_product_differences": "生白术、炒白术、麸炒白术、土炒白术等；炒制后颜色加深、焦香增强。必须把炮制方式作为独立字段，不应仅写“白术”。",
+      "similar_materials": [
+        "苍术",
+        "关苍术",
+        "菊科其他根茎"
+      ],
+      "key_identification_points": "白术块大肥厚、断面黄白并散有油点；苍术多呈结节圆柱形，断面常有橙黄油室及白色结晶状“起霜”。",
+      "quality_control_risks": [
+        "硫熏",
+        "发霉泛油",
+        "混入苍术或其他菊科根茎",
+        "水分、灰分、浸出物和挥发性成分异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 3,
+      "training_class_name": "Dandelion",
+      "standard_name_zh": "蒲公英",
+      "standard_name_en": "Dandelion",
+      "pharmacopoeial_latin_name": "Taraxaci Herba",
+      "aliases": [
+        "黄花地丁",
+        "婆婆丁",
+        "蒲公草"
+      ],
+      "botanical_or_zoological_source": "菊科蒲公英 Taraxacum mongolicum 及同属数种植物的干燥全草，具体合法基原应按现行药典核对。",
+      "common_origin_regions": [
+        "东北",
+        "华北",
+        "西北及全国多地"
+      ],
+      "medicinal_part": "干燥全草。",
+      "macroscopic_surface": "根圆锥形，表面棕褐；叶基生、倒披针形或羽状深裂，皱缩；可见中空花葶和头状花序或瘦果。",
+      "cross_section_or_internal_features": "根断面黄白色，可见放射状纹理；叶脉明显。",
+      "odor_and_taste": "气微，味微苦。",
+      "texture": "叶质脆，根较韧。",
+      "processing_and_product_differences": "多为净制、切段；炒蒲公英并非常规统一规格，使用时应以饮片标签为准。",
+      "similar_materials": [
+        "苦苣菜",
+        "苣荬菜",
+        "菊科其他黄花全草"
+      ],
+      "key_identification_points": "基生叶莲座状、叶裂形态与中空花葶是主要特征；折断常见乳汁。",
+      "quality_control_risks": [
+        "混入近似菊科全草",
+        "泥沙和杂质偏高",
+        "农残和重金属",
+        "潮湿霉变",
+        "采收期不当导致形态缺失"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 4,
+      "training_class_name": "Licorice",
+      "standard_name_zh": "甘草",
+      "standard_name_en": "Licorice",
+      "pharmacopoeial_latin_name": "Glycyrrhizae Radix et Rhizoma",
+      "aliases": [
+        "国老",
+        "甜草",
+        "粉甘草",
+        "生甘草"
+      ],
+      "botanical_or_zoological_source": "豆科甘草 Glycyrrhiza uralensis、胀果甘草 G. inflata 或光果甘草 G. glabra 的干燥根和根茎。",
+      "common_origin_regions": [
+        "内蒙古",
+        "甘肃",
+        "新疆",
+        "宁夏等"
+      ],
+      "medicinal_part": "干燥根及根茎。",
+      "macroscopic_surface": "圆柱形，表面红棕、灰棕或灰黄色，纵皱纹明显，并有横长皮孔和须根痕。",
+      "cross_section_or_internal_features": "断面黄白色，形成层环明显，木部放射状纹理和裂隙可见。",
+      "odor_and_taste": "气微，味甜而特殊。",
+      "texture": "质坚实而较重，断面纤维性并具粉性。",
+      "processing_and_product_differences": "生甘草、蜜炙甘草；蜜炙品表面黄棕至棕褐、有光泽，略具蜜香且味更甜。",
+      "similar_materials": [
+        "黄芪",
+        "苦参",
+        "其他甜味根类或提取后药渣"
+      ],
+      "key_identification_points": "甘草断面黄色、菊花心样放射纹明显且味显著甜；黄芪纤维更强、豆腥气较明显。",
+      "quality_control_risks": [
+        "提取后药渣回流",
+        "混入非规定甘草种",
+        "硫熏",
+        "农残和重金属",
+        "霉变",
+        "甘草酸等指标不足"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 5,
+      "training_class_name": "Gardenia",
+      "standard_name_zh": "栀子",
+      "standard_name_en": "Gardenia",
+      "pharmacopoeial_latin_name": "Gardeniae Fructus",
+      "aliases": [
+        "山栀子",
+        "黄栀子",
+        "枝子"
+      ],
+      "botanical_or_zoological_source": "茜草科植物栀子 Gardenia jasminoides 的干燥成熟果实。",
+      "common_origin_regions": [
+        "江西",
+        "湖南",
+        "福建",
+        "浙江",
+        "四川等"
+      ],
+      "medicinal_part": "干燥成熟果实。",
+      "macroscopic_surface": "长卵形或椭圆形，表面红黄至红棕色，有6条左右纵棱，顶端有宿萼残痕。",
+      "cross_section_or_internal_features": "果皮薄脆，内有多数种子，种子团黄红至深红，黏结成团。",
+      "odor_and_taste": "气微，味微酸而苦。",
+      "texture": "果皮薄而脆，种子团较坚实。",
+      "processing_and_product_differences": "生栀子、炒栀子、焦栀子、栀子炭；随炒制加深，颜色由黄红转棕褐或焦黑，焦香增强。",
+      "similar_materials": [
+        "水栀子",
+        "其他栀子属果实",
+        "染色或提取后果实"
+      ],
+      "key_identification_points": "正品纵棱明显、宿萼残存，内部种子多而呈红黄色；水栀子通常果体更大、棱特征和色泽不同。",
+      "quality_control_risks": [
+        "染色增色",
+        "提取后药渣",
+        "霉变虫蛀",
+        "农残",
+        "栀子苷等成分不足",
+        "焦栀子炭化过度"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 6,
+      "training_class_name": "Codonopsis",
+      "standard_name_zh": "党参",
+      "standard_name_en": "Codonopsis",
+      "pharmacopoeial_latin_name": "Codonopsis Radix",
+      "aliases": [
+        "潞党参",
+        "西党参",
+        "东党参",
+        "台党参"
+      ],
+      "botanical_or_zoological_source": "桔梗科党参 Codonopsis pilosula、素花党参 C. pilosula var. modesta 或川党参 C. tangshen 的干燥根。",
+      "common_origin_regions": [
+        "山西",
+        "甘肃",
+        "陕西",
+        "四川",
+        "湖北等"
+      ],
+      "medicinal_part": "干燥根。",
+      "macroscopic_surface": "长圆柱形，根头有多数疣状茎痕形成“狮子盘头”；表面黄棕至灰棕，有纵皱纹和横长皮孔。",
+      "cross_section_or_internal_features": "断面黄白色，皮部较厚，木部淡黄，常见放射状裂隙和菊花心样纹理。",
+      "odor_and_taste": "气微香，味甘。",
+      "texture": "质柔韧或稍硬，断面有裂隙。",
+      "processing_and_product_differences": "生党参、米炒党参、蜜炙党参等；炒制品颜色加深并有炒香或蜜香。",
+      "similar_materials": [
+        "人参",
+        "桔梗",
+        "羊乳根等"
+      ],
+      "key_identification_points": "“狮子盘头”、横长皮孔、断面菊花心及甘味为重点；人参通常有芦头、芦碗与支根形态。",
+      "quality_control_risks": [
+        "硫熏",
+        "染色",
+        "虫蛀霉变",
+        "混入桔梗或其他根类",
+        "糖浸增重",
+        "党参炔苷等指标异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 7,
+      "training_class_name": "Peach Kernel",
+      "standard_name_zh": "桃仁",
+      "standard_name_en": "Peach Kernel",
+      "pharmacopoeial_latin_name": "Persicae Semen",
+      "aliases": [
+        "桃核仁",
+        "桃仁肉"
+      ],
+      "botanical_or_zoological_source": "蔷薇科桃 Prunus persica 或山桃 P. davidiana 的干燥成熟种子。",
+      "common_origin_regions": [
+        "全国桃产区，常见于华北、西北、华东、西南"
+      ],
+      "medicinal_part": "干燥成熟种子，除去硬核壳。",
+      "macroscopic_surface": "扁长卵形，顶端尖、基部钝偏斜，表面黄棕至红棕，密布细小颗粒状突起。",
+      "cross_section_or_internal_features": "种皮薄，子叶两片，黄白色，富油性。",
+      "odor_and_taste": "气微，味微苦。",
+      "texture": "质较脆，富油，压之可见油迹。",
+      "processing_and_product_differences": "生桃仁、燀桃仁、炒桃仁；燀制后易去皮，炒后表面微黄并具香气。去皮桃仁应作为加工规格标明。",
+      "similar_materials": [
+        "苦杏仁",
+        "郁李仁"
+      ],
+      "key_identification_points": "桃仁通常较长而扁，基部偏斜；苦杏仁更心形、基部较圆，苦味及苦杏仁苷风险更明显。",
+      "quality_control_risks": [
+        "酸败走油",
+        "霉菌和黄曲霉毒素风险",
+        "混入苦杏仁",
+        "去皮后不易区分来源",
+        "苦杏仁苷/氰苷相关安全风险",
+        "虫蛀"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 8,
+      "training_class_name": "Peeled Peach Kernel",
+      "standard_name_zh": "去皮桃仁",
+      "standard_name_en": "Peeled Peach Kernel",
+      "pharmacopoeial_latin_name": "Persicae Semen (decorticated)",
+      "aliases": [
+        "燀桃仁",
+        "去种皮桃仁",
+        "桃仁肉"
+      ],
+      "botanical_or_zoological_source": "桃仁经燀法或温水处理后除去种皮所得的加工饮片；并非独立植物基原。",
+      "common_origin_regions": [
+        "随桃仁来源，主要来自国内桃产区"
+      ],
+      "medicinal_part": "除去种皮的桃或山桃成熟种子。",
+      "macroscopic_surface": "类白至淡黄白色，扁长卵形，可见两片子叶外形，表面较光滑，残留少量棕色种皮。",
+      "cross_section_or_internal_features": "内部黄白色、富油，胚结构可见。",
+      "odor_and_taste": "气微，味微苦，油润。",
+      "texture": "质脆，易压碎并显油迹。",
+      "processing_and_product_differences": "核心区别是已去种皮；不得把去皮桃仁当作与桃仁无关的独立药材。炒制后色黄、香气增加。",
+      "similar_materials": [
+        "苦杏仁去皮品",
+        "郁李仁去皮品"
+      ],
+      "key_identification_points": "应追溯原料批次和加工记录；仅凭去皮后的白色子叶较难区分，需结合形状、尺寸及原料凭证。",
+      "quality_control_risks": [
+        "来源不可追溯",
+        "苦杏仁混入后难以肉眼识别",
+        "酸败走油",
+        "霉菌毒素",
+        "加工水质和干燥不足",
+        "氰苷类风险"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 9,
+      "training_class_name": "Kochia Fruit",
+      "standard_name_zh": "地肤子",
+      "standard_name_en": "Kochia Fruit",
+      "pharmacopoeial_latin_name": "Kochiae Fructus",
+      "aliases": [
+        "地葵",
+        "扫帚子",
+        "益明"
+      ],
+      "botanical_or_zoological_source": "苋科（旧称藜科）地肤 Bassia scoparia（同物异名 Kochia scoparia）的干燥成熟果实。",
+      "common_origin_regions": [
+        "华北",
+        "东北",
+        "西北及全国多地"
+      ],
+      "medicinal_part": "干燥成熟果实。",
+      "macroscopic_surface": "扁球形或五角星状，外包宿存花被，表面灰绿至棕色，具放射状翅状突起。",
+      "cross_section_or_internal_features": "剥开可见小型种子，种皮棕黑色。",
+      "odor_and_taste": "气微，味微苦。",
+      "texture": "质轻而脆。",
+      "processing_and_product_differences": "净制去杂，通常不作复杂炮制。",
+      "similar_materials": [
+        "藜科/苋科其他小型果实种子",
+        "灰菜种子"
+      ],
+      "key_identification_points": "宿存花被形成五角星样外形是重要特征；整体轻小而非单纯光滑种子。",
+      "quality_control_risks": [
+        "泥沙和茎叶杂质",
+        "近缘植物混入",
+        "农残",
+        "霉变",
+        "灰分超限"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 10,
+      "training_class_name": "Moutan Cortex",
+      "standard_name_zh": "牡丹皮",
+      "standard_name_en": "Moutan Cortex",
+      "pharmacopoeial_latin_name": "Moutan Cortex",
+      "aliases": [
+        "丹皮",
+        "粉丹皮",
+        "刮丹皮"
+      ],
+      "botanical_or_zoological_source": "毛茛科植物牡丹 Paeonia suffruticosa 的干燥根皮。",
+      "common_origin_regions": [
+        "安徽铜陵、山东、河南、四川等"
+      ],
+      "medicinal_part": "干燥根皮。",
+      "macroscopic_surface": "筒状或半筒状，外表面灰褐或黄褐，有横长皮孔和根痕；刮去栓皮者呈粉红或淡红棕色。",
+      "cross_section_or_internal_features": "内表面淡黄或灰黄色，有细纵纹，断面较平坦，粉性。",
+      "odor_and_taste": "气芳香，味微苦而涩，略有麻舌感。",
+      "texture": "质硬而脆，易折断。",
+      "processing_and_product_differences": "原丹皮、刮丹皮、酒牡丹皮、炒牡丹皮、牡丹皮炭；刮皮品颜色更浅，炭品外黑内棕。",
+      "similar_materials": [
+        "地骨皮",
+        "桑白皮",
+        "其他根皮"
+      ],
+      "key_identification_points": "牡丹皮常呈筒状、具特殊芳香和粉性断面；地骨皮薄而槽状、外表面灰黄色且易层层剥离。",
+      "quality_control_risks": [
+        "硫熏",
+        "混入地骨皮或其他根皮",
+        "抽芯不净",
+        "霉变",
+        "丹皮酚等指标不足",
+        "炭化过度"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 11,
+      "training_class_name": "Cordyceps",
+      "standard_name_zh": "冬虫夏草",
+      "standard_name_en": "Cordyceps",
+      "pharmacopoeial_latin_name": "Cordyceps",
+      "aliases": [
+        "虫草",
+        "中华虫草"
+      ],
+      "botanical_or_zoological_source": "麦角菌科真菌冬虫夏草菌 Ophiocordyceps sinensis 寄生于蝙蝠蛾科幼虫形成的子座和虫体复合体。",
+      "common_origin_regions": [
+        "青海",
+        "西藏",
+        "四川",
+        "甘肃、云南高海拔地区"
+      ],
+      "medicinal_part": "真菌子座与寄主幼虫尸体的复合体。",
+      "macroscopic_surface": "虫体似蚕，黄棕至棕褐，环纹明显，足8对，中部4对较明显；头部长出单一细长子座。",
+      "cross_section_or_internal_features": "虫体断面类白或淡黄，内部较充实；子座断面色深。",
+      "odor_and_taste": "气微腥，味微苦。",
+      "texture": "虫体质脆易折，子座较柔韧。",
+      "processing_and_product_differences": "一般净制、低温干燥，不宜高温炮制；断草、整草和规格等级主要是商品规格差异。",
+      "similar_materials": [
+        "亚香棒虫草",
+        "蛹虫草",
+        "地蚕等虫体伪品",
+        "模具压制或胶粘拼接品"
+      ],
+      "key_identification_points": "虫体环纹、足的分布、头部与子座自然连接、子座单一且表面细纵纹为重点。",
+      "quality_control_risks": [
+        "重金属尤其砷风险",
+        "染色、增重和金属丝穿插",
+        "胶粘拼接",
+        "霉菌污染",
+        "非正品虫草混充",
+        "人工培育蛹虫草冒充"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 12,
+      "training_class_name": "Eucommia",
+      "standard_name_zh": "杜仲",
+      "standard_name_en": "Eucommia",
+      "pharmacopoeial_latin_name": "Eucommiae Cortex",
+      "aliases": [
+        "丝棉皮",
+        "扯丝皮"
+      ],
+      "botanical_or_zoological_source": "杜仲科植物杜仲 Eucommia ulmoides 的干燥树皮。",
+      "common_origin_regions": [
+        "陕西",
+        "湖北",
+        "四川",
+        "贵州",
+        "河南及多地栽培区"
+      ],
+      "medicinal_part": "干燥树皮。",
+      "macroscopic_surface": "板片状或卷片状，外表面灰棕、粗糙，有纵裂槽；内表面暗紫褐或红棕色，较平滑。",
+      "cross_section_or_internal_features": "折断面有大量细密、银白色、富弹性的橡胶丝相连。",
+      "odor_and_taste": "气微，味稍苦。",
+      "texture": "质脆，但胶丝牵连使断面不完全分离。",
+      "processing_and_product_differences": "生杜仲、盐杜仲、炒杜仲；盐炙或炒制后颜色加深、胶丝弹性减弱并易折断。",
+      "similar_materials": [
+        "厚朴",
+        "秦皮",
+        "其他树皮"
+      ],
+      "key_identification_points": "折断后白色弹性胶丝密布是最具代表性的鉴别点。",
+      "quality_control_risks": [
+        "剥皮年限不足",
+        "混入其他树皮",
+        "盐炙不均",
+        "霉变",
+        "农残和重金属",
+        "胶丝和松脂醇二葡萄糖苷等指标异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 13,
+      "training_class_name": "Angelica",
+      "standard_name_zh": "当归",
+      "standard_name_en": "Angelica",
+      "pharmacopoeial_latin_name": "Angelicae Sinensis Radix",
+      "aliases": [
+        "秦归",
+        "岷归",
+        "云归"
+      ],
+      "botanical_or_zoological_source": "伞形科植物当归 Angelica sinensis 的干燥根。",
+      "common_origin_regions": [
+        "甘肃岷县及周边为传统主产区，亦见云南、四川、陕西等"
+      ],
+      "medicinal_part": "干燥根，常分归头、归身、归尾或全归。",
+      "macroscopic_surface": "根头膨大，主根短粗，下部有多条支根；表面黄棕至棕褐，有纵皱纹及横长皮孔。",
+      "cross_section_or_internal_features": "断面黄白或淡黄棕，形成层环明显，皮部有多数棕色油点。",
+      "odor_and_taste": "香气浓郁而特异，味甘、辛、微苦。",
+      "texture": "质柔韧，断面油润。",
+      "processing_and_product_differences": "生当归、酒当归、土炒当归、当归炭；酒制后香气和酒气更明显，炭品表面焦黑。",
+      "similar_materials": [
+        "独活",
+        "欧当归",
+        "白芷及伞形科其他根"
+      ],
+      "key_identification_points": "特异浓香、油润断面和分枝根形态为重点；独活外形更粗糙且气味不同。",
+      "quality_control_risks": [
+        "硫熏",
+        "发霉走油",
+        "欧当归等混入",
+        "重金属和农残",
+        "挥发油损失",
+        "阿魏酸等指标不足"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 14,
+      "training_class_name": "Apricot Kernel",
+      "standard_name_zh": "苦杏仁",
+      "standard_name_en": "Bitter Apricot Kernel",
+      "pharmacopoeial_latin_name": "Armeniacae Semen Amarum",
+      "aliases": [
+        "北杏仁",
+        "杏仁",
+        "苦杏仁肉"
+      ],
+      "botanical_or_zoological_source": "蔷薇科山杏、东北杏、西伯利亚杏或杏等规定来源植物的干燥成熟种子，具体基原按现行药典核对。",
+      "common_origin_regions": [
+        "东北",
+        "华北",
+        "西北等杏产区"
+      ],
+      "medicinal_part": "除去硬核壳的成熟种子。",
+      "macroscopic_surface": "心形或扁心形，顶端尖、基部圆钝，表面黄棕至红棕，密布细颗粒。",
+      "cross_section_or_internal_features": "种皮内为两片黄白色子叶，富油。",
+      "odor_and_taste": "气微，味苦。",
+      "texture": "质脆，富油。",
+      "processing_and_product_differences": "生苦杏仁、燀苦杏仁、炒苦杏仁；燀制便于去皮，炒后香气增强。加工不能消除全部氰苷风险。",
+      "similar_materials": [
+        "桃仁",
+        "甜杏仁"
+      ],
+      "key_identification_points": "苦杏仁通常较桃仁短而心形，基部更圆；苦味明显。去皮后应依赖形态和批次追溯。",
+      "quality_control_risks": [
+        "苦杏仁苷水解产生氢氰酸的安全风险",
+        "儿童误食风险",
+        "酸败走油",
+        "黄曲霉毒素",
+        "混入甜杏仁或桃仁",
+        "炮制不当"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 15,
+      "training_class_name": "Polygonum Multiflorum",
+      "standard_name_zh": "何首乌",
+      "standard_name_en": "Polygonum Multiflorum",
+      "pharmacopoeial_latin_name": "Polygoni Multiflori Radix",
+      "aliases": [
+        "首乌",
+        "生首乌",
+        "赤首乌"
+      ],
+      "botanical_or_zoological_source": "蓼科植物何首乌 Fallopia multiflora（常用同物异名 Polygonum multiflorum）的干燥块根。",
+      "common_origin_regions": [
+        "河南",
+        "湖北",
+        "广西",
+        "广东",
+        "贵州、四川等"
+      ],
+      "medicinal_part": "干燥块根。",
+      "macroscopic_surface": "团块状或不规则纺锤形，表面红棕或红褐，凹凸不平，有皱纹和横长皮孔。",
+      "cross_section_or_internal_features": "断面淡黄棕或红棕，皮部散有多个类圆形异常维管束，形成“云锦花纹”，中央木部较大。",
+      "odor_and_taste": "气微，味微苦、甘涩。",
+      "texture": "质坚实而重。",
+      "processing_and_product_differences": "生何首乌与制何首乌必须严格区分；制何首乌通常以黑豆汁蒸制，表面及断面转黑褐、质较柔润。",
+      "similar_materials": [
+        "黄药子",
+        "翼蓼等块根",
+        "制首乌与生首乌混淆"
+      ],
+      "key_identification_points": "断面云锦花纹是核心；生品红棕，制品黑褐而油润，不能互相替代。",
+      "quality_control_risks": [
+        "肝损伤相关安全风险，尤其生品、超量或来源不明制品",
+        "炮制不规范",
+        "以黑色染料或糖浆伪制",
+        "混入其他块根",
+        "蒽醌和二苯乙烯苷相关指标异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 16,
+      "training_class_name": "Polygonatum",
+      "standard_name_zh": "黄精",
+      "standard_name_en": "Polygonatum",
+      "pharmacopoeial_latin_name": "Polygonati Rhizoma",
+      "aliases": [
+        "鸡头黄精",
+        "姜形黄精",
+        "大黄精"
+      ],
+      "botanical_or_zoological_source": "百合科/天门冬科黄精 Polygonatum sibiricum、滇黄精 P. kingianum 或多花黄精 P. cyrtonema 的干燥根茎。",
+      "common_origin_regions": [
+        "河北",
+        "内蒙古",
+        "安徽",
+        "浙江",
+        "湖南",
+        "云南、贵州等"
+      ],
+      "medicinal_part": "干燥根茎。",
+      "macroscopic_surface": "结节状、鸡头状或姜块状，表面黄白至黄棕，有环节和圆盘状茎痕。",
+      "cross_section_or_internal_features": "断面淡黄白至黄棕，角质或略粉性，可见散在维管束小点。",
+      "odor_and_taste": "气微，味甜，嚼之黏。",
+      "texture": "质坚韧或角质样，干品较硬。",
+      "processing_and_product_differences": "生黄精刺激性较强，常经蒸制；制黄精或九蒸九晒制品色深、质柔润、甜味增强。需记录实际蒸制次数和辅料。",
+      "similar_materials": [
+        "玉竹",
+        "姜黄类根茎",
+        "其他黄精属根茎"
+      ],
+      "key_identification_points": "黄精多结节肥厚、味甜黏；玉竹多长圆柱形、环纹细密、断面角质而较均一。",
+      "quality_control_risks": [
+        "炮制不足",
+        "糖或糖浆浸渍增重",
+        "硫熏",
+        "霉变",
+        "非规定黄精属植物混入",
+        "水分和浸出物异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 17,
+      "training_class_name": "Spatholobus",
+      "standard_name_zh": "鸡血藤",
+      "standard_name_en": "Spatholobus Stem",
+      "pharmacopoeial_latin_name": "Spatholobi Caulis",
+      "aliases": [
+        "血风藤",
+        "大血藤（误称需避免）",
+        "过江龙"
+      ],
+      "botanical_or_zoological_source": "豆科植物密花豆 Spatholobus suberectus 的干燥藤茎。",
+      "common_origin_regions": [
+        "广东",
+        "广西",
+        "云南等"
+      ],
+      "medicinal_part": "干燥藤茎，常横切或斜切成片。",
+      "macroscopic_surface": "圆柱形或椭圆厚片，外皮灰棕，粗糙，有纵沟和皮孔。",
+      "cross_section_or_internal_features": "断面木部淡黄或黄白，导管孔明显，韧皮部呈红棕色环带或斑块，与木部相间形成偏心环纹。",
+      "odor_and_taste": "气微，味涩、微苦。",
+      "texture": "质坚硬，难折断。",
+      "processing_and_product_differences": "通常净制切片；酒制品颜色稍深并带酒气，需与生品区分。",
+      "similar_materials": [
+        "大血藤",
+        "红藤",
+        "其他红色藤茎"
+      ],
+      "key_identification_points": "断面红棕色韧皮部与淡色木部相间、呈多个偏心环或半环，是关键。",
+      "quality_control_risks": [
+        "混入大血藤等非同源藤材",
+        "染色强化红色",
+        "霉变",
+        "木质部过多、有效部位不足",
+        "重金属和农残"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 18,
+      "training_class_name": "Goji Berry",
+      "standard_name_zh": "枸杞子",
+      "standard_name_en": "Goji Berry",
+      "pharmacopoeial_latin_name": "Lycii Fructus",
+      "aliases": [
+        "宁夏枸杞",
+        "杞子",
+        "枸杞果"
+      ],
+      "botanical_or_zoological_source": "茄科植物宁夏枸杞 Lycium barbarum 的干燥成熟果实。",
+      "common_origin_regions": [
+        "宁夏",
+        "青海",
+        "甘肃",
+        "新疆、内蒙古等"
+      ],
+      "medicinal_part": "干燥成熟果实。",
+      "macroscopic_surface": "纺锤形或椭圆形，表面红色至暗红，皱缩，顶端有花柱痕，基部有果柄痕。",
+      "cross_section_or_internal_features": "果肉柔润，内含多数扁肾形黄棕色种子。",
+      "odor_and_taste": "气微，味甜、微酸。",
+      "texture": "质柔润，易吸潮黏结。",
+      "processing_and_product_differences": "一般净制；酒枸杞等并非所有地区统一常用品种，需按实际饮片标签记录。",
+      "similar_materials": [
+        "染色枸杞",
+        "硫熏枸杞",
+        "黑果枸杞",
+        "其他枸杞属果实"
+      ],
+      "key_identification_points": "正品红色自然不均、种子多且扁；水洗不应迅速大量掉色，刺激性硫味异常。",
+      "quality_control_risks": [
+        "二氧化硫残留",
+        "染色",
+        "糖水浸泡增重",
+        "农残",
+        "霉菌和虫蛀",
+        "高湿结块",
+        "非宁夏枸杞混充"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 19,
+      "training_class_name": "Lotus Stamen",
+      "standard_name_zh": "莲须",
+      "standard_name_en": "Lotus Stamen",
+      "pharmacopoeial_latin_name": "Nelumbinis Stamen",
+      "aliases": [
+        "莲花须",
+        "莲蕊须",
+        "莲蕊"
+      ],
+      "botanical_or_zoological_source": "睡莲科植物莲 Nelumbo nucifera 的干燥雄蕊。",
+      "common_origin_regions": [
+        "湖南",
+        "湖北",
+        "江西",
+        "江苏、浙江等莲产区"
+      ],
+      "medicinal_part": "干燥雄蕊。",
+      "macroscopic_surface": "线形，花丝细长，淡黄棕；花药长椭圆形，黄至棕黄色。",
+      "cross_section_or_internal_features": "内部结构细小，不以断面为主要鉴别依据。",
+      "odor_and_taste": "气微香，味涩。",
+      "texture": "质轻而脆。",
+      "processing_and_product_differences": "通常除去杂质、低温干燥，不作复杂炮制。",
+      "similar_materials": [
+        "莲房碎屑",
+        "莲花花瓣碎片",
+        "其他水生植物雄蕊"
+      ],
+      "key_identification_points": "花丝与花药连接完整、大小均一、颜色黄棕是重点。",
+      "quality_control_risks": [
+        "花粉和泥沙杂质",
+        "受潮霉变",
+        "掺入花瓣或莲房碎屑",
+        "农残",
+        "过度烘干焦化"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 20,
+      "training_class_name": "Lotus Seed",
+      "standard_name_zh": "莲子",
+      "standard_name_en": "Lotus Seed",
+      "pharmacopoeial_latin_name": "Nelumbinis Semen",
+      "aliases": [
+        "莲肉",
+        "白莲子",
+        "湘莲",
+        "建莲"
+      ],
+      "botanical_or_zoological_source": "睡莲科植物莲 Nelumbo nucifera 的干燥成熟种子。",
+      "common_origin_regions": [
+        "湖南",
+        "福建",
+        "江西",
+        "湖北、江苏等"
+      ],
+      "medicinal_part": "干燥成熟种子，常除去果皮及种皮，部分去心。",
+      "macroscopic_surface": "卵圆或类球形，表面淡黄白至红棕；去皮品类白，中央常见去除莲子心后的孔隙。",
+      "cross_section_or_internal_features": "断面白色、粉性，两片肥厚子叶明显。",
+      "odor_and_taste": "气微，味甘、微涩；带莲子心者可有明显苦味。",
+      "texture": "质坚硬，煮后粉糯。",
+      "processing_and_product_differences": "红莲、白莲、去心莲子和带心莲子属商品/加工规格；漂白白莲颜色异常均一时需警惕。",
+      "similar_materials": [
+        "芡实",
+        "白果仁",
+        "豆类种子"
+      ],
+      "key_identification_points": "莲子有特征性胚孔和两片子叶；芡实多类球形、断面更致密，无莲子心孔。",
+      "quality_control_risks": [
+        "硫熏漂白",
+        "霉变虫蛀",
+        "去心不净",
+        "陈货泛黄",
+        "农残",
+        "掺入芡实或其他种仁"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 21,
+      "training_class_name": "Ophiopogon",
+      "standard_name_zh": "麦冬",
+      "standard_name_en": "Ophiopogon Root",
+      "pharmacopoeial_latin_name": "Ophiopogonis Radix",
+      "aliases": [
+        "麦门冬",
+        "杭麦冬",
+        "川麦冬"
+      ],
+      "botanical_or_zoological_source": "天门冬科植物麦冬 Ophiopogon japonicus 的干燥块根。",
+      "common_origin_regions": [
+        "浙江",
+        "四川及长江流域栽培区"
+      ],
+      "medicinal_part": "干燥块根。",
+      "macroscopic_surface": "纺锤形，两端略尖，表面黄白或淡黄色，有细纵皱纹。",
+      "cross_section_or_internal_features": "断面黄白，半透明或角质样，中柱细小。",
+      "odor_and_taste": "气微香，味甘、微苦，嚼之黏。",
+      "texture": "质柔韧，干后较硬，断面角质。",
+      "processing_and_product_differences": "一般净制；朱麦冬、酒麦冬等地方炮制品需单独标注。抽芯与否也应记录。",
+      "similar_materials": [
+        "山麦冬",
+        "沿阶草属近缘块根"
+      ],
+      "key_identification_points": "麦冬多较饱满、表面黄白、断面半透明且中柱小；山麦冬形态和中柱比例可有差异。",
+      "quality_control_risks": [
+        "硫熏",
+        "糖水浸泡增重",
+        "近缘种混入",
+        "霉变",
+        "抽芯不净",
+        "农残及皂苷/黄酮类指标异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 22,
+      "training_class_name": "Akebia Stem",
+      "standard_name_zh": "木通",
+      "standard_name_en": "Akebia Stem",
+      "pharmacopoeial_latin_name": "Akebiae Caulis",
+      "aliases": [
+        "三叶木通",
+        "八月札藤（果实名称不可混用）"
+      ],
+      "botanical_or_zoological_source": "木通科木通 Akebia quinata、三叶木通 A. trifoliata 或白木通相关规定来源的干燥藤茎，具体基原应按现行药典核对。",
+      "common_origin_regions": [
+        "华东",
+        "华中",
+        "西南等"
+      ],
+      "medicinal_part": "干燥藤茎。",
+      "macroscopic_surface": "圆柱形，表面灰棕至灰黄色，有纵纹、皮孔及枝痕。",
+      "cross_section_or_internal_features": "断面皮部较薄，木部黄白，导管孔大而明显，髓小或中空。",
+      "odor_and_taste": "气微，味微苦。",
+      "texture": "质坚硬，切片较轻。",
+      "processing_and_product_differences": "通常切厚片生用，不作复杂炮制。",
+      "similar_materials": [
+        "川木通",
+        "关木通",
+        "小木通",
+        "其他藤茎"
+      ],
+      "key_identification_points": "正品木通的基原和断面导管排列需结合标签、显微和理化鉴别；不能仅凭“木通”通用名判断。",
+      "quality_control_risks": [
+        "误用含马兜铃酸的关木通（马兜铃科）导致严重肾毒性风险",
+        "基原混乱",
+        "混入川木通或其他藤材",
+        "霉变",
+        "来源凭证缺失"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "这是高风险名称，系统应强制显示基原和人工复核提示。",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 23,
+      "training_class_name": "Polygonatum Odoratum",
+      "standard_name_zh": "玉竹",
+      "standard_name_en": "Polygonatum Odoratum",
+      "pharmacopoeial_latin_name": "Polygonati Odorati Rhizoma",
+      "aliases": [
+        "葳蕤",
+        "尾参",
+        "玉竹参"
+      ],
+      "botanical_or_zoological_source": "天门冬科植物玉竹 Polygonatum odoratum 的干燥根茎。",
+      "common_origin_regions": [
+        "湖南",
+        "河南",
+        "江苏",
+        "浙江、东北等"
+      ],
+      "medicinal_part": "干燥根茎。",
+      "macroscopic_surface": "长圆柱形，略扁，表面黄白至淡黄棕，有细密环节和圆形茎痕。",
+      "cross_section_or_internal_features": "断面黄白、角质样或略透明，散有细小维管束点。",
+      "odor_and_taste": "气微，味甘，嚼之黏。",
+      "texture": "质硬而略脆，受潮后柔韧。",
+      "processing_and_product_differences": "生玉竹、蒸玉竹；蒸后色泽加深、质较柔润。糖制或蜜浸商品不应冒充常规饮片。",
+      "similar_materials": [
+        "黄精",
+        "天冬",
+        "山药"
+      ],
+      "key_identification_points": "玉竹多呈长条圆柱，环纹细密；黄精多结节肥厚、形状不规则。",
+      "quality_control_risks": [
+        "糖浆浸泡增重",
+        "硫熏",
+        "黄精混入",
+        "霉变",
+        "水分和浸出物异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 24,
+      "training_class_name": "Ligustrum Fruit",
+      "standard_name_zh": "女贞子",
+      "standard_name_en": "Ligustrum Fruit",
+      "pharmacopoeial_latin_name": "Ligustri Lucidi Fructus",
+      "aliases": [
+        "女贞实",
+        "冬青子"
+      ],
+      "botanical_or_zoological_source": "木犀科植物女贞 Ligustrum lucidum 的干燥成熟果实。",
+      "common_origin_regions": [
+        "浙江",
+        "江苏",
+        "湖南",
+        "福建、广西等"
+      ],
+      "medicinal_part": "干燥成熟果实。",
+      "macroscopic_surface": "卵形、椭圆形或肾形，表面蓝黑至紫黑，皱缩，基部有果柄痕。",
+      "cross_section_or_internal_features": "果皮薄，内有1～2枚种子，断面灰白或黄白。",
+      "odor_and_taste": "气微，味甘、微苦涩。",
+      "texture": "质坚实。",
+      "processing_and_product_differences": "生女贞子、酒女贞子；酒制后表面色更深、略有酒香。",
+      "similar_materials": [
+        "冬青属果实",
+        "鼠李科黑色果实",
+        "黑豆等"
+      ],
+      "key_identification_points": "果实形状、果柄痕和内部种子数结合判断；不能只凭黑色外观。",
+      "quality_control_risks": [
+        "染色",
+        "混入其他黑色果实",
+        "霉变虫蛀",
+        "酒制不均",
+        "齐墩果酸等指标不足"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 25,
+      "training_class_name": "Cistanche",
+      "standard_name_zh": "肉苁蓉",
+      "standard_name_en": "Cistanche",
+      "pharmacopoeial_latin_name": "Cistanches Herba",
+      "aliases": [
+        "大芸",
+        "寸芸",
+        "沙漠人参"
+      ],
+      "botanical_or_zoological_source": "列当科肉苁蓉 Cistanche deserticola 或管花肉苁蓉 C. tubulosa 的干燥带鳞叶肉质茎。",
+      "common_origin_regions": [
+        "内蒙古",
+        "新疆",
+        "甘肃、宁夏等荒漠区"
+      ],
+      "medicinal_part": "干燥肉质茎。",
+      "macroscopic_surface": "扁圆柱或不规则厚片，表面棕褐至黑褐，密布覆瓦状肉质鳞叶痕。",
+      "cross_section_or_internal_features": "断面棕褐，有波状环纹或散在维管束点，常油润。",
+      "odor_and_taste": "气微，味甜、微苦。",
+      "texture": "质柔润或坚韧，不易折断。",
+      "processing_and_product_differences": "生肉苁蓉、酒苁蓉；酒制后色深、质柔润并有酒香。盐渍原料必须充分脱盐并记录。",
+      "similar_materials": [
+        "锁阳",
+        "草苁蓉",
+        "其他寄生肉质茎"
+      ],
+      "key_identification_points": "覆瓦状鳞叶和断面波状环纹为重点；锁阳表面粗糙、断面常有三角形维管束。",
+      "quality_control_risks": [
+        "盐分过高",
+        "泥沙和金属增重",
+        "糖浆浸泡",
+        "硫熏",
+        "霉变",
+        "非规定种混入",
+        "苯乙醇苷类成分不足"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 26,
+      "training_class_name": "Ginseng",
+      "standard_name_zh": "人参",
+      "standard_name_en": "Ginseng",
+      "pharmacopoeial_latin_name": "Ginseng Radix et Rhizoma",
+      "aliases": [
+        "生晒参",
+        "白参",
+        "红参（炮制品）",
+        "园参"
+      ],
+      "botanical_or_zoological_source": "五加科植物人参 Panax ginseng 的干燥根和根茎。",
+      "common_origin_regions": [
+        "吉林、辽宁、黑龙江等东北地区"
+      ],
+      "medicinal_part": "干燥根和根茎。",
+      "macroscopic_surface": "主根纺锤形或圆柱形，上端有根茎“芦头”及凹陷“芦碗”，表面淡黄白，有横环纹、纵皱纹及支根。",
+      "cross_section_or_internal_features": "断面黄白，形成层环明显，皮部散有黄棕色树脂道点。",
+      "odor_and_taste": "气特异，味微苦而后甘。",
+      "texture": "质较坚实，断面粉性。",
+      "processing_and_product_differences": "生晒参、白参、红参、糖参等差异显著；红参经蒸制呈红棕半透明，糖参可能含糖量高。所有炮制品应独立标识。",
+      "similar_materials": [
+        "西洋参",
+        "党参",
+        "太子参",
+        "商陆根伪品"
+      ],
+      "key_identification_points": "芦头芦碗、横环纹、树脂道点及特异气味综合判断；西洋参断面环纹和气味不同。",
+      "quality_control_risks": [
+        "以低等级参充高等级",
+        "糖浸增重",
+        "拼接整形",
+        "农残和重金属",
+        "霉变",
+        "人参皂苷指标不足",
+        "物种混用"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 27,
+      "training_class_name": "Smoked Plum",
+      "standard_name_zh": "乌梅",
+      "standard_name_en": "Mume Fruit",
+      "pharmacopoeial_latin_name": "Mume Fructus",
+      "aliases": [
+        "梅实",
+        "酸梅",
+        "熏梅"
+      ],
+      "botanical_or_zoological_source": "蔷薇科植物梅 Prunus mume 的近成熟果实经低温烘焙或烟熏后干燥。",
+      "common_origin_regions": [
+        "四川",
+        "浙江",
+        "福建",
+        "湖南、贵州等"
+      ],
+      "medicinal_part": "经加工的近成熟果实。",
+      "macroscopic_surface": "类球形或扁球形，表面乌黑或棕黑，皱缩不平，基部有果梗痕。",
+      "cross_section_or_internal_features": "果肉棕黑，紧贴硬核；核表面有凹点。",
+      "odor_and_taste": "气微烟熏，味极酸。",
+      "texture": "果肉柔韧，核坚硬。",
+      "processing_and_product_differences": "乌梅本身即为加工品；乌梅炭经炒炭后外焦黑、内部棕褐。过度烟熏或使用不当燃料应避免。",
+      "similar_materials": [
+        "黑色李子干",
+        "山杏熏制品",
+        "染黑果实"
+      ],
+      "key_identification_points": "强酸味、梅核形态及自然烟熏皱缩外观是重点。",
+      "quality_control_risks": [
+        "工业染色",
+        "不当烟熏产生污染物",
+        "霉变",
+        "糖浆浸泡",
+        "其他果实混充",
+        "有机酸等指标不足"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 28,
+      "training_class_name": "Raspberry",
+      "standard_name_zh": "覆盆子",
+      "standard_name_en": "Chinese Raspberry Fruit",
+      "pharmacopoeial_latin_name": "Rubi Fructus",
+      "aliases": [
+        "覆盆",
+        "华东覆盆子",
+        "掌叶覆盆子"
+      ],
+      "botanical_or_zoological_source": "蔷薇科植物华东覆盆子 Rubus chingii 的干燥果实。",
+      "common_origin_regions": [
+        "浙江",
+        "福建",
+        "安徽",
+        "江西等"
+      ],
+      "medicinal_part": "未完全成熟或近成熟聚合果，按规范采收加工。",
+      "macroscopic_surface": "圆锥形或扁圆锥形，由多数小核果聚合而成，表面黄绿、黄棕或棕褐，顶端圆钝，基部凹入。",
+      "cross_section_or_internal_features": "小核果内部各含小核，聚合结构清楚。",
+      "odor_and_taste": "气微，味微酸涩。",
+      "texture": "质较坚硬，易碎成小核果。",
+      "processing_and_product_differences": "一般净制；盐覆盆子等炮制品需按标签区分。",
+      "similar_materials": [
+        "普通树莓成熟果",
+        "蛇莓",
+        "其他悬钩子属果实"
+      ],
+      "key_identification_points": "聚合小核果结构和黄绿至棕色未成熟外观是重点；成熟红树莓干通常色红且较甜软。",
+      "quality_control_risks": [
+        "近缘悬钩子属果实混入",
+        "成熟度不合格",
+        "霉变",
+        "农残",
+        "盐制不均"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 29,
+      "training_class_name": "Trichosanthes Peel",
+      "standard_name_zh": "瓜蒌皮",
+      "standard_name_en": "Trichosanthes Peel",
+      "pharmacopoeial_latin_name": "Trichosanthis Pericarpium",
+      "aliases": [
+        "栝楼皮",
+        "瓜壳",
+        "栝楼壳"
+      ],
+      "botanical_or_zoological_source": "葫芦科栝楼 Trichosanthes kirilowii 或双边栝楼 T. rosthornii 的干燥成熟果皮。",
+      "common_origin_regions": [
+        "山东",
+        "河南",
+        "安徽",
+        "河北、四川等"
+      ],
+      "medicinal_part": "成熟果实的干燥果皮。",
+      "macroscopic_surface": "不规则皱缩片或舟状片，外表面橙黄、黄棕至棕红，有细皱纹；内表面黄白，常附少量果肉纤维。",
+      "cross_section_or_internal_features": "断面较薄，可见纤维性果皮层。",
+      "odor_and_taste": "气微，味淡、微酸。",
+      "texture": "质脆或略韧。",
+      "processing_and_product_differences": "通常净制切丝；蜜炙瓜蒌皮等需单独标注。不得与全瓜蒌、瓜蒌子混为同一数据项。",
+      "similar_materials": [
+        "陈皮",
+        "橘红",
+        "其他葫芦科果皮"
+      ],
+      "key_identification_points": "果皮较厚、舟状皱缩，内表面有网状纤维和残留果肉；柑橘类果皮有油点和强芳香。",
+      "quality_control_risks": [
+        "霉变",
+        "果肉未除净导致黏连",
+        "混入其他果皮",
+        "农残",
+        "黄曲霉毒素风险",
+        "来源物种混乱"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 30,
+      "training_class_name": "Cinnamon",
+      "standard_name_zh": "肉桂",
+      "standard_name_en": "Cinnamon Bark",
+      "pharmacopoeial_latin_name": "Cinnamomi Cortex",
+      "aliases": [
+        "桂皮",
+        "官桂",
+        "企边桂"
+      ],
+      "botanical_or_zoological_source": "樟科植物肉桂 Cinnamomum cassia 的干燥树皮。",
+      "common_origin_regions": [
+        "广西",
+        "广东",
+        "云南、福建等"
+      ],
+      "medicinal_part": "干燥树皮。",
+      "macroscopic_surface": "槽状或卷筒状，外表面灰棕、粗糙，有皮孔和地衣斑；内表面红棕、较平滑，有细纵纹。",
+      "cross_section_or_internal_features": "断面外层棕色，内层红棕，常见淡黄色线纹，油性。",
+      "odor_and_taste": "香气浓烈特异，味甜、辛辣。",
+      "texture": "质硬而脆，易折断。",
+      "processing_and_product_differences": "肉桂、桂心、桂碎及不同剥皮规格；不应把桂枝当肉桂。炮制通常以净制切片为主。",
+      "similar_materials": [
+        "桂枝",
+        "厚朴",
+        "阴香等樟科树皮"
+      ],
+      "key_identification_points": "强烈桂皮香、内表面红棕及油润断面为重点；厚朴气味和内表面色泽不同。",
+      "quality_control_risks": [
+        "香精浸泡伪增香",
+        "硫熏",
+        "霉变",
+        "混入阴香或其他桂皮",
+        "挥发油损失",
+        "香豆素及农残/重金属风险"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 31,
+      "training_class_name": "Cornus",
+      "standard_name_zh": "山茱萸",
+      "standard_name_en": "Cornelian Cherry Fruit",
+      "pharmacopoeial_latin_name": "Corni Fructus",
+      "aliases": [
+        "山萸肉",
+        "枣皮",
+        "药枣"
+      ],
+      "botanical_or_zoological_source": "山茱萸科植物山茱萸 Cornus officinalis 的干燥成熟果肉。",
+      "common_origin_regions": [
+        "浙江",
+        "河南",
+        "陕西、山西等"
+      ],
+      "medicinal_part": "除去果核的成熟果肉。",
+      "macroscopic_surface": "不规则片状或囊状，表面紫红至紫黑，皱缩，有光泽，偶残留果核。",
+      "cross_section_or_internal_features": "果肉薄，内面较光滑，可见核痕。",
+      "odor_and_taste": "气微，味酸、涩、微苦。",
+      "texture": "质柔润。",
+      "processing_and_product_differences": "生山茱萸、酒萸肉、蒸山萸肉；酒制或蒸制后颜色更深、质更柔润。",
+      "similar_materials": [
+        "枸杞子",
+        "酸枣皮",
+        "染色果肉"
+      ],
+      "key_identification_points": "不规则囊状果肉、紫红色及明显酸涩味；应基本去核。",
+      "quality_control_risks": [
+        "去核不净",
+        "糖浆浸泡增重",
+        "染色",
+        "霉变",
+        "酒制不均",
+        "马钱苷等指标不足"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 32,
+      "training_class_name": "Chinese Yam",
+      "standard_name_zh": "山药",
+      "standard_name_en": "Chinese Yam",
+      "pharmacopoeial_latin_name": "Dioscoreae Rhizoma",
+      "aliases": [
+        "淮山药",
+        "怀山药",
+        "薯蓣"
+      ],
+      "botanical_or_zoological_source": "薯蓣科植物薯蓣 Dioscorea polystachya（常见同物异名 D. opposita）的干燥根茎。",
+      "common_origin_regions": [
+        "河南焦作为传统道地产区，亦产河北、山西、山东等"
+      ],
+      "medicinal_part": "干燥根茎。",
+      "macroscopic_surface": "毛山药圆柱形，表面黄白、有纵沟和残留须根；光山药经刮皮修整，表面白而光滑。饮片多为类圆白片。",
+      "cross_section_or_internal_features": "断面白色、粉性，散有细小点状维管束。",
+      "odor_and_taste": "气微，味淡，嚼之发黏。",
+      "texture": "质坚实，断面粉性强。",
+      "processing_and_product_differences": "毛山药、光山药、麸炒山药、土炒山药；炒制后色微黄、具焦香。硫熏白亮品需警惕。",
+      "similar_materials": [
+        "天花粉",
+        "白芷片",
+        "葛根片",
+        "淀粉压制片"
+      ],
+      "key_identification_points": "高粉性、黏液性和散在点状维管束；光山药条直、白而坚实。",
+      "quality_control_risks": [
+        "硫熏漂白",
+        "淀粉或其他根茎压制",
+        "霉变虫蛀",
+        "农残",
+        "水分、灰分和尿囊素/多糖相关指标异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 33,
+      "training_class_name": "Sour Jujube Seed",
+      "standard_name_zh": "酸枣仁",
+      "standard_name_en": "Sour Jujube Seed",
+      "pharmacopoeial_latin_name": "Ziziphi Spinosae Semen",
+      "aliases": [
+        "酸枣核仁",
+        "枣仁",
+        "北枣仁"
+      ],
+      "botanical_or_zoological_source": "鼠李科植物酸枣 Ziziphus jujuba var. spinosa 的干燥成熟种子。",
+      "common_origin_regions": [
+        "河北",
+        "山西",
+        "陕西",
+        "辽宁、河南等"
+      ],
+      "medicinal_part": "干燥成熟种子。",
+      "macroscopic_surface": "扁圆形或扁椭圆形，一面较平坦、中央有纵线，另一面微隆起；表面紫红或紫褐，有光泽。",
+      "cross_section_or_internal_features": "种皮坚硬，内有黄白色子叶。",
+      "odor_and_taste": "气微，味淡或微苦。",
+      "texture": "质坚硬。",
+      "processing_and_product_differences": "生酸枣仁、炒酸枣仁；炒后色加深、有裂纹和香气，炒焦会影响质量。",
+      "similar_materials": [
+        "理枣仁",
+        "枳椇子",
+        "其他小型硬种子"
+      ],
+      "key_identification_points": "扁圆、紫红有光泽、一面具纵沟；理枣仁形状和种脐特征不同。",
+      "quality_control_risks": [
+        "进口理枣仁混充",
+        "虫蛀霉变",
+        "炒制过度",
+        "酸败",
+        "黄曲霉毒素",
+        "斯皮诺素等指标不足"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 34,
+      "training_class_name": "Mulberry Bark",
+      "standard_name_zh": "桑白皮",
+      "standard_name_en": "Mulberry Root Bark",
+      "pharmacopoeial_latin_name": "Mori Cortex",
+      "aliases": [
+        "桑根白皮",
+        "白桑皮"
+      ],
+      "botanical_or_zoological_source": "桑科植物桑 Morus alba 的干燥根皮。",
+      "common_origin_regions": [
+        "全国桑树栽培区"
+      ],
+      "medicinal_part": "除去栓皮的干燥根皮。",
+      "macroscopic_surface": "扭曲卷筒状或槽状，外表面白黄、淡黄棕，可见纵裂和残留橙黄栓皮；内表面黄白、平滑有纵纹。",
+      "cross_section_or_internal_features": "断面纤维性强，撕裂时有白色纤维。",
+      "odor_and_taste": "气微，味微甘。",
+      "texture": "质韧，不易折断。",
+      "processing_and_product_differences": "生桑白皮、蜜桑白皮；蜜炙后颜色加深、有光泽和蜜香。",
+      "similar_materials": [
+        "牡丹皮",
+        "地骨皮",
+        "其他根皮"
+      ],
+      "key_identification_points": "去栓皮后黄白、纤维性强；牡丹皮更脆并有芳香，地骨皮薄而易层剥。",
+      "quality_control_risks": [
+        "栓皮未除净",
+        "其他根皮混入",
+        "霉变",
+        "蜜炙加糖过量",
+        "农残和重金属",
+        "桑皮苷等指标异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 35,
+      "training_class_name": "Hawthorn",
+      "standard_name_zh": "山楂",
+      "standard_name_en": "Hawthorn Fruit",
+      "pharmacopoeial_latin_name": "Crataegi Fructus",
+      "aliases": [
+        "北山楂",
+        "山里红",
+        "红果"
+      ],
+      "botanical_or_zoological_source": "蔷薇科山里红 Crataegus pinnatifida var. major 或山楂 C. pinnatifida 的干燥成熟果实。",
+      "common_origin_regions": [
+        "山东",
+        "河北",
+        "河南",
+        "辽宁、山西等"
+      ],
+      "medicinal_part": "干燥成熟果实，常横切片。",
+      "macroscopic_surface": "球形或圆片，外皮红至棕红，有灰白小斑点；切片可见黄白果肉和多个核室。",
+      "cross_section_or_internal_features": "横切面果肉黄棕，核坚硬，多为3～5枚。",
+      "odor_and_taste": "气微清香，味酸、微甜。",
+      "texture": "果肉较硬，核坚。",
+      "processing_and_product_differences": "生山楂、炒山楂、焦山楂、山楂炭；颜色和焦香随火候加深。",
+      "similar_materials": [
+        "南山楂",
+        "野山楂",
+        "染色或糖渍山楂片"
+      ],
+      "key_identification_points": "红棕外皮小斑点、核室数量及强酸味；糖渍片表面异常黏甜。",
+      "quality_control_risks": [
+        "糖浆浸泡",
+        "染色",
+        "霉变虫蛀",
+        "农残",
+        "焦化过度",
+        "有机酸和黄酮类指标不足"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 36,
+      "training_class_name": "Gastrodia",
+      "standard_name_zh": "天麻",
+      "standard_name_en": "Gastrodia Tuber",
+      "pharmacopoeial_latin_name": "Gastrodiae Rhizoma",
+      "aliases": [
+        "明天麻",
+        "冬麻",
+        "春麻"
+      ],
+      "botanical_or_zoological_source": "兰科植物天麻 Gastrodia elata 的干燥块茎。",
+      "common_origin_regions": [
+        "云南",
+        "贵州",
+        "四川",
+        "陕西、湖北等"
+      ],
+      "medicinal_part": "干燥块茎。",
+      "macroscopic_surface": "长椭圆或纺锤形，表面黄白至黄棕，有纵皱纹和点状环节；一端有红棕色芽痕“鹦哥嘴”，另一端有圆形脐疤。",
+      "cross_section_or_internal_features": "断面黄白、角质样，较平坦。",
+      "odor_and_taste": "气微，味甘。",
+      "texture": "质坚硬，不易折断。",
+      "processing_and_product_differences": "鲜天麻蒸透后干燥形成常见饮片；不同等级以大小、饱满度和色泽区分。硫熏品异常白。",
+      "similar_materials": [
+        "马铃薯干",
+        "大丽菊块根",
+        "蕉芋块茎等伪品"
+      ],
+      "key_identification_points": "“鹦哥嘴”、脐疤、点状环纹和角质断面是重点。",
+      "quality_control_risks": [
+        "硫熏漂白",
+        "淀粉类块茎伪制",
+        "拼接整形",
+        "霉变",
+        "农残",
+        "天麻素等指标不足"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 37,
+      "training_class_name": "Prepared Rehmannia",
+      "standard_name_zh": "熟地黄",
+      "standard_name_en": "Prepared Rehmannia Root",
+      "pharmacopoeial_latin_name": "Rehmanniae Radix Praeparata",
+      "aliases": [
+        "熟地",
+        "大熟地"
+      ],
+      "botanical_or_zoological_source": "玄参科植物地黄 Rehmannia glutinosa 的新鲜或干燥块根经规定方法反复蒸制和干燥所得炮制品。",
+      "common_origin_regions": [
+        "河南为传统主产区，亦产山东、山西等"
+      ],
+      "medicinal_part": "经炮制的地黄块根。",
+      "macroscopic_surface": "不规则团块或厚片，表面乌黑有光泽，皱缩，黏性明显。",
+      "cross_section_or_internal_features": "断面乌黑或黑褐，滋润有光泽，纤维性不明显。",
+      "odor_and_taste": "气微，味甜。",
+      "texture": "质柔软、黏腻。",
+      "processing_and_product_differences": "生地黄与熟地黄必须严格区分；熟地黄通常经酒炖或蒸制，颜色更黑、质更柔润。炮制次数和辅料应留档。",
+      "similar_materials": [
+        "生地黄",
+        "黑色糖浸根块",
+        "何首乌制品"
+      ],
+      "key_identification_points": "熟地黄乌黑黏润、味甜；生地黄棕黑但较韧、黏性和甜味不同。",
+      "quality_control_risks": [
+        "炮制不足或过度",
+        "糖浆/焦糖染色增重",
+        "辅料残留",
+        "霉变酸败",
+        "地黄苷类与毛蕊花糖苷等指标异常",
+        "来源不可追溯"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 38,
+      "training_class_name": "Fennel",
+      "standard_name_zh": "小茴香",
+      "standard_name_en": "Fennel Fruit",
+      "pharmacopoeial_latin_name": "Foeniculi Fructus",
+      "aliases": [
+        "谷茴香",
+        "香丝菜籽",
+        "小茴"
+      ],
+      "botanical_or_zoological_source": "伞形科植物茴香 Foeniculum vulgare 的干燥成熟果实。",
+      "common_origin_regions": [
+        "甘肃",
+        "内蒙古",
+        "山西",
+        "新疆等"
+      ],
+      "medicinal_part": "干燥成熟分果。",
+      "macroscopic_surface": "双悬果圆柱形，略弯，黄绿或淡黄棕，表面有5条明显纵棱。",
+      "cross_section_or_internal_features": "横断面近五边形，可见油管。",
+      "odor_and_taste": "香气浓烈，味甜、辛。",
+      "texture": "质硬，易分裂为两个分果。",
+      "processing_and_product_differences": "生小茴香、盐小茴香、炒小茴香；盐炙后色稍深并有咸味。",
+      "similar_materials": [
+        "孜然",
+        "莳萝籽",
+        "毒芹类果实"
+      ],
+      "key_identification_points": "小茴香果实较粗长、黄绿色、五棱明显且甜香；孜然更细长、色深、气味不同。",
+      "quality_control_risks": [
+        "毒性伞形科果实误混风险",
+        "农残",
+        "霉变",
+        "挥发油损失",
+        "盐制过量",
+        "非规定种混入"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 39,
+      "training_class_name": "Alisma",
+      "standard_name_zh": "泽泻",
+      "standard_name_en": "Alisma Rhizome",
+      "pharmacopoeial_latin_name": "Alismatis Rhizoma",
+      "aliases": [
+        "水泻",
+        "建泽泻",
+        "川泽泻"
+      ],
+      "botanical_or_zoological_source": "泽泻科东方泽泻 Alisma orientale（分类学处理可写作 Alisma plantago-aquatica subsp. orientale）的干燥块茎。",
+      "common_origin_regions": [
+        "福建",
+        "四川",
+        "江西等"
+      ],
+      "medicinal_part": "干燥块茎。",
+      "macroscopic_surface": "类球形、椭圆形或卵圆形，表面黄白至淡黄棕，有多数环状浅沟和须根痕。",
+      "cross_section_or_internal_features": "断面黄白，粉性，散有多数小孔或油点样斑点。",
+      "odor_and_taste": "气微，味微苦。",
+      "texture": "质坚实，断面粉性。",
+      "processing_and_product_differences": "生泽泻、盐泽泻、麸炒泽泻；盐炙后略带咸味，颜色加深。",
+      "similar_materials": [
+        "水生植物其他块茎",
+        "三棱等"
+      ],
+      "key_identification_points": "类球块茎、环状沟纹、断面粉性并有细小孔点。",
+      "quality_control_risks": [
+        "硫熏",
+        "泥沙增重",
+        "近缘物种混入",
+        "霉变",
+        "盐制过量",
+        "三萜类指标异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 40,
+      "training_class_name": "Bamboo Shavings",
+      "standard_name_zh": "竹茹",
+      "standard_name_en": "Bamboo Shavings",
+      "pharmacopoeial_latin_name": "Bambusae Caulis in Taenias",
+      "aliases": [
+        "竹皮",
+        "青竹茹",
+        "淡竹茹"
+      ],
+      "botanical_or_zoological_source": "禾本科若干规定竹种茎秆除去外皮后刮取的中间层，具体基原应按现行药典核对。",
+      "common_origin_regions": [
+        "长江流域及华南竹产区"
+      ],
+      "medicinal_part": "竹秆中间层刮成的丝、片或团。",
+      "macroscopic_surface": "卷曲丝条或薄片，黄白、淡黄绿或淡青色，常团成束。",
+      "cross_section_or_internal_features": "断面很薄，以纤维层为主，无明显木本年轮。",
+      "odor_and_taste": "气微，味淡。",
+      "texture": "质轻、柔韧而有弹性。",
+      "processing_and_product_differences": "生竹茹、姜竹茹、炒竹茹；姜制后略黄并有姜气。商品可分散丝和团块。",
+      "similar_materials": [
+        "竹外皮碎片",
+        "竹屑",
+        "其他植物纤维"
+      ],
+      "key_identification_points": "轻柔卷曲、薄而有弹性，色泽淡黄绿；粗硬外皮和大量木质碎片不合格。",
+      "quality_control_risks": [
+        "混入竹屑或外皮",
+        "漂白",
+        "霉变",
+        "姜制辅料过量",
+        "基原竹种不明",
+        "灰分和杂质偏高"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 41,
+      "training_class_name": "Fritillaria",
+      "standard_name_zh": "川贝母",
+      "standard_name_en": "Fritillaria Bulb",
+      "pharmacopoeial_latin_name": "Fritillariae Cirrhosae Bulbus",
+      "aliases": [
+        "川贝",
+        "松贝",
+        "青贝",
+        "炉贝"
+      ],
+      "botanical_or_zoological_source": "百合科川贝母、暗紫贝母、甘肃贝母、梭砂贝母、太白贝母、瓦布贝母等规定来源的干燥鳞茎，具体物种清单按现行药典核对。",
+      "common_origin_regions": [
+        "四川",
+        "西藏",
+        "青海",
+        "甘肃、云南高海拔地区"
+      ],
+      "medicinal_part": "干燥鳞茎。",
+      "macroscopic_surface": "类圆锥形或近球形，白色或淡黄白；松贝外层两枚鳞叶大小悬殊，大瓣抱小瓣形成“怀中抱月”，顶端闭合。",
+      "cross_section_or_internal_features": "断面白色、粉性，鳞叶层次明显。",
+      "odor_and_taste": "气微，味微苦。",
+      "texture": "质硬而脆，断面粉性。",
+      "processing_and_product_differences": "常按松贝、青贝、炉贝等商品规格分类；不宜把浙贝母等其他贝母炮制品归入川贝母。",
+      "similar_materials": [
+        "浙贝母",
+        "平贝母",
+        "伊贝母",
+        "人工粉压伪品"
+      ],
+      "key_identification_points": "松贝“怀中抱月”、体小色白；青贝外层鳞叶大小接近；炉贝常较长、可见虎皮斑。需结合物种和产地凭证。",
+      "quality_control_risks": [
+        "高价导致严重掺伪",
+        "浙贝母等混充",
+        "淀粉或贝母粉压制",
+        "硫熏漂白",
+        "重金属和农残",
+        "生物碱指标异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "模型英文 Fritillaria 过于宽泛，系统应固定映射为川贝母并显示物种复杂性与人工复核提示。",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 42,
+      "training_class_name": "Chuanxiong",
+      "standard_name_zh": "川芎",
+      "standard_name_en": "Chuanxiong Rhizome",
+      "pharmacopoeial_latin_name": "Chuanxiong Rhizoma",
+      "aliases": [
+        "芎藭",
+        "香果",
+        "京芎"
+      ],
+      "botanical_or_zoological_source": "伞形科植物川芎 Ligusticum chuanxiong 的干燥根茎。",
+      "common_origin_regions": [
+        "四川都江堰、彭州等为传统主产区"
+      ],
+      "medicinal_part": "干燥根茎。",
+      "macroscopic_surface": "不规则结节状拳形团块，表面黄棕，有多数平行隆起轮节、凹陷茎痕和根痕。",
+      "cross_section_or_internal_features": "断面黄白或灰黄色，散有黄棕色油点，形成层环呈波状。",
+      "odor_and_taste": "香气浓烈特异，味苦、辛，稍有麻舌感。",
+      "texture": "质坚实，不易折断。",
+      "processing_and_product_differences": "生川芎、酒川芎、炒川芎；酒制后色加深并有酒香。",
+      "similar_materials": [
+        "藁本",
+        "当归根茎",
+        "其他伞形科根茎"
+      ],
+      "key_identification_points": "拳形结节、平行轮节、浓香和断面油点是重点。",
+      "quality_control_risks": [
+        "硫熏",
+        "混入藁本等",
+        "挥发油散失",
+        "霉变",
+        "农残和重金属",
+        "阿魏酸、藁本内酯等指标异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 43,
+      "training_class_name": "Scrophularia",
+      "standard_name_zh": "玄参",
+      "standard_name_en": "Scrophularia Root",
+      "pharmacopoeial_latin_name": "Scrophulariae Radix",
+      "aliases": [
+        "元参",
+        "浙玄参",
+        "黑参"
+      ],
+      "botanical_or_zoological_source": "玄参科植物玄参 Scrophularia ningpoensis 的干燥根。",
+      "common_origin_regions": [
+        "浙江",
+        "湖北",
+        "四川、湖南等"
+      ],
+      "medicinal_part": "干燥根。",
+      "macroscopic_surface": "圆柱形或纺锤形，略弯，表面灰黄棕至灰褐，有纵沟、横长皮孔和根痕。",
+      "cross_section_or_internal_features": "断面乌黑或棕黑，微有光泽，中心有时较淡。",
+      "odor_and_taste": "气特异似焦糖，味甘、微苦。",
+      "texture": "质坚实而较柔润。",
+      "processing_and_product_differences": "一般需发汗加工使内部变黑；生玄参、蒸玄参等工艺差异需按产地和药典规范记录。",
+      "similar_materials": [
+        "地黄",
+        "黑顺片类黑色根片",
+        "其他玄参属根"
+      ],
+      "key_identification_points": "玄参外皮灰棕、内部乌黑并有特殊焦糖样气；熟地黄更黏润、味甜。",
+      "quality_control_risks": [
+        "发汗不足导致内色浅",
+        "霉变",
+        "糖浆染色",
+        "混入地黄",
+        "哈巴俄苷/哈巴苷等指标异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    },
+    {
+      "class_id": 44,
+      "training_class_name": "Alpinia Oxyphylla",
+      "standard_name_zh": "益智仁",
+      "standard_name_en": "Alpinia Oxyphylla Fruit",
+      "pharmacopoeial_latin_name": "Alpiniae Oxyphyllae Fructus",
+      "aliases": [
+        "益智子",
+        "摘艼子"
+      ],
+      "botanical_or_zoological_source": "姜科植物益智 Alpinia oxyphylla 的干燥成熟果实。",
+      "common_origin_regions": [
+        "海南、广东、广西等热带地区"
+      ],
+      "medicinal_part": "干燥成熟果实。",
+      "macroscopic_surface": "椭圆形或纺锤形，两端略尖，表面棕褐，有纵向隆起线纹，顶端有花被残痕，基部有果柄痕。",
+      "cross_section_or_internal_features": "果皮薄，内分3室，每室有多枚棕黑色种子，种子被假种皮黏结成团。",
+      "odor_and_taste": "气芳香，味辛、微苦。",
+      "texture": "果皮较脆，种子团坚实。",
+      "processing_and_product_differences": "生益智仁、盐益智仁；盐炙后色稍深并略带咸味。去壳益智仁应记录加工状态。",
+      "similar_materials": [
+        "砂仁",
+        "草豆蔻",
+        "白豆蔻"
+      ],
+      "key_identification_points": "益智果实较细长、表面纵棱明显；内部三室种子团及特异辛香可区别于砂仁。",
+      "quality_control_risks": [
+        "混入其他姜科果实",
+        "挥发油散失",
+        "霉变",
+        "盐制过量",
+        "农残和重金属",
+        "圆柚酮等挥发性成分异常"
+      ],
+      "reference_basis": [
+        "《中华人民共和国药典》2025年版一部：对应药材或饮片项下的来源、性状、鉴别、检查等（正式使用前应以授权原文逐项核对）",
+        "《中华人民共和国药典》2020年版一部：用于与既有项目资料和教材版本交叉核对",
+        "香港浸会大学中药材图像数据库（Chinese Medicinal Material Images Database）",
+        "香港浸会大学中药标本数据库（Chinese Medicine Specimen Database）",
+        "高等中医药院校教材《中药鉴定学》《中药炮制学》《中药学》（不同版次页码需另行核对）"
+      ],
+      "curation_note": "",
+      "review_status": "curated_draft_needs_professional_review"
+    }
+  ]
+}

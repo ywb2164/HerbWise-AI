@@ -2,7 +2,6 @@ import importlib
 
 import pytest
 
-from app.core.config import get_settings
 from app.integrations.contracts import RecognitionCandidate, VisionRecognitionResult
 from app.integrations.openai_compatible import extract_json
 from app.integrations.secrets import SecretConfigurationError, SecretResolver
@@ -30,45 +29,45 @@ def test_name_normalization_is_lightweight_and_not_fuzzy() -> None:
     assert normalize_name("黄芪") != normalize_name("党参")
 
 
-def test_fusion_agreement_bonus_is_capped(monkeypatch: pytest.MonkeyPatch) -> None:
-    settings = get_settings()
-    monkeypatch.setattr(settings, "fusion_agreement_bonus", 0.15)
-    monkeypatch.setattr(settings, "fusion_confidence_cap", 0.99)
+def test_qwen_yolo_agreement_does_not_adjust_qwen_confidence() -> None:
     result = fuse_recognition(
-        _vision(medicine_id=1, name="黄芪", confidence=0.95),
-        _vision(medicine_id=1, name="黄芪", confidence=0.90),
+        _vision(medicine_id=1, name="Chuanxiong", confidence=0.88),
+        _vision(medicine_id=1, name="Chuanxiong", confidence=0.90),
     )
     assert result.agreement_status == "agree"
-    assert result.confidence_after_adjustment == 0.99
+    assert result.final_candidate is not None
+    assert result.final_candidate.confidence == 0.90
+    assert result.adjustment == 0
     assert result.manual_review_required is False
 
 
-def test_fusion_conflict_prefers_local_conservatively(
-    monkeypatch: pytest.MonkeyPatch,
-) -> None:
-    monkeypatch.setattr(get_settings(), "fusion_conflict_penalty", 0.15)
+def test_qwen_yolo_conflict_keeps_qwen_name() -> None:
     result = fuse_recognition(
-        _vision(medicine_id=1, name="黄芪", confidence=0.9),
-        _vision(medicine_id=2, name="党参", confidence=0.9),
+        _vision(medicine_id=1, name="Chuanxiong", confidence=0.92),
+        _vision(medicine_id=2, name="Chrysanthemum", confidence=0.90),
     )
-    assert result.agreement_status == "conflict"
-    assert result.confidence_after_adjustment == 0.75
+    assert result.agreement_status == "disagree"
+    assert result.final_candidate is not None
+    assert result.final_candidate.herb_name == "Chrysanthemum"
+    assert result.confidence_after_adjustment == 0.90
     assert result.manual_review_required is True
 
 
-def test_out_of_catalog_qwen_falls_back_to_valid_local() -> None:
+def test_out_of_catalog_qwen_is_not_replaced_by_yolo() -> None:
     result = fuse_recognition(
-        _vision(medicine_id=1, name="黄芪", confidence=0.8),
-        _vision(medicine_id=None, name="未知", confidence=0.95, catalog=False),
+        _vision(medicine_id=1, name="Prepared Rehmannia", confidence=0.87),
+        _vision(medicine_id=None, name="Scorpion", confidence=0.93, catalog=False),
     )
     assert result.final_candidate is not None
-    assert result.final_candidate.herb_name == "黄芪"
+    assert result.final_candidate.herb_name == "Scorpion"
+    assert result.agreement_status == "disagree"
     assert result.manual_review_required is True
 
 
 def test_one_provider_and_no_provider_fallbacks() -> None:
-    local = _vision(medicine_id=1, name="黄芪", confidence=0.7)
-    assert fuse_recognition(local, None).agreement_status == "local_only"
+    local = _vision(medicine_id=1, name="Chuanxiong", confidence=0.7)
+    assert fuse_recognition(local, None).agreement_status == "qwen_unavailable"
+    assert fuse_recognition(local, None).final_candidate is None
     assert fuse_recognition(None, None).final_candidate is None
 
 

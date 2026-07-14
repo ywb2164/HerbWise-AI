@@ -16,6 +16,7 @@ from app.modules.profiles.service import (
     get_test_record,
     history,
     initial_questions,
+    initial_test_status,
     list_profiles,
     profile_data,
     profile_dimensions,
@@ -185,6 +186,21 @@ async def diagnose_route(
 )
 async def questions(session: AsyncSession = Depends(get_session)):
     return success(await initial_questions(session))
+
+
+@tests_router.get(
+    "/initial/status",
+    response_model=ApiResponse,
+    summary="Get initial-test status",
+    description="Return a learner's current initial-assessment completion status and results summary.",
+)
+async def initial_status(
+    learner_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    ensure_learner_access(user, learner_id)
+    return success(await initial_test_status(session, learner_id))
 
 
 @tests_router.post(

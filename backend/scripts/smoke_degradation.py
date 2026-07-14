@@ -15,18 +15,21 @@ from app.integrations.rag.ragflow import RAGFlowProvider
 
 
 async def main() -> int:
+    settings = Settings(
+        _env_file=None,
+        model_api_base_url="",
+        llm_base_url="",
+        ragflow_base_url="",
+        ragflow_dataset_id="",
+    )
     try:
-        await RAGFlowProvider(
-            Settings(ragflow_base_url="", ragflow_dataset_id="")
-        ).health_check()
+        await RAGFlowProvider(settings).health_check()
     except ProviderUnavailableError as exc:
         assert exc.error_code == "configuration_error"
     else:
         raise AssertionError("unconfigured RAGFlow must be unavailable")
     try:
-        await OpenAICompatibleLLMProvider(
-            "demo", Settings(model_api_base_url="")
-        ).generate_resource([])
+        await OpenAICompatibleLLMProvider("demo", settings).generate_resource([])
     except ProviderUnavailableError as exc:
         assert exc.error_code == "configuration_error"
     else:

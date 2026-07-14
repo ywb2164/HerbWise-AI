@@ -6,8 +6,6 @@ import {
   NButton,
   NEmpty,
   NProgress,
-  NRadioButton,
-  NRadioGroup,
   NSpin,
   NTabPane,
   NTabs,
@@ -17,11 +15,9 @@ import {
 } from 'naive-ui'
 import {
   AlertCircle,
-  BookOpenCheck,
   Camera,
   CheckCircle2,
   Circle,
-  FileChartColumn,
   ImagePlus,
   LoaderCircle,
   Play,
@@ -30,15 +26,12 @@ import {
   UploadCloud,
 } from 'lucide-vue-next'
 import PageHeader from '../components/PageHeader.vue'
-import SourceBadge from '../components/SourceBadge.vue'
 import { api } from '../services/api'
 import { useAuthStore } from '../stores/auth'
 import { useModelSettingsStore } from '../stores/model-settings'
 import type {
   AgentTask,
   CapabilityStatus,
-  KnowledgeEvidence,
-  ProviderFailure,
   RecognitionCandidate,
   RecognitionEvidence,
   RecognitionRecord,
@@ -49,17 +42,14 @@ import {
   formatDate,
   formatDuration,
   formatPercent,
-  formatProvider,
-  formatResourceStatus,
   formatRuntimeText,
   getErrorMessage,
   isHttpStatus,
-  taskTypeLabels,
 } from '../utils/format'
 
-type VisionMode = 'qwen' | 'local' | 'hybrid'
 type NodeState = 'pending' | 'running' | 'success' | 'failed'
 type CaptureMode = 'upload' | 'camera' | 'simulation'
+type PipelineStatus = { status?: string; confidence?: number }
 
 const router = useRouter()
 const auth = useAuthStore()
@@ -75,13 +65,13 @@ const videoElement = ref<HTMLVideoElement | null>(null)
 const cameraStream = ref<MediaStream | null>(null)
 const imageNaturalWidth = ref(0)
 const imageNaturalHeight = ref(0)
-const visionMode = ref<VisionMode>('local')
 const capabilities = ref<CapabilityStatus | null>(null)
 const capabilitiesLoading = ref(true)
 const starting = ref(false)
 const loadingTask = ref(false)
 const dragActive = ref(false)
 const errorText = ref('')
+const agentErrorText = ref('')
 const task = ref<AgentTask | null>(null)
 const recognitionRecord = ref<RecognitionRecord | null>(null)
 const events = ref<TaskEvent[]>([])
@@ -89,22 +79,29 @@ const announcedTaskId = ref('')
 let pollTimer: ReturnType<typeof setTimeout> | null = null
 
 const workflowNodes = [
-  { code: 'load_profile', label: '学情画像', progress: 10 },
-  { code: 'recognize_image', label: '图像识别', progress: 20 },
-  { code: 'vision_review', label: '视觉复核', progress: 30 },
-  { code: 'retrieve_knowledge', label: '知识检索', progress: 45 },
-  { code: 'judge_result', label: '纠错裁判', progress: 55 },
-  { code: 'generate_resources', label: '资源生成', progress: 70 },
-  { code: 'review_resources', label: '审核纠偏', progress: 80 },
-  { code: 'update_learning_path', label: '路径更新', progress: 90 },
-  { code: 'save_trace', label: '证据归档', progress: 100 },
+  { code: 'upload_image', label: '图片上传', progress: 20 },
+  { code: 'recognize_image', label: '智能辨识', progress: 50 },
+  { code: 'normalize_name', label: '名称与知识核验', progress: 80 },
+  { code: 'persist_recognition', label: '识别完成', progress: 100 },
 ]
 
 const fusionResult = computed(
-  () => task.value?.result?.fusion_result || recognitionRecord.value?.fusion_result || null,
+  () => recognitionRecord.value?.fusion_result || null,
+)
+const finalIdentification = computed<PipelineStatus | null>(
+  () => (fusionResult.value?.final_identification || recognitionRecord.value?.final_identification || null) as PipelineStatus | null,
+)
+const knowledgeMatch = computed<PipelineStatus | null>(
+  () => (fusionResult.value?.knowledge_match || recognitionRecord.value?.knowledge_match || null) as PipelineStatus | null,
+)
+const knowledgeVerification = computed<PipelineStatus | null>(
+  () => (fusionResult.value?.knowledge_verification || recognitionRecord.value?.knowledge_verification || null) as PipelineStatus | null,
+)
+const yoloReference = computed<VisionRecognitionResult | null>(
+  () => (fusionResult.value?.yolo_reference || recognitionRecord.value?.yolo_reference || null) as VisionRecognitionResult | null,
 )
 const candidate = computed<RecognitionCandidate | null>(() => {
-  const result = task.value?.result?.recognition_result?.candidate || fusionResult.value?.final_candidate
+  const result = fusionResult.value?.final_candidate
   if (result) return result
   if (!recognitionRecord.value?.final_name) return null
   return {
@@ -114,62 +111,60 @@ const candidate = computed<RecognitionCandidate | null>(() => {
   }
 })
 const localVisionResult = computed<VisionRecognitionResult | null>(() => {
-  const result = fusionResult.value?.local_result || recognitionRecord.value?.local_result
+  const result = fusionResult.value?.local_result || recognitionRecord.value?.local_result || recognitionRecord.value?.yolo_reference
   if (result) return result
-  const direct = task.value?.result?.recognition_result
-  return direct?.provider === 'local' ? direct : null
+  return null
 })
 const cloudVisionResult = computed<VisionRecognitionResult | null>(() => {
   const result = fusionResult.value?.qwen_result || recognitionRecord.value?.qwen_result
   if (result) return result
-  const direct = task.value?.result?.recognition_result
-  return direct?.provider === 'qwen' ? direct : null
+  return null
 })
 const topCandidates = computed(() => {
   const local = localVisionResult.value?.top_candidates || []
   if (local.length) return local
   const cloud = cloudVisionResult.value?.top_candidates || []
   if (cloud.length) return cloud
-  return task.value?.result?.recognition_result?.top_candidates || []
+  return []
 })
 const cloudCandidates = computed(() => cloudVisionResult.value?.top_candidates || [])
 const characterEvidence = computed<RecognitionEvidence[]>(() => cloudVisionResult.value?.character_evidence || [])
 const qualityEvidence = computed<RecognitionEvidence[]>(() => cloudVisionResult.value?.quality_control_evidence || [])
 const traceabilityAdvice = computed(() => cloudVisionResult.value?.traceability_advice || [])
 const visionEvidenceCount = computed(() => characterEvidence.value.length + qualityEvidence.value.length)
-const evidences = computed<KnowledgeEvidence[]>(() => task.value?.result?.knowledge_evidence || [])
-const generatedResource = computed(() => task.value?.result?.generated_resources?.[0] || null)
-const reviewResult = computed(() => task.value?.result?.review_result || null)
 const manualReviewRequired = computed(
   () =>
     Boolean(fusionResult.value?.manual_review_required) ||
-    Boolean(task.value?.result?.judge_result?.manual_review_required) ||
     Boolean(recognitionRecord.value?.manual_review_required) ||
     Boolean(candidate.value && (candidate.value.confidence || 0) < 0.5),
 )
-const terminal = computed(() => Boolean(task.value && ['success', 'failed'].includes(task.value.status)))
+const terminal = computed(() => Boolean(recognitionRecord.value))
+const recognitionProgress = computed(() => recognitionRecord.value ? 100 : (starting.value ? 50 : 0))
+const agentStatus = computed(() => {
+  if (task.value) return task.value.status === 'success' ? 'completed' : task.value.status === 'queued' ? 'pending' : task.value.status
+  return recognitionRecord.value?.agent_status || 'not_started'
+})
+const agentStatusText = computed(() => ({
+  not_started: '未启动', pending: '等待生成', running: '正在生成', completed: '已完成', failed: '生成失败', skipped: '未启用',
+}[agentStatus.value] || agentStatus.value))
 const localReady = computed(() => Boolean(capabilities.value?.local_model_configured))
 const cloudReady = computed(() => Boolean(capabilities.value?.qwen_configured || modelSettings.configured))
-const hybridReady = computed(() => localReady.value && cloudReady.value)
 const cloudStatusText = computed(() => {
   if (cloudReady.value) return '已就绪'
   return modelSettings.configured ? '待接入视觉' : '未配置'
 })
-const visionModeAvailable = computed(() => isModeAvailable(visionMode.value))
 const capabilityHint = computed(() => {
   if (capabilitiesLoading.value) return '正在检查视觉模型状态'
-  if (visionMode.value === 'local' && !localReady.value) return '本地 YOLO 权重或 Ultralytics 运行环境尚未就绪'
-  if (visionMode.value === 'qwen' && !cloudReady.value) return '云端多模态视觉模型尚未配置'
-  if (visionMode.value === 'hybrid' && !hybridReady.value) return '双路复核需要本地 YOLO 与云端视觉模型同时可用'
+  if (!cloudReady.value) return '智能辨识服务暂未配置。'
+  if (!localReady.value) return '辅助参考暂不可用，但不影响本次智能辨识。'
   return ''
 })
 const canStart = computed(() =>
   Boolean(
     selectedFile.value &&
       !starting.value &&
-      task.value?.status !== 'running' &&
       !capabilitiesLoading.value &&
-      visionModeAvailable.value,
+      cloudReady.value,
   ),
 )
 const previewAspect = computed(() =>
@@ -201,24 +196,6 @@ function bboxIntersectionOverUnion(left: number[], right: number[]): number {
   return union > 0 ? intersection / union : 0
 }
 
-function isModeAvailable(mode: VisionMode, status = capabilities.value): boolean {
-  if (!status) return false
-  const cloudConfigured = status.qwen_configured || modelSettings.configured
-  if (mode === 'local') return status.local_model_configured
-  if (mode === 'qwen') return cloudConfigured
-  return status.local_model_configured && cloudConfigured
-}
-
-function preferredVisionMode(status: CapabilityStatus): VisionMode {
-  if (['qwen', 'local', 'hybrid'].includes(status.vision_mode)) {
-    const configuredMode = status.vision_mode as VisionMode
-    if (isModeAvailable(configuredMode, status)) return configuredMode
-  }
-  if (status.local_model_configured) return 'local'
-  if (status.qwen_configured) return 'qwen'
-  return 'local'
-}
-
 function candidatePrimaryName(item: RecognitionCandidate): string {
   return item.herb_name || item.english_name || item.raw_name || item.training_class_name || '未知'
 }
@@ -227,23 +204,6 @@ function candidateSecondaryName(item: RecognitionCandidate): string {
   const primary = candidatePrimaryName(item)
   const secondary = item.english_name || item.raw_name || item.training_class_name || ''
   return secondary === primary ? '' : secondary
-}
-
-function providerFailureLabel(failure: ProviderFailure): string {
-  const provider = failure.provider === 'local' ? '本地 YOLO' : failure.provider === 'qwen' ? '云端视觉' : failure.provider
-  const reasons: Record<string, string> = {
-    authentication_error: '鉴权失败',
-    configuration_error: '未配置',
-    invalid_response: '返回格式无效',
-    local_model_unavailable: '模型不可用',
-    network_error: '网络连接失败',
-    provider_unavailable: '服务不可用',
-    rate_limit_error: '调用频率受限',
-    schema_validation_error: '结果结构校验失败',
-    timeout_error: '调用超时',
-    unsupported_file: '图片格式不支持',
-  }
-  return `${provider}：${reasons[failure.error_code] || failure.error_code}`
 }
 
 function detectionBoxStyle(item: RecognitionCandidate): Record<string, string> {
@@ -270,6 +230,9 @@ function latestNodeEvent(code: string): TaskEvent | undefined {
 }
 
 function nodeState(code: string): NodeState {
+  if (recognitionRecord.value?.recognition_status === 'completed') return 'success'
+  if (starting.value && code === 'recognize_image') return 'running'
+  if (selectedFile.value && code === 'upload_image') return 'success'
   const latest = latestNodeEvent(code)
   if (latest?.status === 'failed') return 'failed'
   if (latest?.event === 'node_completed' || latest?.status === 'success') return 'success'
@@ -409,42 +372,28 @@ async function loadTask(taskId: string, continuePolling = true): Promise<void> {
     const [taskData, eventData] = await Promise.all([api.getTask(taskId), api.getTaskEvents(taskId)])
     task.value = taskData
     events.value = eventData
-    if (taskData.progress >= 20 || ['success', 'failed'].includes(taskData.status)) {
-      try {
-        const records = await api.getRecognitionRecordsByTask(taskId)
-        recognitionRecord.value = records.items[0] || recognitionRecord.value
-      } catch {
-        // The recognition record can lag briefly behind the task progress event.
-      }
-    }
-    const failures = taskData.result?.provider_failures || []
-    const noDetection = taskData.error_message === 'No usable recognition result'
-    const taskError = taskData.error_message && !noDetection
-      ? formatRuntimeText(taskData.error_message, taskData.error_message)
+    const taskError = taskData.error_message
+      ? '学习建议暂时生成失败，不影响识别结果。'
       : ''
-    errorText.value = taskError || failures.map(providerFailureLabel).join('；')
+    agentErrorText.value = taskError
 
     if (!['success', 'failed'].includes(taskData.status) && continuePolling) {
       pollTimer = window.setTimeout(() => void loadTask(taskId), 700)
     } else if (taskData.status === 'success' && announcedTaskId.value !== taskId) {
       announcedTaskId.value = taskId
-      message.success('智能体任务已完成')
+      message.success('学习建议已生成')
     } else if (taskData.status === 'failed' && announcedTaskId.value !== taskId) {
       announcedTaskId.value = taskId
-      if (!noDetection) message.error(taskError || '智能体任务失败')
+      message.warning(taskError || '学习建议暂时生成失败，不影响识别结果。')
     }
   } catch (error) {
     if (isHttpStatus(error, 404)) {
-      if (localStorage.getItem('herbwise.last_task_id') === taskId) {
-        localStorage.removeItem('herbwise.last_task_id')
-      }
       task.value = null
-      recognitionRecord.value = null
       events.value = []
-      errorText.value = ''
+      agentErrorText.value = ''
       return
     }
-    errorText.value = getErrorMessage(error, '任务状态加载失败')
+    agentErrorText.value = getErrorMessage(error, '学习建议状态加载失败')
   } finally {
     loadingTask.value = false
   }
@@ -455,8 +404,8 @@ async function startTask(): Promise<void> {
     errorText.value = '请先选择药材图片'
     return
   }
-  if (!visionModeAvailable.value) {
-    errorText.value = capabilityHint.value || '当前视觉模型不可用'
+  if (!cloudReady.value) {
+    errorText.value = capabilityHint.value || '智能辨识服务暂时不可用。'
     return
   }
   starting.value = true
@@ -468,33 +417,35 @@ async function startTask(): Promise<void> {
   announcedTaskId.value = ''
   try {
     const uploaded = await api.uploadFile(selectedFile.value)
-    const created = await api.createTask({
+    recognitionRecord.value = await api.recognizeUploadedFile({
       learner_id: auth.learnerId,
-      task_type: 'full_loop',
       file_id: uploaded.file_id,
-      vision_mode: visionMode.value,
-      llm_mode: modelSettings.configured ? 'real' : 'mock',
+      vision_mode: 'qwen',
     })
-    localStorage.setItem('herbwise.last_task_id', created.task_id)
-    task.value = {
-      task_id: created.task_id,
-      learner_id: auth.learnerId,
-      task_type: 'full_loop',
-      status: created.status,
-      current_node: null,
-      progress: 0,
-      result: null,
-      error_message: null,
-      created_at: null,
-      started_at: null,
-      finished_at: null,
+    message.success('识别完成')
+    if (recognitionRecord.value.agent_task_id) {
+      await loadTask(recognitionRecord.value.agent_task_id)
     }
-    message.success('图片上传成功，智能体已启动')
-    await loadTask(created.task_id)
   } catch (error) {
-    errorText.value = getErrorMessage(error, '任务启动失败')
+    errorText.value = getErrorMessage(error, '智能辨识服务暂时不可用。')
   } finally {
     starting.value = false
+  }
+}
+
+async function startAgentAdvice(): Promise<void> {
+  if (!recognitionRecord.value?.recognition_id) return
+  agentErrorText.value = ''
+  try {
+    const created = await api.createRecognitionAdvice(recognitionRecord.value.recognition_id)
+    recognitionRecord.value = {
+      ...recognitionRecord.value,
+      agent_status: created.agent_status,
+      agent_task_id: created.agent_task_id,
+    }
+    if (created.agent_task_id) await loadTask(created.agent_task_id)
+  } catch (error) {
+    agentErrorText.value = getErrorMessage(error, '学习建议暂时生成失败，不影响识别结果。')
   }
 }
 
@@ -504,6 +455,7 @@ function newTask(): void {
   recognitionRecord.value = null
   events.value = []
   errorText.value = ''
+  agentErrorText.value = ''
 }
 
 watch(captureMode, async mode => {
@@ -524,19 +476,16 @@ watch(captureMode, async mode => {
 })
 
 onMounted(async () => {
-  await modelSettings.load().catch(() => undefined)
+  await modelSettings.load('vision').catch(() => undefined)
   capabilitiesLoading.value = true
   try {
     const status = await api.getCapabilities()
     capabilities.value = status
-    visionMode.value = preferredVisionMode(status)
   } catch {
     errorText.value = '视觉模型状态读取失败，请检查后端服务'
   } finally {
     capabilitiesLoading.value = false
   }
-  const lastTaskId = localStorage.getItem('herbwise.last_task_id')
-  if (lastTaskId) await loadTask(lastTaskId)
 })
 
 onBeforeUnmount(() => {
@@ -557,8 +506,8 @@ onBeforeUnmount(() => {
           载入示例
           <template #icon><ImagePlus :size="17" /></template>
         </n-button>
-        <n-button v-if="task" secondary @click="newTask">
-          新建任务
+        <n-button v-if="recognitionRecord" secondary @click="newTask">
+          新建辨识
           <template #icon><RefreshCw :size="17" /></template>
         </n-button>
       </template>
@@ -581,7 +530,7 @@ onBeforeUnmount(() => {
         <div class="surface-body capture-body">
           <div class="capture-source">
             <span>样本来源</span>
-            <n-radio-group v-model:value="captureMode" name="capture-mode" :disabled="task?.status === 'running'">
+            <n-radio-group v-model:value="captureMode" name="capture-mode" :disabled="starting">
               <n-radio-button value="upload">上传图片</n-radio-button>
               <n-radio-button value="camera">摄像头</n-radio-button>
               <n-radio-button value="simulation">虚拟实训</n-radio-button>
@@ -607,7 +556,7 @@ onBeforeUnmount(() => {
               :class="{ 'low-confidence': (item.confidence || 0) < 0.5 }"
               :style="detectionBoxStyle(item)"
             >
-              <b>{{ candidatePrimaryName(item) }} {{ formatPercent(item.confidence) }}</b>
+              <b>检测 {{ formatPercent(item.confidence) }}</b>
             </span>
             <span v-if="!previewUrl" class="upload-placeholder">
               <UploadCloud :size="34" :stroke-width="1.6" />
@@ -634,18 +583,19 @@ onBeforeUnmount(() => {
           </div>
 
           <div class="mode-control">
-            <span>视觉模型</span>
-            <n-radio-group v-model:value="visionMode" name="vision-mode" :disabled="task?.status === 'running'">
-              <n-radio-button value="local" :disabled="!localReady">本地 YOLO</n-radio-button>
-              <n-radio-button value="qwen" :disabled="!cloudReady">云端多模态</n-radio-button>
-              <n-radio-button value="hybrid" :disabled="!hybridReady">双路复核</n-radio-button>
-            </n-radio-group>
+            <span>智能辨识引擎</span>
+            <div class="pipeline-summary">
+              <strong>本草智策智能辨识引擎</strong><b>+</b><strong>辅助参考</strong><b>+</b><strong>结构化知识核验</strong>
+            </div>
             <div class="mode-status">
               <n-tag size="small" :bordered="false" :type="localReady ? 'success' : 'default'">
-                YOLO {{ localReady ? '已就绪' : '未就绪' }}
+                辅助参考：{{ localReady ? '已就绪' : '不可用' }}
               </n-tag>
               <n-tag size="small" :bordered="false" :type="cloudReady ? 'success' : 'default'">
-                云端视觉 {{ cloudStatusText }}
+                多模态主识别：{{ cloudStatusText }}
+              </n-tag>
+              <n-tag size="small" :bordered="false" :type="capabilities?.knowledge_catalog_loaded ? 'success' : 'default'">
+                45 类知识包：{{ capabilities?.knowledge_catalog_loaded ? '已加载' : '未加载' }}
               </n-tag>
             </div>
             <n-alert v-if="capabilityHint" type="warning" :bordered="false" class="capability-alert">
@@ -654,7 +604,7 @@ onBeforeUnmount(() => {
           </div>
 
           <n-button type="primary" size="large" block :disabled="!canStart" :loading="starting" @click="startTask">
-            启动智能体任务
+            开始智能辨识
             <template #icon><Play :size="18" /></template>
           </n-button>
         </div>
@@ -663,21 +613,21 @@ onBeforeUnmount(() => {
       <div class="surface workflow-panel">
         <div class="surface-header workflow-heading">
           <div>
-            <h2 class="surface-title">智能体任务流</h2>
-            <span class="workflow-status">{{ formatResourceStatus(task?.status || 'pending') }}</span>
+            <h2 class="surface-title">识别进度</h2>
+            <span class="workflow-status">{{ recognitionRecord?.recognition_status || (starting ? 'recognizing' : 'uploaded') }}</span>
           </div>
           <div class="workflow-progress">
-            <strong>{{ task?.progress || 0 }}%</strong>
+            <strong>{{ recognitionProgress }}%</strong>
             <n-progress
               type="line"
-              :percentage="task?.progress || 0"
+              :percentage="recognitionProgress"
               :height="7"
               :show-indicator="false"
-              :status="task?.status === 'failed' ? 'error' : 'success'"
+              :status="errorText ? 'error' : 'success'"
             />
           </div>
         </div>
-        <n-spin :show="loadingTask && !task" size="small">
+        <n-spin :show="starting" size="small">
           <div class="workflow-list">
             <div v-for="(node, index) in workflowNodes" :key="node.code" class="workflow-row" :class="nodeState(node.code)">
               <div class="node-state-icon">
@@ -701,11 +651,10 @@ onBeforeUnmount(() => {
     <section v-if="candidate || terminal" class="result-section">
       <div class="result-heading">
         <div class="result-name">
-          <span class="eyebrow">辨识结论</span>
+          <span class="eyebrow">识别结果</span>
           <h2>{{ candidate ? candidatePrimaryName(candidate) : '未得到可用结果' }}</h2>
-          <span>{{ candidate?.english_name || task?.error_message || '' }}</span>
         </div>
-        <div v-if="candidate" class="confidence-block">
+        <div v-if="candidate && (candidate.confidence || 0) > 0" class="confidence-block">
           <n-progress
             type="circle"
             :percentage="Math.round((candidate.confidence || 0) * 100)"
@@ -716,33 +665,58 @@ onBeforeUnmount(() => {
           />
           <span>置信度</span>
         </div>
-        <div class="result-tags">
-          <SourceBadge :source="task?.result?.judge_result?.data_source || task?.result?.recognition_result?.provider || recognitionRecord?.data_source || visionMode" />
+        <div v-if="false" class="result-tags">
           <n-tag v-if="manualReviewRequired" type="warning" :bordered="false">需人工复核</n-tag>
-          <n-tag v-else-if="task?.status === 'success'" type="success" :bordered="false">流程通过</n-tag>
           <n-tag v-else-if="candidate" type="info" :bordered="false">识别已完成</n-tag>
         </div>
       </div>
 
-      <n-tabs type="line" animated class="result-tabs">
+      <n-alert v-if="false && agentErrorText" type="warning" :bordered="false" class="task-alert">
+        {{ agentErrorText }}
+      </n-alert>
+      <n-alert v-if="false && knowledgeMatch?.status === 'out_of_catalog'" type="info" :bordered="false" class="task-alert">
+        已完成药材辨识；该药材暂未收录于本地知识库。
+      </n-alert>
+      <div v-if="false" class="result-actions assistant-actions">
+        <span>智能辅助：{{ agentStatusText }}</span>
+        <n-button
+          v-if="recognitionRecord?.agent_status !== 'skipped' && !recognitionRecord?.agent_task_id"
+          secondary
+          :loading="loadingTask"
+          @click="startAgentAdvice"
+        >
+          生成学习建议
+        </n-button>
+        <span v-else-if="task?.result?.agent_result">学习建议已生成，可在任务记录中查看。</span>
+      </div>
+
+      <n-tabs v-if="false" type="line" animated class="result-tabs">
         <n-tab-pane name="conclusion" tab="识别结论">
           <div class="conclusion-grid">
             <div class="decision-panel">
-              <span class="detail-label">裁判结果</span>
-              <strong>{{ formatResourceStatus(task?.result?.judge_result?.status || 'pass') }}</strong>
-              <p>{{ formatRuntimeText(String(task?.result?.judge_result?.reason || fusionResult?.decision_reason || '智能体流程已完成结果复核。')) }}</p>
+              <span class="detail-label">识别状态</span>
+              <strong>{{ recognitionRecord?.recognition_status || 'completed' }}</strong>
+              <p>{{ formatRuntimeText(String(fusionResult?.decision_reason || '已完成图像辨识、名称规范化与知识核验。')) }}</p>
               <dl>
+                <div>
+                  <dt>主识别置信度</dt>
+                  <dd>{{ formatPercent(finalIdentification?.confidence as number | undefined, 1) }}</dd>
+                </div>
+                <div>
+                  <dt>辅助参考</dt>
+                  <dd>{{ yoloReference?.candidate?.raw_name || yoloReference?.candidate?.herb_name || '不可用' }} · {{ formatPercent(yoloReference?.candidate?.confidence as number | undefined, 1) }}</dd>
+                </div>
+                <div>
+                  <dt>知识核验</dt>
+                  <dd>{{ knowledgeVerification?.status || 'not_available' }} / {{ knowledgeMatch?.status || 'not_available' }}</dd>
+                </div>
                 <div>
                   <dt>融合一致性</dt>
                   <dd>{{ formatRuntimeText(String(fusionResult?.agreement_status || recognitionRecord?.agreement_status || '')) }}</dd>
                 </div>
                 <div>
-                  <dt>调整后置信度</dt>
-                  <dd>{{ formatPercent(fusionResult?.confidence_after_adjustment as number | undefined, 1) }}</dd>
-                </div>
-                <div>
                   <dt>识别记录</dt>
-                  <dd class="mono">{{ task?.result?.recognition_id || recognitionRecord?.recognition_id || '--' }}</dd>
+                  <dd class="mono">{{ recognitionRecord?.recognition_id || '--' }}</dd>
                 </div>
               </dl>
             </div>
@@ -763,14 +737,14 @@ onBeforeUnmount(() => {
           </div>
         </n-tab-pane>
 
-        <n-tab-pane v-if="cloudVisionResult" name="vision" :tab="`云端视觉 (${visionEvidenceCount})`">
+        <n-tab-pane v-if="cloudVisionResult" name="vision" :tab="`辨识依据 (${visionEvidenceCount})`">
           <div class="vision-review">
             <div class="vision-review-header">
               <div>
-                <span class="detail-label">云端模型</span>
-                <strong>{{ cloudVisionResult.model_name || formatProvider(cloudVisionResult.provider) }}</strong>
+                <span class="detail-label">智能辨识引擎</span>
+                <strong>本草智策智能辨识引擎</strong>
               </div>
-              <span>{{ formatDuration(cloudVisionResult.elapsed_ms) }}</span>
+              <span>{{ formatDuration(cloudVisionResult!.elapsed_ms) }}</span>
             </div>
 
             <section class="vision-top">
@@ -780,12 +754,12 @@ onBeforeUnmount(() => {
                   <span>{{ index + 1 }}</span>
                   <div>
                     <strong>{{ candidatePrimaryName(item) }}</strong>
-                    <small>{{ candidateSecondaryName(item) || formatProvider(cloudVisionResult.provider) }}</small>
+                    <small>{{ candidateSecondaryName(item) || '智能辨识候选' }}</small>
                   </div>
                   <b>{{ formatPercent(item.confidence, 1) }}</b>
                 </div>
               </div>
-              <n-empty v-else size="small" description="云端模型未返回候选" />
+              <n-empty v-else size="small" description="未返回候选" />
             </section>
 
             <div class="vision-evidence-columns">
@@ -794,7 +768,7 @@ onBeforeUnmount(() => {
                 <div v-if="characterEvidence.length" class="vision-evidence-list">
                   <div v-for="(item, index) in characterEvidence" :key="`character-${index}`" class="vision-evidence-row">
                     <p>{{ item.text }}</p>
-                    <small>{{ item.confidence == null ? formatProvider(item.source) : formatPercent(item.confidence, 1) }}</small>
+                    <small>{{ item.confidence == null ? '图像依据' : formatPercent(item.confidence, 1) }}</small>
                   </div>
                 </div>
                 <n-empty v-else size="small" description="暂无性状依据" />
@@ -804,17 +778,17 @@ onBeforeUnmount(() => {
                 <div v-if="qualityEvidence.length" class="vision-evidence-list">
                   <div v-for="(item, index) in qualityEvidence" :key="`quality-${index}`" class="vision-evidence-row">
                     <p>{{ item.text }}</p>
-                    <small>{{ item.confidence == null ? formatProvider(item.source) : formatPercent(item.confidence, 1) }}</small>
+                    <small>{{ item.confidence == null ? '图像依据' : formatPercent(item.confidence, 1) }}</small>
                   </div>
                 </div>
                 <n-empty v-else size="small" description="暂无质控依据" />
               </section>
             </div>
 
-            <section v-if="cloudVisionResult.uncertainty || traceabilityAdvice.length" class="vision-summary">
-              <div v-if="cloudVisionResult.uncertainty">
+            <section v-if="cloudVisionResult!.uncertainty || traceabilityAdvice.length" class="vision-summary">
+              <div v-if="cloudVisionResult!.uncertainty">
                 <span class="detail-label">不确定性</span>
-                <p>{{ formatRuntimeText(cloudVisionResult.uncertainty) }}</p>
+                <p>{{ formatRuntimeText(cloudVisionResult!.uncertainty) }}</p>
               </div>
               <div v-if="traceabilityAdvice.length">
                 <span class="detail-label">复核建议</span>
@@ -826,54 +800,10 @@ onBeforeUnmount(() => {
           </div>
         </n-tab-pane>
 
-        <n-tab-pane name="evidence" :tab="`知识证据 (${evidences.length})`">
-          <div v-if="evidences.length" class="evidence-list">
-            <article v-for="(item, index) in evidences" :key="item.evidence_id || index" class="evidence-item">
-              <div class="evidence-index">{{ String(index + 1).padStart(2, '0') }}</div>
-              <div class="evidence-content">
-                <div class="evidence-title-row">
-                  <h3>{{ item.document_name || item.citation || '知识证据' }}</h3>
-                  <SourceBadge :source="item.data_source || item.source || 'mock'" />
-                </div>
-                <p>{{ item.content || '暂无证据摘要' }}</p>
-                <div class="evidence-meta">
-                  <span>页码 {{ item.page_number ?? '未标注' }}</span>
-                  <span>Chunk {{ item.chunk_id || '未标注' }}</span>
-                  <span>相关度 {{ formatPercent(item.score, 1) }}</span>
-                  <span v-if="item.citation">{{ item.citation }}</span>
-                </div>
-              </div>
-            </article>
-          </div>
-          <div v-else class="empty-state"><n-empty description="暂无知识证据" /></div>
-        </n-tab-pane>
-
-        <n-tab-pane name="resource" tab="生成资源">
-          <div v-if="generatedResource" class="resource-result">
-            <div class="resource-result-header">
-              <div>
-                <span class="detail-label">{{ taskTypeLabels[generatedResource.resource_type] || generatedResource.resource_type }}</span>
-                <h3>{{ generatedResource.title }}</h3>
-              </div>
-              <div>
-                <SourceBadge :source="generatedResource.provider" />
-                <n-tag size="small" :bordered="false">{{ formatResourceStatus(generatedResource.status) }}</n-tag>
-              </div>
-            </div>
-            <div class="content-prewrap resource-content">{{ generatedResource.content_markdown }}</div>
-            <div v-if="reviewResult" class="review-strip">
-              <BookOpenCheck :size="19" />
-              <span>资源审核</span>
-              <strong>{{ formatResourceStatus(reviewResult.status) }}</strong>
-              <small>{{ formatProvider(reviewResult.provider) }}</small>
-            </div>
-          </div>
-          <div v-else class="empty-state"><n-empty description="暂无生成资源" /></div>
-        </n-tab-pane>
       </n-tabs>
 
-      <div class="result-actions">
-        <span>完成时间 {{ formatDate(task?.finished_at) }}</span>
+      <div v-if="false" class="result-actions">
+        <span>完成时间 {{ formatDate(recognitionRecord?.created_at) }}</span>
         <n-tooltip trigger="hover">
           <template #trigger>
             <n-button secondary @click="router.push('/traces')">
@@ -881,12 +811,8 @@ onBeforeUnmount(() => {
               <template #icon><ScanSearch :size="17" /></template>
             </n-button>
           </template>
-          查看任务追踪与模型日志
+          查看识别与智能辅助追踪
         </n-tooltip>
-        <n-button type="primary" @click="router.push('/reports')">
-          生成报告
-          <template #icon><FileChartColumn :size="17" /></template>
-        </n-button>
       </div>
     </section>
   </div>
@@ -936,6 +862,26 @@ onBeforeUnmount(() => {
   color: var(--muted);
   font-size: 12px;
   font-weight: 650;
+}
+
+.pipeline-summary {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  color: var(--ink);
+  font-size: 12px;
+}
+
+.pipeline-summary strong {
+  padding: 6px 8px;
+  border-radius: 5px;
+  background: var(--primary-soft);
+  font-weight: 600;
+}
+
+.pipeline-summary b {
+  color: var(--primary);
 }
 
 .capture-source :deep(.n-radio-group),

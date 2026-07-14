@@ -6,6 +6,7 @@ from app.core.responses import UTF8JSONResponse
 class AppException(Exception):
     status_code = 400
     code = 1000
+    error_code: str | None = None
 
     def __init__(self, message: str, *, code: int | None = None) -> None:
         self.message = message
@@ -42,6 +43,7 @@ def install_exception_handlers(app: FastAPI) -> None:
             status_code=exc.status_code,
             content={
                 "code": exc.code,
+                "error_code": exc.error_code,
                 "message": exc.message,
                 "data": None,
                 "request_id": getattr(request.state, "request_id", None),

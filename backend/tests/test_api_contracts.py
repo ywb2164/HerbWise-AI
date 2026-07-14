@@ -44,7 +44,7 @@ def test_business_endpoint_requires_authentication() -> None:
 def test_user_model_settings_enable_cloud_capabilities(client: TestClient) -> None:
     try:
         saved = client.put(
-            "/api/model-settings",
+            "/api/model-settings/vision",
             json={
                 "protocol": "openai",
                 "base_url": "https://vision.example.test/v1",
@@ -52,14 +52,26 @@ def test_user_model_settings_enable_cloud_capabilities(client: TestClient) -> No
                 "api_key": "vision-test-key",
             },
         )
+        text_saved = client.put(
+            "/api/model-settings/text",
+            json={
+                "protocol": "openai",
+                "base_url": "https://text.example.test/v1",
+                "model_id": "text-test-model",
+                "api_key": "text-test-key",
+            },
+        )
         capabilities = client.get("/api/capabilities")
 
         assert saved.status_code == 200
+        assert text_saved.status_code == 200
+        assert "vision-test-key" not in saved.text
+        assert "text-test-key" not in text_saved.text
         assert capabilities.status_code == 200
         assert capabilities.json()["qwen_configured"] is True
         assert capabilities.json()["generation_model_configured"] is True
     finally:
-        runtime_model_registry.clear(99)
+        runtime_model_registry.clear_all()
 
 
 def test_success_response_serializes_nested_datetimes() -> None:

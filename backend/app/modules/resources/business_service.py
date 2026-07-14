@@ -37,17 +37,35 @@ def resource_data(item: ResourceOutput) -> dict:
     return {
         "resource_id": item.resource_id,
         "learner_id": item.learner_id,
+        "plan_id": item.plan_id,
+        "learning_plan_item_id": item.plan_item_id,
         "task_id": item.task_id,
         "medicine_id": item.medicine_id,
         "resource_type": item.resource_type,
         "title": item.title,
         "content_markdown": item.content_markdown,
         "content_json": item.content_json or {},
+        "learning_objectives": item.learning_objectives_json or [],
+        "target_dimensions": item.target_dimensions_json or [],
+        "target_knowledge_points": item.target_knowledge_points_json or [],
         "difficulty": item.difficulty,
+        "estimated_minutes": item.estimated_minutes,
+        "personalization_reason": item.personalization_reason,
         "status": item.status,
         "provider": item.provider,
         "model_name": item.model_name,
         "prompt_version": item.prompt_version,
+        "requires_rag": bool(item.retrieval_id),
+        "retrieval_id": item.retrieval_id,
+        "citation_count": item.citation_count,
+        "citations": item.citations_json or [],
+        "review_status": item.review_status,
+        "review_score": item.review_score,
+        "rewrite_count": item.rewrite_count,
+        "version": item.version,
+        "parent_resource_id": item.parent_resource_id,
+        "data_source": item.data_source,
+        "fallback_used": item.fallback_used,
         "created_at": item.created_at,
         "updated_at": item.updated_at,
     }
@@ -87,7 +105,7 @@ async def generate_resource(
         prompt_template_code="resource_generation",
     )
     model_config = None
-    runtime_config = runtime_model_registry.get_for_learner(payload.learner_id)
+    runtime_config = runtime_model_registry.get_for_learner(payload.learner_id, "text")
     if runtime_config is None and settings.llm_mode == "real":
         model_config = await session.scalar(
             select(ModelConfig)
@@ -132,7 +150,14 @@ async def generate_resource(
             "parent_resource_id": parent_resource_id,
             **(first.content_json or {}),
         },
+        plan_id=None,
+        plan_item_id=None,
+        learning_objectives_json=[],
+        target_dimensions_json=[],
+        target_knowledge_points_json=[],
         difficulty=payload.difficulty,
+        estimated_minutes=None,
+        personalization_reason=None,
         status="generated",
         provider=(
             f"{runtime_config.protocol}_compatible"
@@ -163,7 +188,14 @@ async def generate_resource(
         retrieval_id=payload.retrieval_id,
         evidence_ids_json=payload.evidence_ids,
         citations_json=citations,
+        citation_count=len(citations),
+        review_status=None,
+        review_score=None,
+        rewrite_count=0,
+        version=1,
+        parent_resource_id=parent_resource_id,
         data_source="ragflow" if payload.retrieval_id else "mock",
+        fallback_used=False,
     )
     session.add(item)
     session.add(
@@ -206,6 +238,11 @@ async def list_resources(
     session: AsyncSession, page: int, page_size: int, learner_id: str | None
 ) -> dict:
     filters = [ResourceOutput.learner_id == learner_id] if learner_id else []
+    # A learner's resource library is intentionally not a generation-job log.
+    # Keep unfinished, rejected, and historical revisions out of the student
+    # list while leaving the unscoped/admin query unchanged.
+    if learner_id is not None:
+        filters.append(ResourceOutput.status.in_(("approved", "degraded")))
     total = (
         await session.scalar(
             select(func.count()).select_from(ResourceOutput).where(*filters)
@@ -223,12 +260,19 @@ async def list_resources(
             )
         ).all()
     )
+    latest: dict[tuple[str | None, str | None, str], ResourceOutput] = {}
+    for item in records:
+        key = (item.task_id, item.plan_item_id, item.resource_type)
+        latest.setdefault(key, item)
+    visible = list(latest.values())
     return {
-        "items": [resource_data(item) for item in records],
+        "items": [resource_data(item) for item in visible],
         "page": page,
         "page_size": page_size,
-        "total": total,
-        "pages": (total + page_size - 1) // page_size,
+        "total": len(visible) if learner_id is not None else total,
+        "pages": (len(visible) + page_size - 1) // page_size
+        if learner_id is not None
+        else (total + page_size - 1) // page_size,
     }
 
 
@@ -292,7 +336,7 @@ async def review_resource(
     settings = get_settings()
     model_review = None
     review_config = None
-    runtime_config = runtime_model_registry.get_for_learner(resource.learner_id)
+    runtime_config = runtime_model_registry.get_for_learner(resource.learner_id, "text")
     if manual_status is None and runtime_config is None and settings.llm_mode == "real":
         review_config = await session.scalar(
             select(ModelConfig)

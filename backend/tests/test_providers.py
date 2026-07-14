@@ -48,24 +48,26 @@ def test_runtime_model_registry_isolates_and_redacts_credentials() -> None:
     config = registry.set(
         user_id=7,
         learner_id="stu_007",
+        purpose="text",
         protocol="openai",
         base_url="https://models.example.test/v2/",
         model_name="test-model",
         api_key="test-key-1234",
     )
 
-    assert registry.get_for_user(7) is config
-    assert registry.get_for_learner("stu_007") is config
+    assert registry.get_for_user(7, "text") is config
+    assert registry.get_for_learner("stu_007", "text") is config
     assert config.public_status()["api_key_masked"] == "****1234"
     assert "test-key-1234" not in repr(config)
-    assert registry.clear(7) is True
-    assert registry.get_for_learner("stu_007") is None
+    assert registry.clear(7, "text") is True
+    assert registry.get_for_learner("stu_007", "text") is None
 
 
 def test_runtime_model_provider_allows_slow_structured_calls() -> None:
     runtime_model_registry.set(
         user_id=8,
         learner_id="stu_008",
+        purpose="text",
         protocol="openai",
         base_url="https://models.example.test/v2",
         model_name="test-model",
@@ -76,7 +78,7 @@ def test_runtime_model_provider_allows_slow_structured_calls() -> None:
         assert isinstance(provider, OpenAICompatibleLLMProvider)
         assert provider.settings.model_read_timeout_seconds == 120
     finally:
-        runtime_model_registry.clear(8)
+        runtime_model_registry.clear(8, "text")
 
 
 def test_anthropic_response_is_normalized_to_chat_completion() -> None:
@@ -133,6 +135,7 @@ async def test_runtime_model_config_drives_cloud_vision(
     runtime_model_registry.set(
         user_id=9,
         learner_id="stu_009",
+        purpose="vision",
         protocol="openai",
         base_url="https://vision.example.test/v1",
         model_name="vision-test-model",
@@ -140,15 +143,17 @@ async def test_runtime_model_config_drives_cloud_vision(
     )
     captured: dict[str, object] = {}
 
-    async def fake_complete_structured(provider, messages, schema, context):
+    async def fake_complete_text(provider, messages, *, temperature, max_tokens):
         captured["provider"] = provider
         captured["messages"] = messages
-        return schema(candidate=None, top_candidates=[], uncertainty="test")
+        captured["temperature"] = temperature
+        captured["max_tokens"] = max_tokens
+        return "无法识别"
 
     monkeypatch.setattr(
         OpenAICompatibleLLMProvider,
-        "complete_structured",
-        fake_complete_structured,
+        "complete_text",
+        fake_complete_text,
     )
     try:
         result = await QwenVisionProvider().recognize(
@@ -160,13 +165,17 @@ async def test_runtime_model_config_drives_cloud_vision(
             ),
         )
     finally:
-        runtime_model_registry.clear(9)
+        runtime_model_registry.clear(9, "vision")
 
     provider = captured["provider"]
     assert isinstance(provider, OpenAICompatibleLLMProvider)
     assert provider.model_name == "vision-test-model"
     assert provider.settings.model_api_base_url == "https://vision.example.test/v1"
-    assert result.provider == "cloud_vision"
+    assert result.provider == "qwen"
     assert result.model_name == "vision-test-model"
+    assert result.candidate is not None
+    assert result.candidate.herb_name == "无法识别"
+    assert captured["temperature"] == 0
+    assert captured["max_tokens"] == 16
     image_url = captured["messages"][1]["content"][1]["image_url"]["url"]
     assert image_url.startswith("data:image/png;base64,")

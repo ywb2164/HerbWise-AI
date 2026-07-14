@@ -3,17 +3,13 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { NAvatar, NButton, NDrawer, NDrawerContent, NTag, NTooltip } from 'naive-ui'
 import {
-  BookOpenText,
-  ChartNoAxesCombined,
-  ClipboardCheck,
   FileChartColumn,
-  FlaskConical,
   Gauge,
-  LibraryBig,
   LogOut,
   Menu,
   ScanSearch,
   Settings2,
+  Sparkles,
   Target,
 } from 'lucide-vue-next'
 import AppLogo from '../components/AppLogo.vue'
@@ -30,41 +26,11 @@ const settingsOpen = ref(false)
 const mobile = ref(false)
 
 const navigation = [
-  {
-    label: '总览',
-    items: [{ label: '学习工作台', path: '/dashboard', icon: Gauge }],
-  },
-  {
-    label: '学习准备',
-    items: [
-      { label: '构建学习画像', path: '/onboarding', icon: ChartNoAxesCombined },
-      { label: '能力诊断', path: '/diagnosis', icon: ClipboardCheck },
-      { label: '画像档案', path: '/profile', icon: Target },
-    ],
-  },
-  {
-    label: '视觉实训',
-    items: [
-      { label: '药材辨识', path: '/recognition', icon: ScanSearch },
-      { label: '虚拟仿真实训', path: '/simulation', icon: FlaskConical },
-    ],
-  },
-  {
-    label: '个性化学习',
-    items: [
-      { label: '药材知识', path: '/knowledge', icon: LibraryBig },
-      { label: '学习资源', path: '/resources', icon: BookOpenText },
-      { label: '学习任务', path: '/learning-tasks', icon: ClipboardCheck },
-    ],
-  },
-  {
-    label: '结果沉淀',
-    items: [
-      { label: '学习报告', path: '/reports', icon: FileChartColumn },
-      { label: '证据链', path: '/traces', icon: FlaskConical },
-      { label: '测试指标', path: '/metrics', icon: Gauge },
-    ],
-  },
+  { label: '首页', path: '/dashboard', icon: Gauge },
+  { label: '智能识药', path: '/recognition', icon: ScanSearch },
+  { label: '学习中心', path: '/learning-center', icon: Sparkles },
+  { label: '学习报告', path: '/reports', icon: FileChartColumn },
+  { label: '个人中心', path: '/profile', icon: Target },
 ]
 
 const activeTitle = computed(() => String(route.meta.title || '学习工作台'))
@@ -88,7 +54,7 @@ function closeDrawer(): void {
 onMounted(() => {
   updateViewport()
   window.addEventListener('resize', updateViewport)
-  void modelSettings.load()
+  void Promise.all([modelSettings.load('vision'), modelSettings.load('text')])
 })
 
 onBeforeUnmount(() => window.removeEventListener('resize', updateViewport))
@@ -99,13 +65,10 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateViewport))
     <aside class="sidebar">
       <div class="sidebar-brand"><AppLogo /></div>
       <nav class="primary-nav" aria-label="主导航">
-        <section v-for="group in navigation" :key="group.label" class="nav-group">
-          <span class="nav-group-label">{{ group.label }}</span>
-          <router-link v-for="item in group.items" :key="item.path" :to="item.path" class="nav-item">
-            <component :is="item.icon" :size="18" :stroke-width="1.9" aria-hidden="true" />
-            <span>{{ item.label }}</span>
-          </router-link>
-        </section>
+        <router-link v-for="item in navigation" :key="item.path" :to="item.path" class="nav-item">
+          <component :is="item.icon" :size="18" :stroke-width="1.9" aria-hidden="true" />
+          <span>{{ item.label }}</span>
+        </router-link>
       </nav>
       <div class="sidebar-account">
         <n-avatar round size="small" color="#dcebe3" text-color="#195b43">{{ initial }}</n-avatar>
@@ -130,8 +93,8 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateViewport))
           <div class="location-copy"><span>学习中心</span><strong>{{ activeTitle }}</strong></div>
         </div>
         <div class="topbar-meta">
-          <n-tag v-if="modelSettings.status.configured" size="small" type="success" :bordered="false">
-            {{ modelSettings.status.model_id }}
+          <n-tag v-if="modelSettings.statuses.vision.configured" size="small" type="success" :bordered="false">
+            识图：{{ modelSettings.statuses.vision.model_id }}
           </n-tag>
           <span class="learner-chip">{{ auth.learnerId }}</span>
           <n-tooltip trigger="hover">
@@ -153,13 +116,10 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateViewport))
       <div class="drawer-panel">
         <div class="drawer-brand"><AppLogo /></div>
         <nav class="primary-nav" aria-label="移动端主导航">
-          <section v-for="group in navigation" :key="group.label" class="nav-group">
-            <span class="nav-group-label">{{ group.label }}</span>
-            <router-link v-for="item in group.items" :key="item.path" :to="item.path" class="nav-item" @click="closeDrawer">
-              <component :is="item.icon" :size="18" :stroke-width="1.9" aria-hidden="true" />
-              <span>{{ item.label }}</span>
-            </router-link>
-          </section>
+          <router-link v-for="item in navigation" :key="item.path" :to="item.path" class="nav-item" @click="closeDrawer">
+            <component :is="item.icon" :size="18" :stroke-width="1.9" aria-hidden="true" />
+            <span>{{ item.label }}</span>
+          </router-link>
         </nav>
         <n-button secondary block @click="handleLogout">
           <template #icon><LogOut :size="17" /></template>

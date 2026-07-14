@@ -6,11 +6,14 @@ from app.core.responses import ApiResponse, success
 from app.modules.auth.models import User
 from app.modules.auth.service import ensure_learner_access, get_current_user
 from app.modules.recognition.schemas import VisionRecognizeRequest
+from app.modules.recognition.agent_advice import create_recognition_advice_task
+from app.core.config import get_settings
 from app.modules.recognition.service import (
     list_records,
     record_data,
     recognize_uploaded_file,
     require_record,
+    single_name_response_data,
 )
 
 router = APIRouter(
@@ -30,9 +33,17 @@ async def recognize(
     user: User = Depends(get_current_user),
 ):
     ensure_learner_access(user, payload.learner_id)
-    return success(
-        record_data(await recognize_uploaded_file(session, **payload.model_dump()))
-    )
+    record = await recognize_uploaded_file(session, **payload.model_dump())
+    data = single_name_response_data(record)
+    mode = get_settings().recognition_agent_mode
+    if mode == "async" and record.status == "success":
+        agent_task = await create_recognition_advice_task(
+            recognition_id=record.recognition_id, learner_id=record.learner_id
+        )
+        data.update(agent_status="pending", agent_task_id=agent_task.task_id)
+    else:
+        data["agent_status"] = "skipped" if mode == "off" else "not_started"
+    return success(data)
 
 
 @router.get(
@@ -70,6 +81,39 @@ async def record(
     item = await require_record(session, recognition_id)
     ensure_learner_access(user, item.learner_id)
     return success(record_data(item))
+
+
+@router.post(
+    "/records/{recognition_id}/agent-advice",
+    response_model=ApiResponse,
+    summary="Create optional recognition learning advice",
+    description="Create a separate post-recognition assistant task without changing recognition results.",
+)
+async def create_agent_advice(
+    recognition_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    item = await require_record(session, recognition_id)
+    ensure_learner_access(user, item.learner_id)
+    if get_settings().recognition_agent_mode == "off":
+        return success(
+            {
+                "recognition_id": recognition_id,
+                "agent_status": "skipped",
+                "agent_task_id": None,
+            }
+        )
+    task = await create_recognition_advice_task(
+        recognition_id=recognition_id, learner_id=item.learner_id
+    )
+    return success(
+        {
+            "recognition_id": recognition_id,
+            "agent_status": "pending",
+            "agent_task_id": task.task_id,
+        }
+    )
 
 
 @router.get(

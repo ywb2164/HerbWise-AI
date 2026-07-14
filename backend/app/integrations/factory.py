@@ -20,7 +20,7 @@ def get_llm_provider(
     model_config: ModelConfig | None = None, learner_id: str | None = None
 ) -> LLMProvider:
     settings = get_settings()
-    runtime_config = runtime_model_registry.get_for_learner(learner_id)
+    runtime_config = runtime_model_registry.get_for_learner(learner_id, "text")
     if runtime_config is not None:
         from app.core.config import Settings
 

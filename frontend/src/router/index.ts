@@ -38,6 +38,12 @@ const router = createRouter({
           meta: { title: '学习工作台' },
         },
         {
+          path: 'learning-center',
+          name: 'learning-center',
+          component: () => import('../views/LearningCenterView.vue'),
+          meta: { title: '学习中心' },
+        },
+        {
           path: 'recognition',
           name: 'recognition',
           component: () => import('../views/RecognitionView.vue'),

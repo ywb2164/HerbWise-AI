@@ -1,6 +1,6 @@
 import pytest
 
-from app.integrations.mock import MockVisionProvider
+from app.integrations.mock import MockLLMProvider, MockRAGProvider, MockVisionProvider
 from app.modules.traces.models import TraceRecord
 from app.workflows.graph import build_workflow
 
@@ -57,6 +57,12 @@ async def test_mock_langgraph_full_flow_generates_events_logs_and_trace(
     monkeypatch.setattr(workflow_nodes, "record_agent_log", fake_record_agent_log)
     monkeypatch.setattr(
         workflow_nodes, "get_vision_provider", lambda: MockVisionProvider()
+    )
+    monkeypatch.setattr(
+        workflow_nodes, "get_llm_provider", lambda *args, **kwargs: MockLLMProvider()
+    )
+    monkeypatch.setattr(
+        workflow_nodes, "get_rag_provider", lambda *args, **kwargs: MockRAGProvider()
     )
     monkeypatch.setattr(
         workflow_nodes, "async_session_factory", lambda: FakeSession(traces)

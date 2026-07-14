@@ -27,7 +27,7 @@ class UltralyticsLocalVisionProvider(LocalVisionProvider):
 
     def _load(self) -> Any:
         settings = get_settings()
-        path = Path(settings.local_model_path)
+        path = settings.resolved_local_model_path()
         if not settings.local_vision_enabled or not path.is_file():
             raise ProviderUnavailableError(
                 "Local vision model is unavailable",
@@ -88,7 +88,7 @@ class UltralyticsLocalVisionProvider(LocalVisionProvider):
             ) from exc
         return VisionRecognitionResult(
             provider="local",
-            model_name=Path(settings.local_model_path).name,
+            model_name=settings.resolved_local_model_path().name,
             candidate=candidates[0] if candidates else None,
             top_candidates=candidates,
             uncertainty="empty_detection" if not candidates else None,
@@ -109,7 +109,7 @@ class UltralyticsLocalVisionProvider(LocalVisionProvider):
     @classmethod
     def status(cls) -> dict[str, object]:
         settings = get_settings()
-        model_path = Path(settings.local_model_path)
+        model_path = settings.resolved_local_model_path()
         return {
             "configured": settings.local_vision_enabled and model_path.is_file(),
             "loaded": cls._model is not None,

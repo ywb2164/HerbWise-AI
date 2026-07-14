@@ -367,6 +367,20 @@ async def initial_questions(session: AsyncSession) -> list[dict]:
     ]
 
 
+async def initial_test_status(session: AsyncSession, learner_id: str) -> dict:
+    await require_profile(session, learner_id)
+    record = await session.scalar(
+        select(TestRecord)
+        .where(TestRecord.learner_id == learner_id, TestRecord.test_type == "initial")
+        .order_by(TestRecord.submitted_at.desc())
+    )
+    return {
+        "completed": record is not None,
+        "record_id": record.record_id if record else None,
+        "submitted_at": record.submitted_at if record else None,
+    }
+
+
 async def submit_initial_test(
     session: AsyncSession, payload: InitialTestSubmission
 ) -> dict:
