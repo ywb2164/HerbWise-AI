@@ -188,7 +188,12 @@ async def questions(session: AsyncSession = Depends(get_session)):
     return success(await initial_questions(session))
 
 
-@tests_router.get("/initial/status", response_model=ApiResponse)
+@tests_router.get(
+    "/initial/status",
+    response_model=ApiResponse,
+    summary="Get initial-test status",
+    description="Return a learner's current initial-assessment completion status and results summary.",
+)
 async def initial_status(
     learner_id: str,
     session: AsyncSession = Depends(get_session),

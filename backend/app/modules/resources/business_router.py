@@ -88,6 +88,7 @@ async def create_generation_job(
     "",
     response_model=ApiResponse,
     summary="List current learner resource-generation jobs",
+    description="List the most recent persisted resource-generation jobs for the selected learner.",
 )
 async def list_generation_jobs(
     learner_id: str,

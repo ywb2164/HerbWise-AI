@@ -55,6 +55,7 @@ async def list_route(
     "/attempts/{attempt_id}/result",
     response_model=ApiResponse,
     summary="Get one completed learner task attempt",
+    description="Return the result of a completed learner task attempt for the selected learner.",
 )
 async def attempt_result_route(
     attempt_id: str,

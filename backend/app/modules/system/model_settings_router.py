@@ -111,6 +111,7 @@ def _provider(
 def _provider_error(
     exc: ProviderUnavailableError, *, vision: bool
 ) -> ModelSettingsException:
+    error_code = exc.error_code or "provider_unavailable"
     messages = {
         "authentication_error": "AUTHENTICATION_FAILED：API Key 验证失败",
         "model_not_found": "MODEL_NOT_FOUND：未找到指定模型",
@@ -121,12 +122,12 @@ def _provider_error(
         "schema_validation_error": "MODEL_RESPONSE_EMPTY：模型未返回所需结构化内容",
         "provider_unavailable": "PROVIDER_UNAVAILABLE：模型服务暂不可用",
     }
-    if vision and exc.error_code in {"invalid_response", "schema_validation_error"}:
+    if vision and error_code in {"invalid_response", "schema_validation_error"}:
         return ModelSettingsException(
             "MODEL_DOES_NOT_SUPPORT_VISION：该模型不支持图片输入"
         )
     return ModelSettingsException(
-        messages.get(exc.error_code, "PROVIDER_UNAVAILABLE：模型服务不可用")
+        messages.get(error_code, "PROVIDER_UNAVAILABLE：模型服务不可用")
     )
 
 
