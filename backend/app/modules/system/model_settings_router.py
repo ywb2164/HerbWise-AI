@@ -108,9 +108,12 @@ def _provider(
     )
 
 
-def _provider_error(exc: ProviderUnavailableError, *, vision: bool) -> ModelSettingsException:
+def _provider_error(
+    exc: ProviderUnavailableError, *, vision: bool
+) -> ModelSettingsException:
     messages = {
         "authentication_error": "AUTHENTICATION_FAILED：API Key 验证失败",
+        "model_not_found": "MODEL_NOT_FOUND：未找到指定模型",
         "timeout_error": "MODEL_TIMEOUT：模型请求超时",
         "network_error": "PROVIDER_UNAVAILABLE：模型服务不可用",
         "configuration_error": "PROVIDER_UNAVAILABLE：模型服务配置不可用",
@@ -119,8 +122,12 @@ def _provider_error(exc: ProviderUnavailableError, *, vision: bool) -> ModelSett
         "provider_unavailable": "PROVIDER_UNAVAILABLE：模型服务暂不可用",
     }
     if vision and exc.error_code in {"invalid_response", "schema_validation_error"}:
-        return ModelSettingsException("MODEL_DOES_NOT_SUPPORT_VISION：该模型不支持图片输入")
-    return ModelSettingsException(messages.get(exc.error_code, "PROVIDER_UNAVAILABLE：模型服务不可用"))
+        return ModelSettingsException(
+            "MODEL_DOES_NOT_SUPPORT_VISION：该模型不支持图片输入"
+        )
+    return ModelSettingsException(
+        messages.get(exc.error_code, "PROVIDER_UNAVAILABLE：模型服务不可用")
+    )
 
 
 def _form_payload(
@@ -134,7 +141,12 @@ def _form_payload(
     )
 
 
-@router.get("/{purpose}", response_model=ApiResponse)
+@router.get(
+    "/{purpose}",
+    response_model=ApiResponse,
+    summary="Get model settings",
+    description="Return the current user's runtime model configuration status for the selected purpose.",
+)
 async def get_model_settings(
     purpose: ModelPurpose, user: User = Depends(get_current_user)
 ):
@@ -142,7 +154,12 @@ async def get_model_settings(
     return success(config.public_status() if config else _unconfigured_status(purpose))
 
 
-@router.put("/{purpose}", response_model=ApiResponse)
+@router.put(
+    "/{purpose}",
+    response_model=ApiResponse,
+    summary="Save model settings",
+    description="Validate and save the current user's runtime model configuration for the selected purpose.",
+)
 async def save_model_settings(
     purpose: ModelPurpose,
     payload: ModelSettingsPayload,
@@ -164,7 +181,12 @@ async def save_model_settings(
     return success(config.public_status())
 
 
-@router.post("/text/test", response_model=ApiResponse)
+@router.post(
+    "/text/test",
+    response_model=ApiResponse,
+    summary="Test text model settings",
+    description="Test the supplied text model configuration with a small structured response request.",
+)
 async def test_text_model_settings(
     payload: ModelSettingsPayload, user: User = Depends(get_current_user)
 ):
@@ -175,7 +197,12 @@ async def test_text_model_settings(
         result = ModelConnectionResult.model_validate(
             (
                 await provider.complete_structured(
-                    [{"role": "user", "content": '请只返回 JSON：{"ok": true, "reply": "OK"}'}],
+                    [
+                        {
+                            "role": "user",
+                            "content": '请只返回 JSON：{"ok": true, "reply": "OK"}',
+                        }
+                    ],
                     ModelConnectionResult,
                     ModelCallContext(
                         learner_id=user.learner_id,
@@ -199,7 +226,12 @@ async def test_text_model_settings(
     )
 
 
-@router.post("/vision/test", response_model=ApiResponse)
+@router.post(
+    "/vision/test",
+    response_model=ApiResponse,
+    summary="Test vision model settings",
+    description="Test the supplied vision model configuration using an uploaded image.",
+)
 async def test_vision_model_settings(
     file: Annotated[UploadFile, File(...)],
     protocol: Annotated[str, Form()],
@@ -213,7 +245,9 @@ async def test_vision_model_settings(
     key = _api_key(payload, existing)
     mime = file.content_type or mimetypes.guess_type(file.filename or "")[0]
     if mime not in {"image/jpeg", "image/png", "image/webp"}:
-        raise ModelSettingsException("MODEL_DOES_NOT_SUPPORT_VISION：请上传 JPG、PNG 或 WebP 图片")
+        raise ModelSettingsException(
+            "MODEL_DOES_NOT_SUPPORT_VISION：请上传 JPG、PNG 或 WebP 图片"
+        )
     image = await file.read()
     if not image:
         raise ModelSettingsException("MODEL_RESPONSE_EMPTY：图片内容为空")
@@ -228,8 +262,14 @@ async def test_vision_model_settings(
                 {
                     "role": "user",
                     "content": [
-                        {"type": "text", "text": "这张图片中的主要对象是什么？只回答名称。"},
-                        {"type": "image_url", "image_url": {"url": f"data:{mime};base64,{encoded}"}},
+                        {
+                            "type": "text",
+                            "text": "这张图片中的主要对象是什么？只回答名称。",
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": {"url": f"data:{mime};base64,{encoded}"},
+                        },
                     ],
                 }
             ],
@@ -254,7 +294,12 @@ async def test_vision_model_settings(
     )
 
 
-@router.delete("/{purpose}", response_model=ApiResponse)
+@router.delete(
+    "/{purpose}",
+    response_model=ApiResponse,
+    summary="Clear model settings",
+    description="Clear the current user's runtime model configuration for the selected purpose.",
+)
 async def clear_model_settings(
     purpose: ModelPurpose, user: User = Depends(get_current_user)
 ):

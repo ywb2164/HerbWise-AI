@@ -18,7 +18,7 @@ from app.integrations.contracts import (
     PathUpdateResult,
     ReviewResult,
 )
-from app.integrations.secrets import SecretResolver
+from app.integrations.secrets import SecretConfigurationError, SecretResolver
 
 logger = logging.getLogger(__name__)
 
@@ -86,7 +86,14 @@ class OpenAICompatibleLLMProvider(LLMProvider):
             if self.settings.model_api_key.get_secret_value()
             else "env:LLM_API_KEY"
         )
-        return base_url.rstrip("/"), SecretResolver.resolve(reference)
+        try:
+            api_key = SecretResolver.resolve(reference)
+        except SecretConfigurationError as exc:
+            raise ProviderUnavailableError(
+                "Model API credential is not configured",
+                error_code="configuration_error",
+            ) from exc
+        return base_url.rstrip("/"), api_key
 
     @staticmethod
     def _anthropic_content(content: object) -> object:
@@ -218,6 +225,10 @@ class OpenAICompatibleLLMProvider(LLMProvider):
                         raise ProviderUnavailableError(
                             "Model authentication failed",
                             error_code="authentication_error",
+                        )
+                    if response.status_code == 404:
+                        raise ProviderUnavailableError(
+                            "Model was not found", error_code="model_not_found"
                         )
                     if response.status_code == 429:
                         last_error = ProviderUnavailableError(

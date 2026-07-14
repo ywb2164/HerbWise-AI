@@ -25,7 +25,9 @@ async def capabilities(user: User = Depends(get_current_user)) -> dict[str, obje
     runtime_text = runtime_model_registry.get_for_user(user.id, "text")
     return {
         "ai_mode": settings.ai_mode,
-        "vision_mode": "mock" if settings.effective_vision_mode() == "mock" else "fixed_pipeline",
+        "vision_mode": "mock"
+        if settings.effective_vision_mode() == "mock"
+        else "fixed_pipeline",
         "llm_mode": settings.llm_mode,
         "rag_mode": settings.rag_mode,
         "qwen_configured": bool(

@@ -87,10 +87,14 @@ def _resolve_vision_llm(
         model_read_timeout_seconds=settings.model_read_timeout_seconds,
         model_max_retries=settings.model_max_retries,
     )
-    return model, "qwen", OpenAICompatibleLLMProvider(
+    return (
         model,
-        vision_settings,
-        api_key=settings.model_api_key,
+        "qwen",
+        OpenAICompatibleLLMProvider(
+            model,
+            vision_settings,
+            api_key=settings.model_api_key,
+        ),
     )
 
 

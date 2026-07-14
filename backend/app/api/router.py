@@ -6,7 +6,11 @@ from app.modules.profiles.router import profiles_router, tests_router
 from app.modules.knowledge.router import router as medicine_router
 from app.modules.knowledge.rag_router import router as knowledge_router
 from app.modules.knowledge.admin_rag_router import router as admin_rag_router
-from app.modules.resources.business_router import resources_router, reviews_router
+from app.modules.resources.business_router import (
+    resource_jobs_router,
+    resources_router,
+    reviews_router,
+)
 from app.modules.learning_paths.router import (
     answers_router,
     paths_router,
@@ -31,6 +35,7 @@ api_router.include_router(medicine_router)
 api_router.include_router(knowledge_router)
 api_router.include_router(admin_rag_router)
 api_router.include_router(resources_router)
+api_router.include_router(resource_jobs_router)
 api_router.include_router(reviews_router)
 api_router.include_router(paths_router)
 api_router.include_router(reports_router)

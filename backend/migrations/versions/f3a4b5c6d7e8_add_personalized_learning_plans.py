@@ -32,9 +32,21 @@ def upgrade() -> None:
         sa.Column("provider", sa.String(64)),
         sa.Column("prompt_version", sa.String(64)),
         sa.Column("data_source", sa.String(64), nullable=False, server_default="llm"),
-        sa.Column("fallback_used", sa.Boolean(), nullable=False, server_default=sa.false()),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "fallback_used", sa.Boolean(), nullable=False, server_default=sa.false()
+        ),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
         sa.UniqueConstraint("plan_id"),
     )
     op.create_index("ix_learning_plans_plan_id", "learning_plans", ["plan_id"])
@@ -57,15 +69,39 @@ def upgrade() -> None:
         sa.Column("status", sa.String(32), nullable=False, server_default="pending"),
         sa.Column("linked_task_id", sa.String(64)),
         sa.Column("linked_resource_id", sa.String(64)),
-        sa.Column("created_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
-        sa.Column("updated_at", sa.DateTime(timezone=True), server_default=sa.func.now(), nullable=False),
+        sa.Column(
+            "created_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
+        sa.Column(
+            "updated_at",
+            sa.DateTime(timezone=True),
+            server_default=sa.func.now(),
+            nullable=False,
+        ),
         sa.UniqueConstraint("item_id"),
-        sa.UniqueConstraint("plan_id", "order_index", name="uq_learning_plan_item_order"),
+        sa.UniqueConstraint(
+            "plan_id", "order_index", name="uq_learning_plan_item_order"
+        ),
     )
-    op.create_index("ix_learning_plan_items_item_id", "learning_plan_items", ["item_id"])
-    op.create_index("ix_learning_plan_items_plan_id", "learning_plan_items", ["plan_id"])
-    op.create_index("ix_learning_plan_items_linked_task_id", "learning_plan_items", ["linked_task_id"])
-    op.create_index("ix_learning_plan_items_linked_resource_id", "learning_plan_items", ["linked_resource_id"])
+    op.create_index(
+        "ix_learning_plan_items_item_id", "learning_plan_items", ["item_id"]
+    )
+    op.create_index(
+        "ix_learning_plan_items_plan_id", "learning_plan_items", ["plan_id"]
+    )
+    op.create_index(
+        "ix_learning_plan_items_linked_task_id",
+        "learning_plan_items",
+        ["linked_task_id"],
+    )
+    op.create_index(
+        "ix_learning_plan_items_linked_resource_id",
+        "learning_plan_items",
+        ["linked_resource_id"],
+    )
 
 
 def downgrade() -> None:

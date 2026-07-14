@@ -104,7 +104,9 @@ class RuntimeModelRegistry:
             return None
         with self._lock:
             owner = self._learner_owner.get(learner_id)
-            return self._by_user.get(owner, {}).get(purpose) if owner is not None else None
+            return (
+                self._by_user.get(owner, {}).get(purpose) if owner is not None else None
+            )
 
     def clear(self, user_id: int, purpose: ModelPurpose) -> bool:
         purpose = self._purpose(purpose)

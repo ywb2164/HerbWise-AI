@@ -14,6 +14,15 @@ from app.modules.resources.business_schemas import (
     ManualDecisionRequest,
     ResourceType,
 )
+from app.modules.resources.agent_schemas import ResourceGenerationRequest
+from app.modules.resources.agent_service import (
+    create_job,
+    job_data,
+    require_job,
+    retry_resource,
+    run_job_workflow,
+)
+from app.modules.resources.rag_decision import PROFESSIONAL_RESOURCE_TYPES
 from app.modules.resources.business_service import (
     archive_resource,
     generate_resource,
@@ -28,6 +37,11 @@ from app.modules.resources.business_service import (
 resources_router = APIRouter(
     prefix="/resources",
     tags=["resources"],
+    dependencies=[Depends(get_current_user)],
+)
+resource_jobs_router = APIRouter(
+    prefix="/resource-generation-jobs",
+    tags=["resource-generation-jobs"],
     dependencies=[Depends(get_current_user)],
 )
 reviews_router = APIRouter(
@@ -50,6 +64,40 @@ async def generate(
 ):
     ensure_learner_access(user, payload.learner_id)
     return success(resource_data(await generate_resource(session, payload)))
+
+
+@resource_jobs_router.post(
+    "",
+    response_model=ApiResponse,
+    status_code=201,
+    summary="Generate a personalised learning resource",
+    description="Create and synchronously run a persisted resource-generation job from a learner-owned task or plan item.",
+)
+async def create_generation_job(
+    payload: ResourceGenerationRequest,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    ensure_learner_access(user, payload.learner_id)
+    job = await create_job(session, payload)
+    await run_job_workflow(session, job, requires_citation=payload.requires_citation)
+    return success(job_data(job))
+
+
+@resource_jobs_router.get(
+    "/{job_id}",
+    response_model=ApiResponse,
+    summary="Get a resource-generation job",
+    description="Return the current status and output metadata for a persisted resource-generation job.",
+)
+async def get_generation_job(
+    job_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    job = await require_job(session, job_id)
+    ensure_learner_access(user, job.learner_id)
+    return success(job_data(job))
 
 
 @resources_router.get(
@@ -86,6 +134,30 @@ async def get_resource(
     resource = await require_resource(session, resource_id)
     ensure_learner_access(user, resource.learner_id)
     return success(resource_data(resource))
+
+
+@resources_router.post(
+    "/{resource_id}/retry",
+    response_model=ApiResponse,
+    status_code=201,
+    summary="Retry a rejected or failed resource",
+    description="Create and run a replacement generation job for a rejected or failed resource.",
+)
+async def retry(
+    resource_id: str,
+    session: AsyncSession = Depends(get_session),
+    user: User = Depends(get_current_user),
+):
+    resource = await require_resource(session, resource_id)
+    ensure_learner_access(user, resource.learner_id)
+    job = await retry_resource(session, resource)
+    await run_job_workflow(
+        session,
+        job,
+        requires_citation=bool(resource.citation_count)
+        or resource.resource_type in PROFESSIONAL_RESOURCE_TYPES,
+    )
+    return success(job_data(job))
 
 
 @resources_router.post(
