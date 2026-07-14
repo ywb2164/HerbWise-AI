@@ -19,5 +19,21 @@ jobs:
       - run: uv run python scripts/smoke_demo_replay.py
       - run: uv run python scripts/smoke_degradation.py
       - run: uv run python scripts/repository_guard.py
-      - run: uv run alembic heads | grep -c '^b9f2c8d04a71 (head)$'
+      - name: Verify single Alembic head
+        run: |
+          uv run python - <<'PY'
+          from alembic.config import Config
+          from alembic.script import ScriptDirectory
+
+          heads = ScriptDirectory.from_config(
+              Config("alembic.ini")
+          ).get_heads()
+
+          print("Alembic heads:", heads)
+
+          if len(heads) != 1:
+              raise SystemExit(
+                  f"Expected exactly one Alembic head, got {heads}"
+              )
+          PY
       - run: uv run python -c "import importlib; importlib.import_module('migrations.versions.b9f2c8d04a71_add_report_output_path')"
