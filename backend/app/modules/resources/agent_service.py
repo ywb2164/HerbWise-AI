@@ -36,10 +36,13 @@ from app.modules.resources.business_models import (
 
 
 class ResourceReferenceError(AppException):
-    def __init__(self, message: str, *, error_code: str, status_code: int = 404) -> None:
+    def __init__(
+        self, message: str, *, error_code: str, status_code: int = 404
+    ) -> None:
         super().__init__(message)
         self.error_code = error_code
         self.status_code = status_code
+
 
 PROMPT_VERSION = "learning-resource-agent-v1"
 SEVERE_REVIEW_ISSUES = frozenset(
@@ -137,7 +140,9 @@ async def _load_context(
                     error_code="PLAN_ITEM_FORBIDDEN",
                     status_code=403,
                 )
-            raise ResourceReferenceError("Learning plan not found", error_code="PLAN_NOT_FOUND")
+            raise ResourceReferenceError(
+                "Learning plan not found", error_code="PLAN_NOT_FOUND"
+            )
         job.plan_id = plan.plan_id
     task = None
     if job.task_id:
@@ -148,10 +153,13 @@ async def _load_context(
             )
         )
         if task is None:
-            raise ResourceReferenceError("Learning task not found", error_code="TASK_NOT_FOUND")
+            raise ResourceReferenceError(
+                "Learning task not found", error_code="TASK_NOT_FOUND"
+            )
     if plan_item and task and plan_item.linked_task_id != task.learning_task_id:
         raise ResourceReferenceError(
-            "Learning plan item and task are not linked", error_code="PLAN_ITEM_TASK_MISMATCH"
+            "Learning plan item and task are not linked",
+            error_code="PLAN_ITEM_TASK_MISMATCH",
         )
     if plan_item and not job.task_id:
         job.task_id = plan_item.linked_task_id
@@ -163,13 +171,17 @@ async def _load_context(
                 )
             )
     learning = await load_learning_context(session, job.learner_id, 30)
-    free_topic = job.additional_instruction.strip() if job.additional_instruction else None
+    free_topic = (
+        job.additional_instruction.strip() if job.additional_instruction else None
+    )
     targets = (
         list(plan_item.target_knowledge_points_json or [])
         if plan_item
         else list(task.target_knowledge_points_json or [])
         if task
-        else [free_topic] if free_topic else []
+        else [free_topic]
+        if free_topic
+        else []
     )
     dimensions = (
         list(plan_item.target_dimensions_json or [])
