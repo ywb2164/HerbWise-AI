@@ -90,54 +90,20 @@ Alembic：单一 head
 - 学习资源推荐
 - 学习报告导出
 
-### 3.3 中药图片识别
+### 3.3 固定智能识别流水线
 
-支持四种视觉模式：
+真实识别不再由用户选择本地、云端或混合模式，而是固定执行：
 
-| 模式       | 说明                               |
-| ---------- | ---------------------------------- |
-| `mock`   | 使用固定 Mock 结果，适合开发与演示 |
-| `qwen`   | 使用 Qwen-VL 进行图片识别          |
-| `local`  | 使用本地 Ultralytics 模型          |
-| `hybrid` | 本地模型与 Qwen-VL 并行识别并融合  |
+```text
+上传图片 → Qwen-VL 开放类别主识别 + YOLO26s 并行参考
+→ 名称标准化与 45 类知识包匹配 → 知识一致性核验 → 最终结果
+```
 
-统一输出包括：
+Qwen-VL 是唯一的最终药材名称来源，且不受 45 类训练集限制。YOLO26s 仅返回独立的 Top-K、置信度和检测框；它不会覆盖 Qwen 名称、不会在 Qwen 失败时伪装成最终答案，也不会对 Qwen 置信度加减分。
 
-- 药材中文名
-- 英文名
-- 训练类别名
-- Top-K 候选
-- 置信度
-- 性状证据
-- 质控证据
-- 不确定性
-- 是否属于当前支持药材目录
-- 是否需要人工复核
+名称仅进行精确的训练类、英文标准名、药典拉丁名、人工维护同义词及规范化等价匹配；不会模糊映射到“最近”的 45 类。目录外结果会保留原始 Qwen 英文名，并标记 `out_of_catalog` 与人工复核需求。
 
-### 3.4 名称标准化
-
-识别结果不会直接作为最终药材名，而是通过数据库进行标准化。
-
-匹配顺序包括：
-
-1. `training_class_name`
-2. 英文标准名
-3. 中文标准名
-4. 中文或英文别名
-5. 规范化后的大小写、空格和标点匹配
-
-别名不写死在业务代码中，统一维护在数据库。
-
-### 3.5 双路识别融合
-
-默认融合规则：
-
-- 本地模型与 Qwen-VL 识别为同一药材：本地置信度增加 `0.15`，最大不超过 `0.99`
-- 两者结果冲突：本地置信度减少 `0.15`，标记 `manual_review_required=true`
-- Qwen 结果超出支持目录、本地模型有效：使用本地模型结果
-- 本地模型失败、Qwen 有效：使用 Qwen 结果
-- Qwen 失败、本地模型有效：使用本地模型结果
-- 两路都失败：不伪造识别结果，任务进入失败状态
+`data/knowledge/herb_profiles_45.v1.json` 是可选的专业初稿知识包，用于名称标准化和性状一致性核验；其 `review_status` 会原样返回，不能视为已完成药典法定审核。
 
 ### 3.6 RAG 知识检索
 
@@ -535,7 +501,20 @@ Health:   http://localhost:8000/health
 .\scripts\start-dev.ps1
 ```
 
-该脚本会检查 Docker，启动 FastAPI、MySQL 和 Redis，并执行 Alembic 迁移及 Seed。停止后端容器：
+该脚本会检查 Docker Desktop 和 Compose 配置，启动 FastAPI、MySQL 和 Redis，等待服务就绪后在 API 容器内执行 Alembic 迁移、Seed 和（如存在）药材类别映射导入。它不会在 Windows 本机运行 `uv`，也不会删除已有数据卷。停止后端容器：
+
+可选参数：
+
+```powershell
+# 不重新构建镜像；仍会执行迁移、映射导入和健康检查
+.\scripts\start-dev.ps1 -NoBuild
+
+# 跳过 seed_data.py，但仍执行 Alembic 迁移
+.\scripts\start-dev.ps1 -SkipSeed
+
+# 跳过本地模型信息检查
+.\scripts\start-dev.ps1 -SkipModelCheck
+```
 
 ```powershell
 .\scripts\stop-services.ps1
@@ -586,10 +565,13 @@ Health:   http://localhost:8000/health
 ### 9.5 手动启动后端
 
 ```powershell
-docker compose up -d --build
-docker compose ps
-docker compose exec api uv run alembic upgrade head
-docker compose exec api uv run python scripts/seed_data.py
+docker compose -f compose.yaml -f compose.dev.yaml up -d --build
+
+docker compose -f compose.yaml -f compose.dev.yaml exec -T api `
+  uv run alembic upgrade head
+
+docker compose -f compose.yaml -f compose.dev.yaml exec -T api `
+  uv run python scripts/seed_data.py
 ```
 
 ---
@@ -618,13 +600,15 @@ RAG_MODE=mock
 
 适合本地开发、前端联调、CI 和无网络演示。
 
-### Hybrid 识别模式
+### 真实智能识别模式
 
 ```env
-VISION_MODE=hybrid
+VISION_MODE=qwen
+LOCAL_VISION_ENABLED=true
+LOCAL_MODEL_PATH=/data/models/herbwise-yolo26s.pt
 ```
 
-同时使用本地视觉模型、Qwen-VL 和确定性融合。
+Qwen-VL 进行开放类别主识别；YOLO26s 独立并行评估。YOLO 不参与最终名称裁决，也不会调整 Qwen 的置信度。
 
 ### 真实 RAG 模式
 

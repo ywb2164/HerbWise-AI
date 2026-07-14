@@ -15,6 +15,11 @@ import type {
   LearningAnswer,
   LearningAnswerPayload,
   LearningPath,
+  LearningPlan,
+  LearningTask,
+  LearningTaskAttempt,
+  LearningTaskDetail,
+  LearningTaskResult,
   MedicineFeature,
   MedicineItem,
   ModelConnectionResult,
@@ -116,6 +121,20 @@ export const api = {
       url: `/learning/answers/${learnerId}`,
       params: { page: 1, page_size: pageSize },
     }),
+  listLearningTasks: (learnerId: string, status?: string) =>
+    request<Paginated<LearningTask>>({ url: '/learning-tasks', params: { learner_id: learnerId, status, page: 1, page_size: 50 } }),
+  getLearningTask: (taskId: string, learnerId: string) =>
+    request<LearningTaskDetail>({ url: `/learning-tasks/${taskId}`, params: { learner_id: learnerId } }),
+  startLearningTask: (taskId: string, learnerId: string) =>
+    request<LearningTaskAttempt>({ method: 'POST', url: `/learning-tasks/${taskId}/start`, params: { learner_id: learnerId } }),
+  submitLearningTask: (taskId: string, learnerId: string, attemptId: string, answers: Array<{ question_id: number; answer: string | string[] }>) =>
+    request<LearningTaskResult>({ method: 'POST', url: `/learning-tasks/${taskId}/submit`, params: { learner_id: learnerId }, data: { attempt_id: attemptId, answers } }),
+  getLearningTaskResult: (taskId: string, learnerId: string) =>
+    request<LearningTaskResult>({ url: `/learning-tasks/${taskId}/result`, params: { learner_id: learnerId } }),
+  getCurrentLearningPlan: (learnerId: string) =>
+    request<LearningPlan | null>({ url: '/learning-plans/current', params: { learner_id: learnerId } }),
+  generateLearningPlan: (learnerId: string, dailyMinutes = 30) =>
+    request<LearningPlan>({ method: 'POST', url: '/learning-plans/generate', data: { learner_id: learnerId, daily_minutes: dailyMinutes } }),
 
   getCapabilities: () => request<CapabilityStatus>({ url: '/capabilities' }),
 
@@ -135,6 +154,16 @@ export const api = {
     vision_mode: 'qwen' | 'local' | 'hybrid'
     llm_mode: 'mock' | 'real'
   }) => request<TaskCreated>({ method: 'POST', url: '/agent/tasks', data: payload }),
+  recognizeUploadedFile: (payload: {
+    learner_id: string
+    file_id: string
+    vision_mode?: 'mock' | 'qwen' | 'local' | 'hybrid'
+  }) => request<RecognitionRecord>({ method: 'POST', url: '/vision/recognize', data: payload }),
+  createRecognitionAdvice: (recognitionId: string) =>
+    request<{ recognition_id: string; agent_status: RecognitionRecord['agent_status']; agent_task_id: string | null }>({
+      method: 'POST',
+      url: `/vision/records/${recognitionId}/agent-advice`,
+    }),
   getTask: (taskId: string) => request<AgentTask>({ url: `/agent/tasks/${taskId}` }),
   getTaskEvents: (taskId: string) => request<TaskEvent[]>({ url: `/agent/tasks/${taskId}/events` }),
   getTaskLogs: (taskId: string) => request<AgentLog[]>({ url: `/agent/tasks/${taskId}/logs` }),

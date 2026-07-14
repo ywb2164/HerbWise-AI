@@ -18,7 +18,7 @@ def model_checks() -> list[Check]:
     settings = get_settings()
     if not settings.local_vision_enabled:
         return [Check("local_model", "skipped", "LOCAL_VISION_ENABLED=false")]
-    path = Path(settings.local_model_path)
+    path = settings.resolved_local_model_path()
     if not path.is_file():
         return [
             Check(

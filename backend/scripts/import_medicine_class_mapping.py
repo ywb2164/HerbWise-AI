@@ -5,9 +5,12 @@ from __future__ import annotations
 import argparse
 import asyncio
 import csv
+import sys
 from pathlib import Path
 
 from sqlalchemy import select
+
+sys.path.append(str(Path(__file__).resolve().parents[1]))
 
 from app.core.database import async_session_factory
 from app.modules.knowledge.models import MedicineAlias, MedicineItem

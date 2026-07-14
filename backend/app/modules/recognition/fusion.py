@@ -1,4 +1,9 @@
-from app.core.config import get_settings
+"""Explainable comparison of independent Qwen and YOLO outcomes.
+
+Qwen-VL is the sole source of a final material name.  YOLO is intentionally
+kept as a parallel reference and can never replace or re-score that decision.
+"""
+
 from app.integrations.contracts import FusionResult, VisionRecognitionResult
 
 
@@ -6,89 +11,49 @@ def fuse_recognition(
     local: VisionRecognitionResult | None,
     qwen: VisionRecognitionResult | None,
 ) -> FusionResult:
-    settings = get_settings()
+    qwen_candidate = qwen.candidate if qwen and qwen.recognized else None
     local_candidate = local.candidate if local else None
-    qwen_candidate = qwen.candidate if qwen else None
-    if local_candidate and qwen_candidate:
-        same = (
+    if qwen_candidate is None:
+        return FusionResult(
+            local_result=local,
+            qwen_result=qwen,
+            agreement_status="qwen_unavailable",
+            decision_reason="Primary Qwen-VL recognition is unavailable; YOLO remains reference-only.",
+            manual_review_required=True,
+            fallback_used=local_candidate is not None,
+            status="primary_recognition_unavailable",
+        )
+
+    same = bool(
+        local_candidate
+        and (
             local_candidate.medicine_id is not None
             and local_candidate.medicine_id == qwen_candidate.medicine_id
-        ) or (
-            local_candidate.in_supported_catalog
-            and qwen_candidate.in_supported_catalog
-            and local_candidate.herb_name == qwen_candidate.herb_name
+            or local_candidate.raw_name
+            and qwen_candidate.raw_name
+            and local_candidate.raw_name.casefold()
+            == qwen_candidate.raw_name.casefold()
         )
-        baseline = max(local_candidate.confidence, qwen_candidate.confidence)
-        if same:
-            confidence = min(
-                settings.fusion_confidence_cap,
-                baseline + settings.fusion_agreement_bonus,
-            )
-            selected = (
-                local_candidate
-                if local_candidate.confidence >= qwen_candidate.confidence
-                else qwen_candidate
-            )
-            return FusionResult(
-                final_candidate=selected.model_copy(update={"confidence": confidence}),
-                local_result=local,
-                qwen_result=qwen,
-                agreement_status="agree",
-                confidence_before_adjustment=baseline,
-                confidence_after_adjustment=confidence,
-                adjustment=settings.fusion_agreement_bonus,
-                decision_reason="Both normalized providers identified the same catalog medicine",
-                in_supported_catalog=True,
-            )
-        confidence = max(
-            0, local_candidate.confidence - settings.fusion_conflict_penalty
-        )
-        return FusionResult(
-            final_candidate=local_candidate.model_copy(
-                update={"confidence": confidence}
-            ),
-            local_result=local,
-            qwen_result=qwen,
-            agreement_status="conflict",
-            confidence_before_adjustment=local_candidate.confidence,
-            confidence_after_adjustment=confidence,
-            adjustment=-settings.fusion_conflict_penalty,
-            decision_reason="Providers disagree after database name normalization; local result is retained conservatively",
-            manual_review_required=True,
-            in_supported_catalog=local_candidate.in_supported_catalog,
-        )
-    if local_candidate:
-        return FusionResult(
-            final_candidate=local_candidate,
-            local_result=local,
-            qwen_result=qwen,
-            agreement_status="local_only",
-            confidence_before_adjustment=local_candidate.confidence,
-            confidence_after_adjustment=local_candidate.confidence,
-            decision_reason="Qwen provider unavailable or returned no candidate",
-            manual_review_required=local_candidate.confidence
-            < settings.fusion_local_accept_threshold,
-            in_supported_catalog=local_candidate.in_supported_catalog,
-            fallback_used=True,
-        )
-    if qwen_candidate:
-        return FusionResult(
-            final_candidate=qwen_candidate,
-            local_result=local,
-            qwen_result=qwen,
-            agreement_status="qwen_only",
-            confidence_before_adjustment=qwen_candidate.confidence,
-            confidence_after_adjustment=qwen_candidate.confidence,
-            decision_reason="Local provider unavailable or returned no candidate",
-            manual_review_required=not qwen_candidate.in_supported_catalog,
-            in_supported_catalog=qwen_candidate.in_supported_catalog,
-            fallback_used=True,
-        )
+    )
+    if local_candidate is None:
+        agreement = "yolo_unavailable"
+    elif same:
+        agreement = "agree"
+    else:
+        agreement = "disagree"
     return FusionResult(
+        final_candidate=qwen_candidate,
         local_result=local,
         qwen_result=qwen,
-        agreement_status="no_result",
-        decision_reason="Neither vision provider returned a usable candidate",
-        manual_review_required=True,
-        fallback_used=True,
+        agreement_status=agreement,
+        confidence_before_adjustment=qwen_candidate.confidence,
+        confidence_after_adjustment=qwen_candidate.confidence,
+        adjustment=0,
+        decision_reason="Primary single-name result is authoritative; the detector is reference-only.",
+        manual_review_required=(
+            (qwen is not None and qwen.needs_review) or agreement == "disagree"
+        ),
+        in_supported_catalog=qwen_candidate.in_supported_catalog,
+        rule_version="v1-fixed-qwen-primary",
+        status="success",
     )

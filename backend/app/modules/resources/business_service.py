@@ -87,7 +87,7 @@ async def generate_resource(
         prompt_template_code="resource_generation",
     )
     model_config = None
-    runtime_config = runtime_model_registry.get_for_learner(payload.learner_id)
+    runtime_config = runtime_model_registry.get_for_learner(payload.learner_id, "text")
     if runtime_config is None and settings.llm_mode == "real":
         model_config = await session.scalar(
             select(ModelConfig)
@@ -292,7 +292,7 @@ async def review_resource(
     settings = get_settings()
     model_review = None
     review_config = None
-    runtime_config = runtime_model_registry.get_for_learner(resource.learner_id)
+    runtime_config = runtime_model_registry.get_for_learner(resource.learner_id, "text")
     if manual_status is None and runtime_config is None and settings.llm_mode == "real":
         review_config = await session.scalar(
             select(ModelConfig)

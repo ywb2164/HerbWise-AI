@@ -140,15 +140,17 @@ async def test_runtime_model_config_drives_cloud_vision(
     )
     captured: dict[str, object] = {}
 
-    async def fake_complete_structured(provider, messages, schema, context):
+    async def fake_complete_text(provider, messages, *, temperature, max_tokens):
         captured["provider"] = provider
         captured["messages"] = messages
-        return schema(candidate=None, top_candidates=[], uncertainty="test")
+        captured["temperature"] = temperature
+        captured["max_tokens"] = max_tokens
+        return "无法识别"
 
     monkeypatch.setattr(
         OpenAICompatibleLLMProvider,
-        "complete_structured",
-        fake_complete_structured,
+        "complete_text",
+        fake_complete_text,
     )
     try:
         result = await QwenVisionProvider().recognize(
@@ -166,7 +168,11 @@ async def test_runtime_model_config_drives_cloud_vision(
     assert isinstance(provider, OpenAICompatibleLLMProvider)
     assert provider.model_name == "vision-test-model"
     assert provider.settings.model_api_base_url == "https://vision.example.test/v1"
-    assert result.provider == "cloud_vision"
+    assert result.provider == "qwen"
     assert result.model_name == "vision-test-model"
+    assert result.candidate is not None
+    assert result.candidate.herb_name == "无法识别"
+    assert captured["temperature"] == 0
+    assert captured["max_tokens"] == 16
     image_url = captured["messages"][1]["content"][1]["image_url"]["url"]
     assert image_url.startswith("data:image/png;base64,")

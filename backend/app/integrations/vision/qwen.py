@@ -1,17 +1,16 @@
 from __future__ import annotations
 
 import base64
+import logging
 import mimetypes
+import re
 from pathlib import Path
 from typing import Any
-
-from pydantic import BaseModel, Field
 
 from app.core.config import Settings, get_settings
 from app.integrations.contracts import (
     ModelCallContext,
     RecognitionCandidate,
-    RecognitionEvidence,
     VisionProvider,
     VisionRecognitionResult,
 )
@@ -21,14 +20,31 @@ from app.integrations.openai_compatible import (
 )
 from app.integrations.runtime_model import runtime_model_registry
 
+logger = logging.getLogger(__name__)
 
-class QwenVisionPayload(BaseModel):
-    candidate: RecognitionCandidate | None = None
-    top_candidates: list[RecognitionCandidate] = Field(default_factory=list)
-    character_evidence: list[RecognitionEvidence] = Field(default_factory=list)
-    quality_control_evidence: list[RecognitionEvidence] = Field(default_factory=list)
-    traceability_advice: list[str] = Field(default_factory=list)
-    uncertainty: str | None = None
+SYSTEM_PROMPT = """你是中药材图像识别器。请根据图片判断其中最可能对应的中药材名称。
+
+只输出一个最可能的常用中文药材名称。
+不要解释，不要分析，不要列候选，不要输出英文，不要添加标点、括号、Markdown或其他文字。
+无法判断时只输出：无法识别"""
+
+USER_PROMPT = "这是什么药材？只回答一个中文药材名。"
+RETRY_PROMPT = (
+    "你刚才没有按照要求只返回药材名称。请只输出一个中文药材名，不要输出任何解释。"
+)
+
+
+def clean_medicinal_name(content: str) -> str:
+    """Apply only the presentation cleanup permitted for the one-name protocol."""
+
+    line = next((item.strip() for item in content.splitlines() if item.strip()), "")
+    line = line.replace("**", "").strip()
+    line = line.strip("“”\"'")
+    return line.rstrip("。.,，,:：").strip()
+
+
+def is_short_chinese_medicinal_name(value: str) -> bool:
+    return value == "无法识别" or bool(re.fullmatch(r"[\u4e00-\u9fff]{1,20}", value))
 
 
 def _resolve_vision_llm(
@@ -36,7 +52,7 @@ def _resolve_vision_llm(
 ) -> tuple[str, str, OpenAICompatibleLLMProvider]:
     settings = get_settings()
     runtime = runtime_model_registry.get_for_learner(
-        context.learner_id if context else None
+        context.learner_id if context else None, "vision"
     )
     if runtime is not None:
         runtime_settings = Settings(
@@ -47,7 +63,7 @@ def _resolve_vision_llm(
         )
         return (
             runtime.model_name,
-            "cloud_vision",
+            "qwen",
             OpenAICompatibleLLMProvider(
                 runtime.model_name,
                 runtime_settings,
@@ -57,15 +73,30 @@ def _resolve_vision_llm(
         )
 
     model = settings.qwen_vl_model or settings.vision_model
-    if not model:
+    if (
+        not model
+        or not settings.model_api_base_url
+        or not settings.model_api_key.get_secret_value()
+    ):
         raise ProviderUnavailableError(
-            "Cloud vision model is not configured",
-            error_code="configuration_error",
+            "Qwen-VL model is not configured", error_code="configuration_error"
         )
-    return model, "qwen", OpenAICompatibleLLMProvider(model)
+    vision_settings = Settings(
+        model_api_base_url=settings.model_api_base_url,
+        model_connect_timeout_seconds=settings.model_connect_timeout_seconds,
+        model_read_timeout_seconds=settings.model_read_timeout_seconds,
+        model_max_retries=settings.model_max_retries,
+    )
+    return model, "qwen", OpenAICompatibleLLMProvider(
+        model,
+        vision_settings,
+        api_key=settings.model_api_key,
+    )
 
 
 class QwenVisionProvider(VisionProvider):
+    """Open-category primary recognizer; it is never constrained by YOLO classes."""
+
     provider_name = "qwen"
 
     async def recognize(
@@ -90,21 +121,21 @@ class QwenVisionProvider(VisionProvider):
             raise ProviderUnavailableError(
                 "Uploaded image exceeds the size limit", error_code="unsupported_file"
             )
-        raw = base64.b64encode(path.read_bytes()).decode("ascii")
-        catalog = (context.supported_catalog if context else [])[:50]
-        prompt = (
-            "你是中药饮片鉴别教学助手。只能依据图像可见证据判断，不得编造不可见信息，"
-            "不要提供临床治疗建议。优先从给定目录中选择；如不在目录中明确设置 in_supported_catalog=false。"
-            "返回最可能候选和 Top-3、性状证据、质控证据、溯源建议、不确定性。\n目录："
-            + str(catalog)
-        )
         model, provider_name, llm = _resolve_vision_llm(context)
+        if settings.vision_debug:
+            logger.info(
+                "[QWEN_REQUEST] model=%s mime=%s bytes=%s",
+                model,
+                mime,
+                path.stat().st_size,
+            )
+        raw = base64.b64encode(path.read_bytes()).decode("ascii")
         messages: list[dict[str, Any]] = [
-            {"role": "system", "content": "Return only valid JSON."},
+            {"role": "system", "content": SYSTEM_PROMPT},
             {
                 "role": "user",
                 "content": [
-                    {"type": "text", "text": prompt},
+                    {"type": "text", "text": USER_PROMPT},
                     {
                         "type": "image_url",
                         "image_url": {"url": f"data:{mime};base64,{raw}"},
@@ -112,15 +143,37 @@ class QwenVisionProvider(VisionProvider):
                 ],
             },
         ]
-        parsed = await llm.complete_structured(
-            messages,
-            QwenVisionPayload,
-            context or ModelCallContext(agent_code="vision_qwen"),
+        cleaned = "无法识别"
+        for attempt in range(2):
+            content = await llm.complete_text(messages, temperature=0, max_tokens=16)
+            cleaned = clean_medicinal_name(content)
+            if is_short_chinese_medicinal_name(cleaned):
+                break
+            if attempt == 0:
+                messages.append({"role": "user", "content": RETRY_PROMPT})
+        if not is_short_chinese_medicinal_name(cleaned):
+            cleaned = "无法识别"
+        candidate = RecognitionCandidate(
+            herb_name=cleaned,
+            raw_name=cleaned,
+            confidence=0,
+            in_supported_catalog=False,
+            matched_by="qwen_single_name",
         )
-        return VisionRecognitionResult(
+        result = VisionRecognitionResult(
             provider=provider_name,
             model_name=model,
             file_id=context.file_id if context else None,
-            **parsed.model_dump(),
+            candidate=candidate,
+            top_candidates=[candidate],
             data_source="real",
+            recognized=True,
+            needs_review=cleaned == "无法识别",
         )
+        if settings.vision_debug:
+            logger.info(
+                "[QWEN_SINGLE_NAME] name=%s retried=%s",
+                cleaned,
+                len(messages) > 2,
+            )
+        return result

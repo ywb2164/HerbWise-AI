@@ -1,5 +1,6 @@
 from functools import lru_cache
 from pathlib import Path
+from typing import Literal
 
 from pydantic import AliasChoices, Field, SecretStr
 from pydantic_settings import BaseSettings, SettingsConfigDict
@@ -45,6 +46,11 @@ class Settings(BaseSettings):
     local_model_image_size: int = Field(default=640, ge=32)
     local_model_confidence_threshold: float = Field(default=0.5, ge=0, le=1)
     local_model_top_k: int = Field(default=3, ge=1, le=10)
+    knowledge_catalog_path: Path = Path("/data/knowledge/herb_profiles_45.v1.json")
+    vision_debug: bool = False
+    qwen_review_confidence_threshold: float = Field(default=0.65, ge=0, le=1)
+    recognition_agent_mode: Literal["off", "manual", "async"] = "manual"
+    recognition_use_legacy_full_loop: bool = False
     fusion_agreement_bonus: float = Field(default=0.15, ge=0, le=1)
     fusion_conflict_penalty: float = Field(default=0.15, ge=0, le=1)
     fusion_confidence_cap: float = Field(default=0.99, ge=0, le=1)
@@ -93,6 +99,21 @@ class Settings(BaseSettings):
     def effective_report_dir(self) -> Path:
         """Keep the legacy REPORT_DIR working while accepting V0.4 naming."""
         return self.report_output_dir or self.report_dir
+
+    def _resolve_project_data_path(self, configured: Path) -> Path:
+        """Use Docker's /data mount when present, otherwise resolve in this repo."""
+
+        configured_text = configured.as_posix()
+        if configured.is_file() or not configured_text.startswith("/data/"):
+            return configured
+        project_root = Path(__file__).resolve().parents[3]
+        return project_root / configured_text.lstrip("/")
+
+    def resolved_local_model_path(self) -> Path:
+        return self._resolve_project_data_path(Path(self.local_model_path))
+
+    def resolved_knowledge_catalog_path(self) -> Path:
+        return self._resolve_project_data_path(self.knowledge_catalog_path)
 
 
 @lru_cache

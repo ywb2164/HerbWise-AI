@@ -57,15 +57,7 @@ async def ready() -> dict[str, str]:
         and SecretResolver.is_configured("env:MODEL_API_KEY")
     )
     local_ready = bool(UltralyticsLocalVisionProvider.status()["configured"])
-    if mode == "qwen" and not qwen_ready:
-        raise ExternalServiceException("Qwen vision configuration is unavailable")
-    if mode == "local" and not local_ready:
-        raise ExternalServiceException("Local vision configuration is unavailable")
-    if mode == "hybrid" and not qwen_ready and not local_ready:
-        raise ExternalServiceException("No hybrid vision provider is available")
-    status = (
-        "degraded"
-        if mode == "hybrid" and (not qwen_ready or not local_ready)
-        else "ready"
-    )
+    if mode != "mock" and not qwen_ready:
+        raise ExternalServiceException("Qwen-VL primary recognition configuration is unavailable")
+    status = "degraded" if mode != "mock" and not local_ready else "ready"
     return {"status": status, "database": "connected", "redis": "connected"}

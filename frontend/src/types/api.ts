@@ -172,6 +172,98 @@ export interface LearningAnswer extends LearningAnswerPayload {
   submitted_at?: string
 }
 
+export interface LearningTaskQuestion {
+  question_id: number
+  question_type: 'single_choice' | 'multiple_choice' | 'true_false'
+  stem: string
+  options: Array<{ key: string; text: string }>
+  dimension_code: DimensionCode
+  knowledge_point: string
+  difficulty: string
+  order_index: number
+  score_weight: number
+}
+
+export interface LearningTask {
+  task_id: string
+  title: string
+  task_type: string
+  source: string
+  status: string
+  difficulty: string
+  estimated_minutes: number | null
+  deadline: string | null
+  progress: number
+  target_dimensions: DimensionCode[]
+  target_knowledge_points: string[]
+  resource_ids: string[]
+  created_at?: string
+  started_at?: string | null
+  completed_at?: string | null
+  question_count?: number
+}
+
+export interface LearningTaskDetail extends LearningTask {
+  questions: LearningTaskQuestion[]
+}
+
+export interface LearningTaskAttempt {
+  task_id: string
+  attempt_id: string
+  status: 'in_progress'
+  started_at: string
+  questions: LearningTaskQuestion[]
+}
+
+export interface LearningTaskResult {
+  task_id: string
+  attempt_id: string
+  status: 'completed'
+  raw_score: number
+  final_score: number
+  accuracy: number
+  duration_seconds: number
+  question_results: Array<{
+    question_id: number
+    student_answer: string | string[] | null
+    correct_answer: string | string[]
+    is_correct: boolean
+    score: number
+    explanation: string
+  }>
+  dimension_changes: Array<{ dimension_code: DimensionCode; before: number; after: number; delta: number; reason: string }>
+  weak_point_changes: Array<{ dimension_code: DimensionCode; knowledge_point: string; before: string | null; after: string; reason: string }>
+  next_task: LearningTask | null
+}
+
+export interface LearningPlanItem {
+  item_id: string
+  order_index: number
+  title: string
+  reason: string
+  target_dimensions: string[]
+  target_knowledge_points: string[]
+  task_type: string
+  difficulty: 'basic' | 'intermediate' | 'advanced' | string
+  estimated_minutes: number
+  resource_type: string
+  status: 'pending' | 'in_progress' | 'completed' | 'skipped' | string
+  linked_task_id: string | null
+  linked_resource_id: string | null
+}
+
+export interface LearningPlan {
+  plan_id: string
+  status: string
+  stage: string
+  summary: string
+  goal: string
+  daily_minutes: number
+  total_estimated_minutes: number
+  fallback_used: boolean
+  items: LearningPlanItem[]
+}
+
 export interface CapabilityStatus {
   ai_mode: string
   vision_mode: string
@@ -180,6 +272,8 @@ export interface CapabilityStatus {
   qwen_configured: boolean
   local_model_configured: boolean
   local_model_loaded: boolean
+  knowledge_catalog_loaded: boolean
+  knowledge_catalog_record_count: number
   generation_model_configured: boolean
   review_model_configured: boolean
   mock_fallback_available: boolean
@@ -293,6 +387,12 @@ export interface VisionRecognitionResult extends JsonRecord {
   uncertainty?: string | null
   elapsed_ms?: number
   data_source?: string
+  recognized?: boolean
+  material_type?: string
+  visible_evidence?: string[]
+  uncertain_features?: string[]
+  alternative_candidates?: Array<{ name_en: string; confidence: number }>
+  needs_review?: boolean
 }
 
 export interface RecognitionFusionResult extends JsonRecord {
@@ -304,6 +404,10 @@ export interface RecognitionFusionResult extends JsonRecord {
   decision_reason?: string
   local_result?: VisionRecognitionResult | null
   qwen_result?: VisionRecognitionResult | null
+  final_identification?: JsonRecord
+  yolo_reference?: VisionRecognitionResult | JsonRecord
+  knowledge_match?: JsonRecord
+  knowledge_verification?: JsonRecord
 }
 
 export interface RecognitionRecord {
@@ -313,6 +417,9 @@ export interface RecognitionRecord {
   file_id: string
   vision_mode: string
   status: string
+  recognition_status?: 'uploaded' | 'recognizing' | 'normalizing' | 'completed' | 'unrecognized' | 'failed'
+  agent_status?: 'not_started' | 'pending' | 'running' | 'completed' | 'failed' | 'skipped'
+  agent_task_id?: string | null
   final_medicine_id?: number | null
   final_name?: string | null
   confidence?: number | null
@@ -323,6 +430,12 @@ export interface RecognitionRecord {
   fusion_result?: RecognitionFusionResult | null
   provider_failures?: ProviderFailure[] | null
   data_source: string
+  final_identification?: JsonRecord | null
+  yolo_reference?: VisionRecognitionResult | JsonRecord | null
+  knowledge_match?: JsonRecord | null
+  knowledge_verification?: JsonRecord | null
+  agent_result?: JsonRecord | null
+  agent_error?: JsonRecord | null
   created_at?: string
 }
 
@@ -398,6 +511,7 @@ export interface TaskResult extends JsonRecord {
   review_result?: ReviewResult
   path_update?: LearningPath
   trace_id?: string
+  agent_result?: JsonRecord
 }
 
 export interface AgentTask {

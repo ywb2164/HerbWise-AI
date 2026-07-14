@@ -16,6 +16,7 @@ from app.integrations.factory import (
     get_vision_provider,
 )
 from app.modules.knowledge.models import MedicineAlias, MedicineItem
+from app.modules.knowledge.catalog import KnowledgeCatalog
 from app.modules.knowledge.normalizer import MedicineNameNormalizer
 from app.modules.recognition.fusion import fuse_recognition
 from app.modules.recognition.models import ModelCallRecord, RecognitionRecord
@@ -84,6 +85,89 @@ async def _normalize_result(
     )
 
 
+def _catalog_match_data(result: VisionRecognitionResult | None) -> dict[str, object]:
+    if result is None or result.candidate is None:
+        return {"status": "not_available", "profile": None}
+    name_zh = result.candidate.herb_name
+    name_en = result.candidate.english_name or result.candidate.raw_name
+    match = KnowledgeCatalog.match(name_zh=name_zh, name_en=name_en)
+    if match.profile is None:
+        return {
+            "status": "out_of_catalog",
+            "original_name_zh": name_zh,
+            "original_name_en": name_en,
+            "standard_name_en": name_en,
+            "standard_name_zh": name_zh,
+            "class_id": None,
+            "profile": None,
+        }
+    return {
+        "status": "matched",
+        "class_id": match.profile.get("class_id"),
+        "training_class_name": match.profile.get("training_class_name"),
+        "standard_name_en": match.standard_name_en,
+        "standard_name_zh": match.profile.get("standard_name_zh"),
+        "aliases": match.profile.get("aliases") or [],
+        "review_status": match.profile.get("review_status"),
+        "profile": match.profile,
+    }
+
+
+def _profile_material_type(profile: dict[str, object]) -> str | None:
+    text = " ".join(
+        str(profile.get(key) or "")
+        for key in ("botanical_or_zoological_source", "medicinal_part")
+    ).casefold()
+    for token, material_type in (
+        ("animal", "animal"),
+        ("insect", "animal"),
+        ("fungus", "fungus"),
+        ("rhizome", "plant_rhizome"),
+        ("root", "plant_root"),
+        ("fruit", "plant_fruit"),
+        ("seed", "plant_seed"),
+        ("bark", "plant_bark"),
+        ("flower", "plant_flower"),
+    ):
+        if token in text:
+            return material_type
+    return None
+
+
+def _knowledge_verification(
+    qwen: VisionRecognitionResult | None, knowledge_match: dict[str, object]
+) -> dict[str, object]:
+    profile = knowledge_match.get("profile")
+    if not isinstance(profile, dict):
+        return {
+            "status": "not_available",
+            "gross_type_match": None,
+            "matched_features": [],
+            "conflicting_features": [],
+            "reason": "The recognized material is not in the loaded 45-class knowledge package.",
+        }
+    expected = _profile_material_type(profile)
+    actual = qwen.material_type if qwen else "unknown"
+    mismatch = bool(
+        expected and actual not in {"unknown", "processed_material", expected}
+    )
+    return {
+        "status": "gross_mismatch" if mismatch else "pass",
+        "gross_type_match": not mismatch,
+        "matched_features": []
+        if mismatch
+        else list(qwen.visible_evidence if qwen else []),
+        "conflicting_features": [
+            f"Qwen material_type={actual}; profile type={expected}"
+        ]
+        if mismatch
+        else [],
+        "reason": "Basic material type conflicts with the matched knowledge profile."
+        if mismatch
+        else "No gross material-type conflict detected.",
+    }
+
+
 async def _record_call(
     session: AsyncSession,
     context: ModelCallContext,
@@ -141,7 +225,13 @@ async def _run_provider(
             result = await get_qwen_vision_provider().recognize(image_path, context)
         else:
             result = await get_vision_provider().recognize(image_path, context)
-        normalized = await _normalize_result(session, result)
+        # The current primary path uses the model's cleaned Chinese answer as
+        # its final name.  Do not normalize, translate, or catalog-map it.
+        normalized = (
+            result
+            if provider_kind == "qwen"
+            else await _normalize_result(session, result)
+        )
         await _record_call(
             session,
             context,
@@ -210,15 +300,16 @@ async def recognize_uploaded_file(
     if file is None:
         raise NotFoundException("Uploaded file not found")
     settings = get_settings()
-    mode = vision_mode or settings.effective_vision_mode()
-    if mode not in {"mock", "qwen", "local", "hybrid"}:
-        raise ValueError("Unsupported vision mode")
+    # The request field remains accepted for legacy clients, but cannot select the
+    # primary recognizer.  Real recognition always uses Qwen plus parallel YOLO.
+    requested_mode = vision_mode or settings.effective_vision_mode()
+    mode = "mock" if requested_mode == "mock" else "fixed_pipeline"
     image_path = str(settings.upload_dir.parent / file.relative_path)
     catalog = await supported_catalog(session)
     local: VisionRecognitionResult | None = None
     qwen: VisionRecognitionResult | None = None
     failures: list[dict[str, str]] = []
-    if mode == "hybrid":
+    if mode == "fixed_pipeline":
         local_outcome, qwen_outcome = await asyncio.gather(
             _run_provider(
                 session,
@@ -240,12 +331,12 @@ async def recognize_uploaded_file(
                     task_id=task_id,
                     learner_id=learner_id,
                     file_id=file_id,
-                    supported_catalog=catalog,
                     agent_code="vision_qwen",
                 ),
             ),
+            return_exceptions=True,
         )
-        if isinstance(local_outcome, Exception):
+        if isinstance(local_outcome, BaseException):
             failures.append(
                 {
                     "provider": "local",
@@ -254,7 +345,7 @@ async def recognize_uploaded_file(
             )
         else:
             local = local_outcome
-        if isinstance(qwen_outcome, Exception):
+        if isinstance(qwen_outcome, BaseException):
             failures.append(
                 {
                     "provider": "qwen",
@@ -264,12 +355,34 @@ async def recognize_uploaded_file(
         else:
             qwen = qwen_outcome
         fusion = fuse_recognition(local, qwen)
+        # The knowledge package remains available for other features but is
+        # deliberately outside the single-name primary recognition result.
+        knowledge_match = {"status": "not_used"}
+        knowledge_verification = {"status": "not_used"}
+        final = fusion.final_candidate
+        fusion = fusion.model_copy(
+            update={
+                "knowledge_match": knowledge_match,
+                "knowledge_verification": knowledge_verification,
+                "yolo_reference": local.model_dump(mode="json")
+                if local
+                else {"status": "failed"},
+                "final_identification": {
+                    "display_name_zh": final.herb_name if final else None,
+                    "medicinal_name_zh": final.herb_name if final else None,
+                    "confidence": final.confidence if final else None,
+                    "catalog_status": "not_used",
+                    "manual_review_required": fusion.manual_review_required,
+                },
+                "manual_review_required": fusion.manual_review_required,
+            }
+        )
         if task_id:
             from app.workflows.events import record_event
 
             fusion_event = (
-                "vision.fusion.conflict"
-                if fusion.agreement_status == "conflict"
+                "vision.pipeline.disagree"
+                if fusion.agreement_status == "disagree"
                 else "vision.fusion.completed"
             )
             await record_event(
@@ -277,7 +390,7 @@ async def recognize_uploaded_file(
                 "vision.fusion",
                 "success",
                 20,
-                f"vision fusion {fusion.agreement_status}",
+                f"fixed vision pipeline {fusion.agreement_status}",
                 payload={
                     "confidence": fusion.confidence_after_adjustment,
                     "candidate": fusion.final_candidate.herb_name
@@ -328,7 +441,7 @@ async def recognize_uploaded_file(
         learner_id=learner_id,
         file_id=file_id,
         vision_mode=mode,
-        status="success" if final else "failed",
+        status="success" if final else fusion.status,
         final_medicine_id=final.medicine_id if final else None,
         final_name=final.herb_name if final else None,
         confidence=final.confidence if final else None,
@@ -347,6 +460,7 @@ async def recognize_uploaded_file(
 
 
 def record_data(item: RecognitionRecord) -> dict:
+    fusion = item.fusion_result_json or {}
     return {
         "recognition_id": item.recognition_id,
         "task_id": item.task_id,
@@ -354,6 +468,7 @@ def record_data(item: RecognitionRecord) -> dict:
         "file_id": item.file_id,
         "vision_mode": item.vision_mode,
         "status": item.status,
+        "recognition_status": "completed" if item.status == "success" else item.status,
         "final_medicine_id": item.final_medicine_id,
         "final_name": item.final_name,
         "confidence": item.confidence,
@@ -361,9 +476,29 @@ def record_data(item: RecognitionRecord) -> dict:
         "manual_review_required": item.manual_review_required,
         "local_result": item.local_result_json,
         "qwen_result": item.qwen_result_json,
-        "fusion_result": item.fusion_result_json,
+        "fusion_result": fusion,
+        "final_identification": fusion.get("final_identification"),
+        "yolo_reference": fusion.get("yolo_reference"),
+        "knowledge_match": fusion.get("knowledge_match"),
+        "knowledge_verification": fusion.get("knowledge_verification"),
         "provider_failures": item.provider_failures_json,
         "data_source": item.data_source,
+        "created_at": item.created_at,
+    }
+
+
+def single_name_response_data(item: RecognitionRecord) -> dict:
+    """Student recognition response: expose only the final name and detector aid."""
+
+    fusion = item.fusion_result_json or {}
+    return {
+        "recognition_id": item.recognition_id,
+        "status": "success" if item.status == "success" else item.status,
+        "recognition_status": "completed" if item.status == "success" else item.status,
+        "final_name": item.final_name,
+        "confidence": item.confidence,
+        "final_identification": fusion.get("final_identification"),
+        "yolo_reference": fusion.get("yolo_reference"),
         "created_at": item.created_at,
     }
 
