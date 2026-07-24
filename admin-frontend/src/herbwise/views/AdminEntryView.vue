@@ -17,7 +17,7 @@ onMounted(() => window.location.replace(portalLoginUrl()));
   display: grid;
   min-height: 100vh;
   color: #52635a;
-  background: #f4f7f5;
+  background: #eef3f0;
   place-content: center;
   justify-items: center;
   gap: 16px;

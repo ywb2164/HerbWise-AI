@@ -11,8 +11,10 @@ import {
   Gauge,
   LibraryBig,
   LogOut,
+  Maximize2,
   Menu,
   ScanSearch,
+  Search,
   Settings2,
   Target,
 } from 'lucide-vue-next'
@@ -30,49 +32,44 @@ const settingsOpen = ref(false)
 const mobile = ref(false)
 
 const navigation = [
+  { label: '学习工作台', path: '/dashboard', icon: Gauge },
+  { label: '学习画像', path: '/profile', icon: ChartNoAxesCombined, matches: ['/onboarding', '/diagnosis', '/profile'] },
+  { label: '药材识别', path: '/recognition', icon: ScanSearch },
+  { label: '虚拟实训', path: '/simulation', icon: FlaskConical },
+  { label: '药材知识', path: '/knowledge', icon: LibraryBig },
+  { label: '学习资源', path: '/resources', icon: BookOpenText },
+  { label: '学习任务', path: '/learning-tasks', icon: ClipboardCheck },
+  { label: '结果沉淀', path: '/reports', icon: FileChartColumn, matches: ['/reports', '/traces', '/metrics'] },
+]
+
+const mobileGroups = [
   {
-    label: '总览',
-    items: [{ label: '学习工作台', path: '/dashboard', icon: Gauge }],
+    label: '学习中心',
+    items: navigation.slice(0, 4),
   },
   {
-    label: '学习准备',
-    items: [
-      { label: '构建学习画像', path: '/onboarding', icon: ChartNoAxesCombined },
-      { label: '能力诊断', path: '/diagnosis', icon: ClipboardCheck },
-      { label: '画像档案', path: '/profile', icon: Target },
-    ],
+    label: '知识与任务',
+    items: navigation.slice(4, 7),
   },
   {
-    label: '视觉实训',
+    label: '结果与证据',
     items: [
-      { label: '药材辨识', path: '/recognition', icon: ScanSearch },
-      { label: '虚拟仿真实训', path: '/simulation', icon: FlaskConical },
-    ],
-  },
-  {
-    label: '个性化学习',
-    items: [
-      { label: '药材知识', path: '/knowledge', icon: LibraryBig },
-      { label: '学习资源', path: '/resources', icon: BookOpenText },
-      { label: '学习任务', path: '/learning-tasks', icon: ClipboardCheck },
-    ],
-  },
-  {
-    label: '结果沉淀',
-    items: [
-      { label: '学习报告', path: '/reports', icon: FileChartColumn },
+      navigation[7],
       { label: '证据链', path: '/traces', icon: FlaskConical },
-      { label: '测试指标', path: '/metrics', icon: Gauge },
+      { label: '测试指标', path: '/metrics', icon: Target },
     ],
   },
 ]
 
-const activeTitle = computed(() => String(route.meta.title || '学习工作台'))
 const displayName = computed(() => auth.user?.display_name || auth.user?.username || '用户')
 const initial = computed(() => displayName.value.slice(0, 1).toUpperCase())
 
+function isActive(item: (typeof navigation)[number]): boolean {
+  return item.matches?.includes(route.path) || route.path === item.path
+}
+
 function updateViewport(): void {
-  mobile.value = window.matchMedia('(max-width: 900px)').matches
+  mobile.value = window.matchMedia('(max-width: 960px)').matches
   if (!mobile.value) drawerOpen.value = false
 }
 
@@ -83,6 +80,14 @@ async function handleLogout(): Promise<void> {
 
 function closeDrawer(): void {
   drawerOpen.value = false
+}
+
+function toggleFullscreen(): void {
+  if (document.fullscreenElement) {
+    void document.exitFullscreen()
+  } else {
+    void document.documentElement.requestFullscreen()
+  }
 }
 
 onMounted(() => {
@@ -96,68 +101,99 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateViewport))
 
 <template>
   <div class="app-shell">
-    <aside class="sidebar">
-      <div class="sidebar-brand"><AppLogo /></div>
-      <nav class="primary-nav" aria-label="主导航">
-        <section v-for="group in navigation" :key="group.label" class="nav-group">
-          <span class="nav-group-label">{{ group.label }}</span>
-          <router-link v-for="item in group.items" :key="item.path" :to="item.path" class="nav-item">
-            <component :is="item.icon" :size="18" :stroke-width="1.9" aria-hidden="true" />
-            <span>{{ item.label }}</span>
-          </router-link>
-        </section>
+    <header class="global-header">
+      <div class="header-brand">
+        <n-button v-if="mobile" quaternary circle aria-label="打开导航" @click="drawerOpen = true">
+          <template #icon><Menu :size="21" /></template>
+        </n-button>
+        <AppLogo />
+      </div>
+
+      <nav v-if="!mobile" class="desktop-nav" aria-label="主导航">
+        <router-link
+          v-for="item in navigation"
+          :key="item.path"
+          :to="item.path"
+          class="top-nav-item"
+          :class="{ active: isActive(item) }"
+        >
+          <component :is="item.icon" :size="17" :stroke-width="1.7" aria-hidden="true" />
+          <span>{{ item.label }}</span>
+        </router-link>
       </nav>
-      <div class="sidebar-account">
-        <n-avatar round size="small" color="#dcebe3" text-color="#195b43">{{ initial }}</n-avatar>
-        <div><strong>{{ displayName }}</strong><span>{{ auth.learnerId }}</span></div>
+
+      <div class="header-tools">
+        <n-tag
+          v-if="modelSettings.status.configured && !mobile"
+          size="small"
+          type="success"
+          :bordered="false"
+        >
+          {{ modelSettings.status.model_id }}
+        </n-tag>
         <n-tooltip trigger="hover">
           <template #trigger>
-            <n-button quaternary circle size="small" aria-label="退出登录" @click="handleLogout">
+            <n-button quaternary circle aria-label="搜索">
+              <template #icon><Search :size="18" /></template>
+            </n-button>
+          </template>
+          页面导航
+        </n-tooltip>
+        <n-tooltip trigger="hover">
+          <template #trigger>
+            <n-button quaternary circle aria-label="全屏" @click="toggleFullscreen">
+              <template #icon><Maximize2 :size="18" /></template>
+            </n-button>
+          </template>
+          全屏
+        </n-tooltip>
+        <n-tooltip trigger="hover">
+          <template #trigger>
+            <n-button quaternary circle aria-label="模型服务设置" @click="settingsOpen = true">
+              <template #icon><Settings2 :size="18" /></template>
+            </n-button>
+          </template>
+          模型服务设置
+        </n-tooltip>
+        <n-tooltip trigger="hover">
+          <template #trigger>
+            <button type="button" class="account-button" aria-label="当前用户">
+              <n-avatar round size="small" color="#e6f1e9" text-color="#1c634c">{{ initial }}</n-avatar>
+              <span v-if="!mobile">{{ displayName }}</span>
+            </button>
+          </template>
+          学习者 {{ auth.learnerId }}
+        </n-tooltip>
+        <n-tooltip trigger="hover">
+          <template #trigger>
+            <n-button quaternary circle aria-label="退出登录" @click="handleLogout">
               <template #icon><LogOut :size="17" /></template>
             </n-button>
           </template>
           退出登录
         </n-tooltip>
       </div>
-    </aside>
+    </header>
 
-    <div class="main-shell">
-      <header class="topbar">
-        <div class="topbar-leading">
-          <n-button v-if="mobile" quaternary circle aria-label="打开导航" @click="drawerOpen = true">
-            <template #icon><Menu :size="21" /></template>
-          </n-button>
-          <div class="location-copy"><span>学习中心</span><strong>{{ activeTitle }}</strong></div>
-        </div>
-        <div class="topbar-meta">
-          <n-tag v-if="modelSettings.status.configured" size="small" type="success" :bordered="false">
-            {{ modelSettings.status.model_id }}
-          </n-tag>
-          <span class="learner-chip">{{ auth.learnerId }}</span>
-          <n-tooltip trigger="hover">
-            <template #trigger>
-              <n-button quaternary circle aria-label="模型服务设置" @click="settingsOpen = true">
-                <template #icon><Settings2 :size="19" /></template>
-              </n-button>
-            </template>
-            模型服务设置
-          </n-tooltip>
-        </div>
-      </header>
-      <main class="app-content"><router-view /></main>
-    </div>
+    <main class="app-content"><router-view /></main>
   </div>
 
   <n-drawer v-model:show="drawerOpen" placement="left" :width="286">
     <n-drawer-content :native-scrollbar="false" body-content-style="padding: 0;">
       <div class="drawer-panel">
         <div class="drawer-brand"><AppLogo /></div>
-        <nav class="primary-nav" aria-label="移动端主导航">
-          <section v-for="group in navigation" :key="group.label" class="nav-group">
-            <span class="nav-group-label">{{ group.label }}</span>
-            <router-link v-for="item in group.items" :key="item.path" :to="item.path" class="nav-item" @click="closeDrawer">
-              <component :is="item.icon" :size="18" :stroke-width="1.9" aria-hidden="true" />
-              <span>{{ item.label }}</span>
+        <nav class="mobile-nav" aria-label="移动端主导航">
+          <section v-for="group in mobileGroups" :key="group.label">
+            <span>{{ group.label }}</span>
+            <router-link
+              v-for="item in group.items"
+              :key="item.path"
+              :to="item.path"
+              :class="{ active: route.path === item.path }"
+              @click="closeDrawer"
+            >
+              <component :is="item.icon" :size="18" />
+              {{ item.label }}
             </router-link>
           </section>
         </nav>
@@ -174,196 +210,218 @@ onBeforeUnmount(() => window.removeEventListener('resize', updateViewport))
 
 <style scoped>
 .app-shell {
-  display: grid;
-  grid-template-columns: 242px minmax(0, 1fr);
   min-height: 100vh;
+  background: var(--canvas);
 }
 
-.sidebar {
+.global-header {
   position: sticky;
+  z-index: 100;
   top: 0;
   display: grid;
-  grid-template-rows: 70px minmax(0, 1fr) auto;
-  height: 100vh;
-  color: #dce4de;
-  background: #18231d;
-  border-right: 1px solid #2c3931;
+  grid-template-columns: 242px minmax(0, 1fr) auto;
+  min-height: 76px;
+  background: rgba(255, 254, 248, 0.96);
+  border-bottom: 1px solid #e8e1d2;
+  box-shadow: 0 5px 18px rgba(87, 77, 48, 0.05);
+  backdrop-filter: blur(18px);
 }
 
-.sidebar-brand,
-.drawer-brand {
+.header-brand {
   display: flex;
-  align-items: center;
-  padding: 0 20px;
-  border-bottom: 1px solid #2c3931;
-}
-
-.sidebar-brand :deep(.app-logo),
-.drawer-brand :deep(.app-logo) {
-  color: #fff;
-}
-
-.primary-nav {
-  min-height: 0;
-  padding: 13px 11px 20px;
-  overflow-y: auto;
-}
-
-.nav-group {
-  display: grid;
-  gap: 2px;
-  margin-bottom: 10px;
-}
-
-.nav-group-label {
-  padding: 8px 10px 4px;
-  color: #7f9185;
-  font-size: 9px;
-  font-weight: 700;
-}
-
-.nav-item {
-  display: grid;
-  grid-template-columns: 24px minmax(0, 1fr);
-  align-items: center;
-  gap: 9px;
-  min-height: 38px;
-  padding: 8px 10px;
-  color: #bdc8c0;
-  border-radius: 6px;
-  font-size: 11px;
-  text-decoration: none;
-}
-
-.nav-item:hover {
-  color: #fff;
-  background: #243129;
-}
-
-.nav-item.router-link-active {
-  color: #fff;
-  background: #2d4a3a;
-}
-
-.nav-item.router-link-active svg {
-  color: #85c29f;
-}
-
-.sidebar-account {
-  display: grid;
-  grid-template-columns: 34px minmax(0, 1fr) 32px;
   align-items: center;
   gap: 8px;
-  min-height: 66px;
-  padding: 11px 14px;
-  border-top: 1px solid #2c3931;
+  min-width: 0;
+  padding: 10px 18px;
 }
 
-.sidebar-account > div {
+.header-brand :deep(.logo-copy strong) {
+  font-family: "Noto Serif SC", "Songti SC", SimSun, serif;
+}
+
+.desktop-nav {
   display: grid;
+  grid-template-columns: repeat(8, minmax(92px, 1fr));
   min-width: 0;
 }
 
-.sidebar-account strong {
-  overflow: hidden;
-  color: #fff;
+.top-nav-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 9px;
+  min-width: 0;
+  padding: 0 10px;
+  color: #335d4e;
+  border-left: 1px solid #eee9dd;
+  font-size: 12px;
+  font-weight: 650;
+  text-decoration: none;
+  transition: color 160ms ease, background 160ms ease;
+}
+
+.top-nav-item:last-child {
+  border-right: 1px solid #eee9dd;
+}
+
+.top-nav-item::after {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 3px;
+  content: "";
+  background: transparent;
+}
+
+.top-nav-item:hover {
+  color: #15553f;
+  background: #fbfaf4;
+}
+
+.top-nav-item.active {
+  color: #165a43;
+  background: #f2f7f1;
+}
+
+.top-nav-item.active::after {
+  background: #2c765a;
+}
+
+.header-tools {
+  display: flex;
+  align-items: center;
+  gap: 1px;
+  min-width: 0;
+  padding: 0 16px 0 12px;
+}
+
+.account-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 128px;
+  padding: 3px 5px;
+  color: #375a4d;
+  background: transparent;
+  border: 0;
+  cursor: default;
   font-size: 11px;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
-.sidebar-account span {
-  color: #829187;
-  font-size: 9px;
-}
-
-.main-shell {
-  min-width: 0;
-}
-
-.topbar {
-  position: sticky;
-  top: 0;
-  z-index: 20;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 16px;
-  min-height: 62px;
-  padding: 8px 22px;
-  background: rgba(255, 255, 255, 0.96);
-  border-bottom: 1px solid var(--line);
-  backdrop-filter: blur(10px);
-}
-
-.topbar-leading,
-.topbar-meta {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  min-width: 0;
-}
-
-.location-copy {
-  display: grid;
-  min-width: 0;
-}
-
-.location-copy span {
-  color: var(--subtle);
-  font-size: 9px;
-}
-
-.location-copy strong {
+.account-button span {
   overflow: hidden;
-  color: var(--ink);
-  font-size: 13px;
   text-overflow: ellipsis;
   white-space: nowrap;
-}
-
-.learner-chip {
-  color: var(--muted);
-  font-family: "SFMono-Regular", Consolas, monospace;
-  font-size: 10px;
 }
 
 .app-content {
-  min-width: 0;
+  min-height: calc(100vh - 76px);
+  background:
+    linear-gradient(rgba(255, 253, 246, 0.86), rgba(249, 248, 241, 0.94)),
+    url('/images/herbwise-page-banner.jpg') top center / 100% 250px no-repeat;
 }
 
 .drawer-panel {
   display: grid;
-  grid-template-rows: 70px minmax(0, 1fr) auto;
+  grid-template-rows: auto minmax(0, 1fr) auto;
   min-height: 100vh;
-  padding-bottom: 14px;
-  color: #dce4de;
-  background: #18231d;
+  padding: 0 16px 20px;
+  background: #fffef8;
 }
 
-.drawer-panel > .n-button {
-  margin: 0 12px;
-  color: #dce4de;
+.drawer-brand {
+  padding: 18px 4px;
+  border-bottom: 1px solid #e9e3d6;
 }
 
-@media (max-width: 900px) {
-  .app-shell {
-    grid-template-columns: 1fr;
+.mobile-nav {
+  min-height: 0;
+  padding: 16px 0;
+  overflow-y: auto;
+}
+
+.mobile-nav section {
+  display: grid;
+  gap: 4px;
+  margin-bottom: 14px;
+}
+
+.mobile-nav section > span {
+  padding: 7px 10px;
+  color: #87968e;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.mobile-nav a {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 44px;
+  padding: 9px 11px;
+  color: #3f5d52;
+  border-radius: 6px;
+  text-decoration: none;
+}
+
+.mobile-nav a.active,
+.mobile-nav a:hover {
+  color: #15543e;
+  background: #eaf3ec;
+}
+
+@media (max-width: 1320px) {
+  .global-header {
+    grid-template-columns: 210px minmax(0, 1fr) auto;
   }
 
-  .sidebar {
+  .header-brand {
+    padding-inline: 13px;
+  }
+
+  .desktop-nav {
+    grid-template-columns: repeat(8, minmax(78px, 1fr));
+  }
+
+  .top-nav-item {
+    gap: 5px;
+    padding-inline: 5px;
+    font-size: 11px;
+  }
+
+  .header-tools {
+    padding-inline: 7px;
+  }
+}
+
+@media (max-width: 1080px) {
+  .top-nav-item span {
     display: none;
   }
 
-  .topbar {
-    padding-inline: 12px;
+  .desktop-nav {
+    grid-template-columns: repeat(8, minmax(46px, 1fr));
   }
 }
 
-@media (max-width: 560px) {
-  .topbar-meta .n-tag,
-  .learner-chip {
-    display: none;
+@media (max-width: 960px) {
+  .global-header {
+    grid-template-columns: minmax(0, 1fr) auto;
+    min-height: 68px;
+  }
+
+  .header-brand {
+    padding: 8px 12px;
+  }
+
+  .header-tools {
+    padding-right: 9px;
+  }
+
+  .app-content {
+    min-height: calc(100vh - 68px);
   }
 }
 </style>

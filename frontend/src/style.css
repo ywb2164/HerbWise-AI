@@ -1,28 +1,32 @@
 :root {
-  color: #17211c;
-  background: #f4f6f4;
+  color: #16221d;
+  background: #eef3f0;
   font-family: Inter, "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", sans-serif;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
-  --ink: #17211c;
-  --muted: #68756d;
-  --subtle: #8c9790;
-  --line: #dfe5e0;
-  --line-strong: #ccd5ce;
-  --canvas: #f4f6f4;
+  --ink: #16221d;
+  --muted: #607168;
+  --subtle: #849189;
+  --line: #d9e3dd;
+  --line-strong: #c2d2c8;
+  --canvas: #eef3f0;
   --surface: #ffffff;
-  --surface-soft: #f8faf8;
-  --primary: #1f6b4f;
-  --primary-strong: #195b43;
-  --primary-soft: #eaf4ef;
-  --amber: #bd7a20;
-  --amber-soft: #fff5df;
-  --blue: #2f6f8f;
-  --blue-soft: #eaf3f7;
-  --danger: #b64b42;
-  --danger-soft: #faece9;
-  --shadow-soft: 0 8px 24px rgba(26, 50, 37, 0.07);
+  --surface-soft: #f5f8f6;
+  --primary: #0b654b;
+  --primary-strong: #074b39;
+  --primary-soft: #e6f2ec;
+  --amber: #b8812f;
+  --amber-soft: #fbf3df;
+  --blue: #2a6f86;
+  --blue-soft: #e8f2f5;
+  --danger: #b44c43;
+  --danger-soft: #f9ece9;
+  --forest-950: #071f18;
+  --forest-900: #0b2b22;
+  --forest-800: #123b2f;
+  --gold: #d6a84a;
+  --shadow-soft: 0 10px 28px rgba(18, 52, 38, 0.08);
 }
 
 * {
@@ -40,6 +44,11 @@ body,
 body {
   min-height: 100vh;
   background: var(--canvas);
+}
+
+::selection {
+  color: #fff;
+  background: var(--primary);
 }
 
 button,
@@ -66,7 +75,7 @@ a {
   width: 100%;
   max-width: 1480px;
   margin: 0 auto;
-  padding: 28px 32px 44px;
+  padding: 26px 30px 44px;
 }
 
 .page-grid {
@@ -83,6 +92,7 @@ a {
   background: var(--surface);
   border: 1px solid var(--line);
   border-radius: 8px;
+  box-shadow: var(--shadow-soft);
 }
 
 .surface-header {
@@ -91,7 +101,7 @@ a {
   justify-content: space-between;
   gap: 16px;
   min-height: 58px;
-  padding: 14px 18px;
+  padding: 15px 18px;
   border-bottom: 1px solid var(--line);
 }
 
@@ -120,7 +130,7 @@ a {
 
 .eyebrow {
   color: var(--primary);
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
   line-height: 1.4;
 }
@@ -161,7 +171,7 @@ a {
 }
 
 .data-table tbody tr.clickable:hover td {
-  background: #f7faf8;
+  background: var(--surface-soft);
 }
 
 .empty-state {

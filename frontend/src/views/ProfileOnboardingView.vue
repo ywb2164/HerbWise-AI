@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, onMounted, reactive, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   NAlert,
   NButton,
@@ -79,6 +79,7 @@ const questionCatalog: Record<string, QuestionCopy> = {
   },
 }
 
+const route = useRoute()
 const router = useRouter()
 const auth = useAuthStore()
 const message = useMessage()
@@ -90,6 +91,13 @@ const errorText = ref('')
 const existingProfile = ref<LearnerProfile | null>(null)
 const questions = ref<InitialQuestion[]>([])
 const answers = reactive<Record<number, string>>({})
+const editMode = computed(() => route.query.mode === 'edit')
+const retakeMode = computed(() => route.query.mode === 'retake')
+const pageTitle = computed(() => {
+  if (editMode.value) return '编辑学习画像'
+  if (retakeMode.value) return '重新测评'
+  return '构建学习画像'
+})
 
 const form = reactive({
   name: auth.user?.display_name || auth.user?.username || '',
@@ -205,6 +213,11 @@ async function nextStep(): Promise<void> {
   saving.value = true
   try {
     await saveProfile()
+    if (editMode.value) {
+      message.success('画像资料已更新')
+      await router.replace('/profile')
+      return
+    }
     if (!questions.value.length) questions.value = await api.getInitialQuestions()
     currentStep.value = 3
     message.success('画像信息已保存')
@@ -241,10 +254,40 @@ async function submitAssessment(): Promise<void> {
 
 onMounted(async () => {
   try {
-    existingProfile.value = await api.getProfile(auth.learnerId)
-    hydrateProfile(existingProfile.value)
+    try {
+      existingProfile.value = await api.getProfile(auth.learnerId)
+      hydrateProfile(existingProfile.value)
+    } catch (error) {
+      if (!isHttpStatus(error, 404)) throw error
+    }
+
+    if (retakeMode.value) {
+      if (!existingProfile.value) {
+        await router.replace('/onboarding')
+        return
+      }
+      questions.value = await api.getInitialQuestions()
+      currentStep.value = 3
+      return
+    }
+
+    if (editMode.value) {
+      if (!existingProfile.value) await router.replace('/onboarding')
+      return
+    }
+
+    if (!existingProfile.value) return
+
+    const history = await api.getProfileHistory(auth.learnerId)
+    if (history.some(item => item.event_type === 'initial_test_submitted')) {
+      await router.replace('/profile')
+      return
+    }
+
+    questions.value = await api.getInitialQuestions()
+    currentStep.value = 3
   } catch (error) {
-    if (!isHttpStatus(error, 404)) errorText.value = getErrorMessage(error, '画像信息加载失败')
+    errorText.value = getErrorMessage(error, '画像信息加载失败')
   } finally {
     loading.value = false
   }
@@ -253,10 +296,10 @@ onMounted(async () => {
 
 <template>
   <div class="page onboarding-page">
-    <PageHeader title="构建学习画像" eyebrow="学习准备" :meta="`学习者 ${auth.learnerId}`">
+    <PageHeader :title="pageTitle" eyebrow="学习准备" :meta="`学习者 ${auth.learnerId}`">
       <template #actions>
-        <n-button v-if="existingProfile" secondary @click="router.push('/diagnosis')">
-          当前诊断
+        <n-button v-if="editMode || retakeMode" secondary @click="router.push('/profile')">
+          返回画像
           <template #icon><ClipboardCheck :size="17" /></template>
         </n-button>
       </template>
@@ -266,7 +309,7 @@ onMounted(async () => {
       <n-steps :current="currentStep" size="small">
         <n-step title="身份与背景" />
         <n-step title="经验与目标" />
-        <n-step title="理论测试" />
+        <n-step v-if="!editMode" title="理论测试" />
       </n-steps>
     </section>
 
@@ -363,17 +406,23 @@ onMounted(async () => {
     </n-spin>
 
     <footer class="onboarding-actions">
-      <n-button v-if="currentStep > 1" secondary size="large" @click="currentStep -= 1">
+      <n-button v-if="currentStep > 1 && !retakeMode" secondary size="large" @click="currentStep -= 1">
         上一步
         <template #icon><ArrowLeft :size="18" /></template>
       </n-button>
+      <n-button v-else-if="editMode || retakeMode" secondary size="large" @click="router.push('/profile')">
+        取消
+      </n-button>
       <span v-else />
       <n-button v-if="currentStep < 3" type="primary" size="large" :loading="saving" @click="nextStep">
-        下一步
-        <template #icon><ArrowRight :size="18" /></template>
+        {{ editMode && currentStep === 2 ? '保存修改' : '下一步' }}
+        <template #icon>
+          <Check v-if="editMode && currentStep === 2" :size="18" />
+          <ArrowRight v-else :size="18" />
+        </template>
       </n-button>
       <n-button v-else type="primary" size="large" :loading="submitting" :disabled="!allAnswered" @click="submitAssessment">
-        完成画像
+        {{ retakeMode ? '提交测评' : '完成画像' }}
         <template #icon><Check :size="18" /></template>
       </n-button>
     </footer>
