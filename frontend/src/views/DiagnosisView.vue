@@ -125,7 +125,7 @@ onMounted(() => {
           </p>
         </div>
         <div class="hero-actions">
-          <n-button secondary @click="router.push('/onboarding')">更新画像</n-button>
+          <n-button secondary @click="router.push('/profile')">查看画像</n-button>
           <n-button type="primary" @click="router.push('/recognition')">
             开始实训
             <template #icon><ScanSearch :size="17" /></template>

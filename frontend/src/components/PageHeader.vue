@@ -33,7 +33,9 @@ withDefaults(
   align-items: flex-end;
   justify-content: space-between;
   gap: 20px;
-  margin-bottom: 24px;
+  margin-bottom: 22px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--line);
 }
 
 .page-heading {
@@ -51,9 +53,9 @@ withDefaults(
 
 h1 {
   color: var(--ink);
-  font-size: 27px;
+  font-size: 26px;
   line-height: 1.25;
-  font-weight: 720;
+  font-weight: 740;
   letter-spacing: 0;
 }
 
@@ -75,6 +77,7 @@ h1 {
     align-items: flex-start;
     flex-direction: column;
     margin-bottom: 18px;
+    padding-bottom: 14px;
   }
 
   h1 {

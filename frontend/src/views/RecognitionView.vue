@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import {
   NAlert,
   NButton,
@@ -62,13 +62,14 @@ type NodeState = 'pending' | 'running' | 'success' | 'failed'
 type CaptureMode = 'upload' | 'camera' | 'simulation'
 
 const router = useRouter()
+const route = useRoute()
 const auth = useAuthStore()
 const modelSettings = useModelSettingsStore()
 const message = useMessage()
 const selectedFile = ref<File | null>(null)
 const previewUrl = ref('')
 const objectUrl = ref('')
-const captureMode = ref<CaptureMode>('upload')
+const captureMode = ref<CaptureMode>(route.query.source === 'camera' ? 'camera' : 'upload')
 const cameraStarting = ref(false)
 const cameraFrozen = ref(false)
 const videoElement = ref<HTMLVideoElement | null>(null)
@@ -583,7 +584,7 @@ onBeforeUnmount(() => {
             <span>样本来源</span>
             <n-radio-group v-model:value="captureMode" name="capture-mode" :disabled="task?.status === 'running'">
               <n-radio-button value="upload">上传图片</n-radio-button>
-              <n-radio-button value="camera">摄像头</n-radio-button>
+              <n-radio-button value="camera">摄像头锁帧</n-radio-button>
               <n-radio-button value="simulation">虚拟实训</n-radio-button>
             </n-radio-group>
           </div>

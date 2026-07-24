@@ -93,6 +93,21 @@ const router = createRouter({
         },
       ],
     },
+    { path: '/home', redirect: '/dashboard' },
+    { path: '/imgPredict', redirect: { path: '/recognition', query: { source: 'upload' } } },
+    { path: '/imgPredictBatch', redirect: { path: '/recognition', query: { source: 'upload' } } },
+    { path: '/dynamicPredict', redirect: { path: '/recognition', query: { source: 'upload' } } },
+    { path: '/videoPredict', redirect: { path: '/recognition', query: { source: 'upload' } } },
+    { path: '/cameraPredict', redirect: { path: '/recognition', query: { source: 'camera' } } },
+    { path: '/virtualLab', redirect: '/simulation' },
+    { path: '/smartChat', redirect: '/knowledge' },
+    { path: '/medicalAgent', redirect: '/resources' },
+    { path: '/traceCenter', redirect: '/traces' },
+    { path: '/trace-dashboard', redirect: '/traces' },
+    { path: '/trace-dashboard-3d', redirect: '/traces' },
+    { path: '/screen', redirect: '/metrics' },
+    { path: '/personal', redirect: '/profile' },
+    { path: '/usermanage', redirect: { path: '/login', query: { role: 'admin' } } },
     { path: '/:pathMatch(.*)*', redirect: '/dashboard' },
   ],
 })
@@ -130,12 +145,18 @@ router.beforeEach(async to => {
       }
       return true
     }
-    return { name: isAdmin ? 'dashboard' : 'onboarding' }
+    return { name: 'dashboard' }
   }
 
   if (!to.meta.public && !to.meta.allowWithoutProfile && user?.learner_id && checkedLearnerId !== user.learner_id) {
     try {
-      await api.getProfile(user.learner_id)
+      const [, history] = await Promise.all([
+        api.getProfile(user.learner_id),
+        api.getProfileHistory(user.learner_id),
+      ])
+      if (!history.some(item => item.event_type === 'initial_test_submitted')) {
+        return { name: 'onboarding' }
+      }
       checkedLearnerId = user.learner_id
     } catch (error) {
       if (isHttpStatus(error, 404)) return { name: 'onboarding' }

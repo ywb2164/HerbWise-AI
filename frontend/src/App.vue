@@ -9,17 +9,18 @@ import {
   zhCN,
   type GlobalThemeOverrides,
 } from 'naive-ui'
+import BenCaoAssistant from './components/BenCaoAssistant.vue'
 
 const themeOverrides: GlobalThemeOverrides = {
   common: {
-    primaryColor: '#1f6b4f',
-    primaryColorHover: '#2b7c5e',
-    primaryColorPressed: '#195b43',
-    primaryColorSuppl: '#2b7c5e',
-    infoColor: '#2f6f8f',
-    warningColor: '#bd7a20',
-    errorColor: '#b64b42',
-    successColor: '#2c7a55',
+    primaryColor: '#0b654b',
+    primaryColorHover: '#14795a',
+    primaryColorPressed: '#074b39',
+    primaryColorSuppl: '#14795a',
+    infoColor: '#2a6f86',
+    warningColor: '#b8812f',
+    errorColor: '#b44c43',
+    successColor: '#19704f',
     borderRadius: '6px',
     borderRadiusSmall: '4px',
     fontFamily:
@@ -37,9 +38,9 @@ const themeOverrides: GlobalThemeOverrides = {
   },
   Menu: {
     itemBorderRadius: '6px',
-    itemColorActive: '#eaf4ef',
-    itemTextColorActive: '#195b43',
-    itemIconColorActive: '#195b43',
+    itemColorActive: '#e6f2ec',
+    itemTextColorActive: '#074b39',
+    itemIconColorActive: '#074b39',
   },
 }
 </script>
@@ -55,6 +56,7 @@ const themeOverrides: GlobalThemeOverrides = {
       <n-notification-provider placement="top-right">
         <n-message-provider>
           <router-view />
+          <BenCaoAssistant />
         </n-message-provider>
       </n-notification-provider>
     </n-dialog-provider>

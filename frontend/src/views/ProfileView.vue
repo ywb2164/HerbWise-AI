@@ -1,7 +1,8 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import { NAlert, NButton, NEmpty, NProgress, NSpin, NTag, useMessage } from 'naive-ui'
-import { AlertTriangle, CheckCircle2, History, RefreshCw, Target, UserRound } from 'lucide-vue-next'
+import { AlertTriangle, CheckCircle2, History, RotateCcw, SquarePen, Target, UserRound } from 'lucide-vue-next'
 import DimensionRadar from '../components/DimensionRadar.vue'
 import PageHeader from '../components/PageHeader.vue'
 import SourceBadge from '../components/SourceBadge.vue'
@@ -12,11 +13,13 @@ import {
   dimensionLabels,
   formatDate,
   getErrorMessage,
+  isHttpStatus,
   levelLabels,
   taskTypeLabels,
 } from '../utils/format'
 
 const auth = useAuthStore()
+const router = useRouter()
 const message = useMessage()
 const loading = ref(true)
 const updating = ref(false)
@@ -50,14 +53,24 @@ async function loadProfile(): Promise<void> {
     api.getProfile(learnerId),
     api.getDimensions(learnerId),
     api.getWeakPoints(learnerId),
-    api.getLearningPath(learnerId),
     api.getProfileHistory(learnerId),
   ])
   if (results[0].status === 'fulfilled') profile.value = results[0].value
   if (results[1].status === 'fulfilled') dimensions.value = results[1].value
   if (results[2].status === 'fulfilled') weakPoints.value = results[2].value
-  if (results[3].status === 'fulfilled') learningPath.value = results[3].value
-  if (results[4].status === 'fulfilled') profileHistory.value = results[4].value
+  if (results[3].status === 'fulfilled') {
+    profileHistory.value = results[3].value
+    const hasLearningPath = profileHistory.value.some(item => item.event_type === 'learning_path_updated')
+    if (hasLearningPath) {
+      try {
+        learningPath.value = await api.getLearningPath(learnerId)
+      } catch (error) {
+        if (!isHttpStatus(error, 404)) errorText.value = getErrorMessage(error, '学习路径加载失败')
+      }
+    } else {
+      learningPath.value = null
+    }
+  }
   const rejected = results.find((item) => item.status === 'rejected')
   if (rejected?.status === 'rejected') errorText.value = getErrorMessage(rejected.reason, '学情数据加载失败')
   loading.value = false
@@ -82,9 +95,13 @@ onMounted(loadProfile)
   <div class="page">
     <PageHeader title="学情画像" :meta="`学习者 ${auth.learnerId}`">
       <template #actions>
-        <n-button secondary :loading="loading" @click="loadProfile">
-          刷新画像
-          <template #icon><RefreshCw :size="17" /></template>
+        <n-button secondary @click="router.push({ path: '/onboarding', query: { mode: 'edit' } })">
+          编辑资料
+          <template #icon><SquarePen :size="17" /></template>
+        </n-button>
+        <n-button secondary @click="router.push({ path: '/onboarding', query: { mode: 'retake' } })">
+          重新测评
+          <template #icon><RotateCcw :size="17" /></template>
         </n-button>
         <n-button type="primary" :loading="updating" @click="updatePath">
           更新学习路径
@@ -312,6 +329,10 @@ onMounted(loadProfile)
   min-width: 0;
 }
 
+.profile-identity > div:last-child {
+  min-width: 0;
+}
+
 .profile-avatar {
   display: grid;
   flex: 0 0 52px;
@@ -332,7 +353,7 @@ onMounted(loadProfile)
 
 .profile-identity p {
   overflow: hidden;
-  max-width: 440px;
+  width: min(440px, 100%);
   color: var(--muted);
   font-size: 12px;
   text-overflow: ellipsis;
